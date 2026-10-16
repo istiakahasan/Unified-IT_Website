@@ -1,0 +1,7 @@
+/* Business / Hybrid / Microsoft 365 tab bar */
+.etabs{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:fit-content;max-width:100%;margin:0 auto 34px;padding:6px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);opacity:0}
+.pg.on .etabs,#bem.on .etabs{animation:vin .8s cubic-bezier(.2,.7,.2,1) .05s forwards}
+.etabs a{padding:11px 24px;border-radius:999px;color:#d6d2ee;text-decoration:none;font:700 14.5px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:background .25s,color .25s}
+.etabs a:hover{background:rgba(255,255,255,.1);color:#fff}
+.etabs a.on{background:linear-gradient(120deg,var(--a1,#ff8a6b),var(--a2,#6b8cff));color:#1a0d00}
+#mega{display:none!important}

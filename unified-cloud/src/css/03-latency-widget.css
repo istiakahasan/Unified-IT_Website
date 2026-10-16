@@ -1,0 +1,32 @@
+/* Live latency widget shown in the hero */
+#lat{position:fixed;z-index:4;right:clamp(16px,3vw,44px);bottom:clamp(20px,6vh,60px);width:clamp(270px,24vw,330px);padding:16px;border-radius:20px;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Inter,sans-serif;background:linear-gradient(160deg,rgba(18,24,58,.62),rgba(10,12,34,.55));border:1px solid rgba(140,160,255,.22);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 18px 50px rgba(4,6,28,.55),inset 0 1px 0 rgba(255,255,255,.08);opacity:0;pointer-events:none;will-change:transform,opacity}
+#lat .lh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+#lat .lt{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;color:#b9c8ff}
+#lat .lh button{background:none;border:0;padding:4px 2px;font:600 12px/1 inherit;color:#8fa8ff;cursor:pointer}
+#lat .lh button:hover{color:#c3a8ff}
+#lat .lr{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:10px;border-radius:14px;background:rgba(255,255,255,.06)}
+#lat .dot{flex:none;width:12px;height:12px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 5px rgba(74,222,128,.16);animation:latp 2s ease-in-out infinite}
+@keyframes latp{50%{box-shadow:0 0 0 8px rgba(74,222,128,.06)}}
+#lat .ln{flex:1;min-width:0}
+#lat .ln b{display:block;font-size:14px;font-weight:700}
+#lat .ln i,#lat .lv i{display:block;font-style:normal;font-size:11px;color:rgba(190,200,235,.62);margin-top:3px}
+#lat .lv{text-align:right}
+#lat .lv b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+#lat .lv.g b{color:#4ade80}
+#lat .lv.o b{color:#fb923c}
+#lat .lf{margin-top:2px;padding:10px 12px;border-radius:12px;text-align:center;font-size:12px;line-height:1.4;color:#9ff0c6;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.28)}
+#lat .lf b{color:#4ade80}
+@media(max-width:760px){#lat{left:12px;right:12px;width:auto;bottom:12px;padding:12px}#lat .lr{padding:9px 12px;margin-bottom:7px}#lat .lv b{font-size:19px}}
+#lat{width:clamp(210px,17.5vw,250px);padding:12px;border-radius:16px;bottom:clamp(16px,5vh,44px)}
+#lat .lh{margin-bottom:9px}
+#lat .lt{font-size:10px;gap:6px}
+#lat .lt svg{width:14px;height:14px}
+#lat .lh button{font-size:10px}
+#lat .lr{gap:9px;padding:8px 10px;margin-bottom:7px;border-radius:11px}
+#lat .dot{width:9px;height:9px;box-shadow:0 0 0 4px rgba(74,222,128,.16)}
+#lat .ln b{font-size:12px}
+#lat .ln i,#lat .lv i{font-size:9.5px;margin-top:2px}
+#lat .lv b{font-size:16px}
+#lat .lf{padding:7px 9px;font-size:10px;border-radius:10px}
+@media(max-width:760px){#lat{left:auto;right:10px;width:200px;bottom:10px;padding:10px}#lat .lr{padding:7px 9px;margin-bottom:5px}#lat .lv b{font-size:15px}}
+#hdr{box-shadow:0 2px 8px rgba(6,4,30,.22),0 12px 32px rgba(6,4,30,.38)}

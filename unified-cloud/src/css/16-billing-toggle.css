@@ -1,0 +1,7 @@
+/* Monthly | Yearly billing switch (Business Email and Hybrid Email) */
+.bill{position:relative;z-index:2;display:flex;width:fit-content;max-width:100%;margin:0 auto;padding:6px;gap:8px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);opacity:0;animation:vin .8s cubic-bezier(.2,.7,.2,1) .25s forwards}
+.bill button{padding:10px 26px;border:0;border-radius:999px;background:transparent;color:#d6d2ee;cursor:pointer;font:700 14.5px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:background .25s,color .25s}
+.bill button:hover{background:rgba(255,255,255,.1);color:#fff}
+.bill button.on{background:linear-gradient(120deg,var(--a1,#ff8a6b),var(--a2,#6b8cff));color:#1a0d00}
+#pg-hybrid .ek,#bem .ek{flex-wrap:wrap;row-gap:6px}
+#bem .bill{margin-bottom:28px}

@@ -1,0 +1,21 @@
+/* Service-page footer (.uf) */
+.uf{position:relative;z-index:1;margin-top:clamp(70px,9vw,110px);color:#aab4d6;font-family:system-ui,-apple-system,"Segoe UI",Inter,sans-serif;font-size:14.5px;border-radius:22px 22px 0 0;background:linear-gradient(180deg,rgba(6,6,24,.55),rgba(4,4,16,.8));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.09);border-bottom:0}
+.uf .uft{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:22px clamp(18px,3vw,40px);border-bottom:1px solid rgba(255,255,255,.1)}
+.uf .ufn{display:inline-flex;align-items:center;gap:12px;color:#fff;font-weight:700;font-size:15.5px}
+.uf .ufn svg{width:26px;height:26px}
+.uf .ufg{color:#8791b8;font-size:14px}
+.uf .ufm{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:34px;padding:44px clamp(18px,3vw,40px) 36px}
+.uf .ufl{display:inline-block;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.94);line-height:0;margin-bottom:18px}
+.uf .ufl img{height:26px;width:auto}
+.uf .ufb p{margin:0 0 20px;max-width:420px;line-height:1.7;color:#b4bdde}
+.uf .ufb a,.uf .ufa{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;color:#c5cdf0;text-decoration:none;line-height:1.5}
+.uf .ufb svg{flex:none;width:19px;height:19px;margin-top:2px;color:#6ea8ff}
+.uf h4{margin:0 0 18px;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:#d6dcf5}
+.uf .ufm>div:not(.ufb) a,.uf .ufm>div:not(.ufb) span{display:block;margin-bottom:14px;color:#8d99c4;text-decoration:none;transition:color .2s,translate .2s}
+.uf .ufm>div:not(.ufb) a:hover{color:#fff;translate:4px 0}
+.uf .ufb a:hover{color:#fff}
+.uf .ufz{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:20px clamp(18px,3vw,40px) 26px;border-top:1px solid rgba(255,255,255,.1);color:#7f8ab2;font-size:13px}
+.uf .ufc{display:flex;gap:10px}
+.uf .ufc i{font-style:normal;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);color:#c5cdf0;font-size:12px;letter-spacing:.06em}
+@media(max-width:900px){.uf .ufm{grid-template-columns:1fr 1fr}.uf .ufb{grid-column:1/-1}}
+@media(max-width:560px){.uf .ufm{grid-template-columns:1fr}}
