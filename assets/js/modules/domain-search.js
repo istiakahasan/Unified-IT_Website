@@ -180,7 +180,7 @@ try {
         var ctaHtml = isTaken
           ? '<button class="dom-btn-offer" type="button" data-action="offer" data-domain="' + parsed.full + '">' + ICONS.offer + ' Make offer</button>'
           : '<div class="dom-exact-price-tag"><div class="p-main">BDT 1,320/yr</div><div class="p-sub">Retail BDT 1,740/yr</div></div>' +
-            '<button class="dom-cart-btn" type="button" data-domain="' + parsed.full + '" data-price="BDT 1,320/yr">' + ICONS.cart + ' Add to cart</button>';
+            '<button class="dom-cart-btn" type="button" data-domain="' + parsed.full + '" data-price="BDT 1,320/yr">' + ICONS.cart + ' Order Now</button>';
 
         var isFav = !!favorites[parsed.full];
 
@@ -268,7 +268,7 @@ try {
                   retailHtml +
                 '</div>' +
                 '<button class="dom-cart-btn" type="button" data-domain="' + domainName + '" data-price="' + item.price + '">' +
-                  ICONS.cart + ' Add to cart' +
+                  ICONS.cart + ' Order Now' +
                 '</button>' +
               '</div>' +
             '</div>'
@@ -389,10 +389,10 @@ try {
 
           if (!wasAdded) {
             cartBtn.classList.add('added');
-            cartBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Added';
+            cartBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Ordered';
             setTimeout(function() {
               cartBtn.classList.remove('added');
-              cartBtn.innerHTML = ICONS.cart + ' Add to cart';
+              cartBtn.innerHTML = ICONS.cart + ' Order Now';
             }, 2500);
           }
           return;

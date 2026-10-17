@@ -88,8 +88,8 @@ if((window.__sm||0)>=.86)hd.style.setProperty('--ph',String(Math.round(300+Math.
 function others(){return AB.classList.contains('on')||PT.classList.contains('on')||document.getElementById('vps').classList.contains('on')||document.getElementById('vds').classList.contains('on')}
 function openV(){if(open)return;open=true;window.__aboutOpen=true;document.body.classList.add('be');document.body.classList.remove('mmo','mgo');V.classList.add('on');V.scrollTop=0}
 function closeV(){if(!open)return;open=false;document.body.classList.remove('be');V.classList.remove('on');if(!others())window.__aboutOpen=false}
-function sync(){if(location.hash==='#email')openV();else closeV()}
-document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.dd a.sv');if(a){var b=a.querySelector('b');if(b&&b.textContent==='Basic Email'){e.preventDefault();e.stopImmediatePropagation();document.querySelectorAll('.dd.open').forEach(function(x){x.classList.remove('open')});location.hash='email';sync()}}},true);
+function sync(){if(location.hash==='#email'){location.replace('#p-email');return}closeV()}
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.dd a.sv');if(a){var b=a.querySelector('b');if(b&&b.textContent==='Basic Email'){e.preventDefault();e.stopImmediatePropagation();document.querySelectorAll('.dd.open').forEach(function(x){x.classList.remove('open')});location.hash='p-email'}}},true);
 addEventListener('hashchange',sync);
 addEventListener('keydown',function(e){if(e.key==='Escape'&&open){location.hash='';sync()}});
 sync();
