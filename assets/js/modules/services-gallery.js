@@ -90,7 +90,7 @@ try {
   var key=new THREE.DirectionalLight(0xe6c8ff,1);key.position.set(4,5,6);scene.add(key);
   var rim=new THREE.PointLight(0xa855ff,6,20);rim.position.set(-3,1,3);scene.add(rim);
 
-  var geos=[new THREE.BoxGeometry(2.2,3.2,2.2,2,3,2),new THREE.IcosahedronGeometry(1.8,1),new THREE.TorusGeometry(1.5,.55,16,48),
+  var geos=[new THREE.BoxGeometry(2.2,3.2,2.2,2,3,2),new THREE.IcosahedronGeometry(2.1,1),new THREE.TorusGeometry(1.5,.55,16,48),
     new THREE.OctahedronGeometry(2),new THREE.DodecahedronGeometry(1.8),new THREE.TorusKnotGeometry(1.2,.4,100,14,2,3),
     new THREE.CylinderGeometry(1.4,1.4,2.8,18,3),new THREE.ConeGeometry(1.7,3,6,3),new THREE.SphereGeometry(1.8,20,14),
     new THREE.TetrahedronGeometry(2.3),new THREE.TorusKnotGeometry(1.2,.35,120,14,3,5)];
@@ -100,9 +100,22 @@ try {
     var wire=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xc08cff,wireframe:true,transparent:true,opacity:.7}));
     gr.add(solid);gr.add(wire);gr.userData={solid:solid,wire:wire};gr.scale.setScalar(.001);scene.add(gr);return gr});
 
-  // ---- Agentic AI (slide 2): Autonomous AI Neural Agent Core, Gyroscopic Reasoning Rings & Synaptic Probes ----
+  // Inner nested neural lattice for Agentic AI background shape (slide 2)
+  var innerAIWire = new THREE.Mesh(new THREE.OctahedronGeometry(1.3), new THREE.MeshBasicMaterial({color:0x5cf0ff,wireframe:true,transparent:true,opacity:.65}));
+  shapes[1].add(innerAIWire);
+  shapes[1].userData.tick = function(t, hue, w, S) {
+    innerAIWire.rotation.x = -t * 0.65;
+    innerAIWire.rotation.y = t * 0.85;
+    innerAIWire.material.color.setHSL((hue + 0.1) % 1, 0.9, 0.75);
+    innerAIWire.material.opacity = 0.45 + S.pulse * 0.35;
+  };
+
+  // ---- Agentic AI Hero Core (slide 2): Autonomous AI Neural Agent Core, Gyroscopic Reasoning Rings & Synaptic Probes on right side ----
+  var agentHero = new THREE.Group();
+  agentHero.scale.setScalar(0.001);
+  scene.add(agentHero);
   (function(){
-    var DS=1,agentNodes=[],pulses=[],gr=new THREE.Group();
+    var agentNodes=[],pulses=[],gr=agentHero;
     var solidMat=new THREE.MeshStandardMaterial({color:0x1b1344,metalness:.6,roughness:.3,transparent:true,opacity:.82,emissive:0x3a1470,emissiveIntensity:.6});
     var lineMat=new THREE.LineBasicMaterial({color:0x5cf0ff,transparent:true,opacity:.75});
     var glowMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -152,12 +165,9 @@ try {
     var rip = new THREE.Mesh(new THREE.RingGeometry(0.98, 1.0, 72), new THREE.MeshBasicMaterial({color:0x5cf0ff, transparent:true, opacity:0.5, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false}));
     rip.rotation.x = -Math.PI/2; rip.position.y = -1.8; gr.add(rip);
 
-    gr.scale.setScalar(0.001);
     gr.userData = {
       solid: { material: solidMat },
       wire: { material: lineMat },
-      upright: true,
-      dx: 5.8,
       tick: function(t, hue, w, S) {
         outerCore.rotation.y = t * 0.4; outerCore.rotation.x = t * 0.2;
         outerWire.rotation.y = t * 0.4; outerWire.rotation.x = t * 0.2;
@@ -196,9 +206,6 @@ try {
         ring.material.color.setHSL(hue, 0.85, 0.7);
       }
     };
-    scene.remove(shapes[DS]);
-    shapes[DS] = gr;
-    scene.add(gr);
   })();
 
   // ---- anime.js: ambient pulse + click burst ----
@@ -258,6 +265,24 @@ try {
       u.solid.material.emissive.setHSL(hue,.8,.18+S.pulse*.08);
       if(u.tick)u.tick(t,hue,w,S);
     });
+
+    // 3D Agentic AI Hero Core on the right side of slide 2
+    if(agentHero){
+      var dHero=Math.abs(sp-1),wHero=ease(Math.max(0,1-dHero));
+      if(!mob && wHero>.005){
+        agentHero.visible=true;
+        agentHero.scale.setScalar(Math.max(wHero,0.001));
+        var dirHero=sp-1;
+        agentHero.position.set(3.0 + dirHero*-2, dirHero*1.6 + Math.sin(t*.8+1)*.15, -Math.abs(dirHero)*3);
+        agentHero.rotation.y=Math.sin(t*.45)*.55 + m.x*.35;
+        agentHero.rotation.x=.08 + Math.sin(t*.3)*.03 - m.y*.1;
+        if(agentHero.userData && agentHero.userData.tick){
+          agentHero.userData.tick(t,hue,wHero,S);
+        }
+      } else {
+        agentHero.visible=false;
+      }
+    }
 
     logos.forEach(function(L,i){
       var d=sp-i,w=ease(Math.max(0,1-Math.abs(d)*1.15));
