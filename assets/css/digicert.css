@@ -5,15 +5,17 @@
 .dcw .dcx-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px 26px}
 .dcw .dcx-title{margin:0;font-size:clamp(1.5rem,2.6vw,2rem);font-weight:700;letter-spacing:-.01em;color:#fff}
 .dcw .dcx-tabs{display:inline-flex;flex-wrap:wrap;gap:6px;padding:5px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
-.dcw .dcx-tab{border:0;cursor:pointer;padding:11px 20px;border-radius:999px;background:transparent;color:#cfcbe8;font:700 14px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:background .25s,color .25s}
-.dcw .dcx-tab:hover{background:rgba(255,255,255,.1);color:#fff}
-.dcw .dcx-tab.on{background:linear-gradient(120deg,var(--a1),var(--a2));color:#1a0d00}
+.dcw .dcx-tab{border:0;cursor:pointer;padding:11px 20px;border-radius:999px;background:transparent;color:#cfcbe8;font:700 14px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:background .25s,color .25s,transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.dcw .dcx-tab:hover{background:rgba(255,255,255,.14);color:#fff;transform:translateY(-2px) scale(1.05)}
+.dcw .dcx-tab.on{background:linear-gradient(120deg,var(--a1),var(--a2));color:#1a0d00;transform:scale(1.03);box-shadow:0 4px 16px rgba(93,224,196,.3)}
+@keyframes vinZoom{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
 .dcw .dcx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:30px}
-.dcw .dcx-card{position:relative;display:flex;flex-direction:column;padding:20px 20px 22px;border-radius:22px;background:linear-gradient(165deg,rgba(26,20,70,.6),rgba(10,8,34,.7));border:1px solid rgba(150,130,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;animation:vin .65s cubic-bezier(.16,1,.3,1) forwards;animation-delay:calc(var(--i, 0) * .08s + .05s);transition:translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .35s}
-.dcw .dcx-card:hover{translate:0 -6px;scale:1.015;border-color:rgba(190,160,255,.5);box-shadow:0 24px 60px rgba(150,110,255,.22)}
+.dcw .dcx-card{position:relative;display:flex;flex-direction:column;padding:20px 20px 22px;border-radius:22px;background:linear-gradient(165deg,rgba(26,20,70,.6),rgba(10,8,34,.7));border:1px solid rgba(150,130,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;animation:vinZoom .65s cubic-bezier(.16,1,.3,1) forwards;animation-delay:calc(var(--i, 0) * .08s + .05s);transition:translate .35s cubic-bezier(.2,.8,.2,1),scale .35s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .35s}
+.dcw .dcx-card:hover{translate:0 -8px;scale:1.028;z-index:4;border-color:rgba(110,231,160,.6);box-shadow:0 24px 60px rgba(110,231,160,.28)}
 .dcw .dcx-card.rec{border:2px solid transparent;background:linear-gradient(165deg,#1b1450,#0b0828) padding-box,linear-gradient(135deg,var(--a1),var(--a2)) border-box;box-shadow:0 0 44px rgba(110,231,160,.16)}
-.dcw .dcx-order{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border:0;border-radius:14px;cursor:pointer;background:linear-gradient(120deg,var(--a1),var(--a2));color:#10131f;font:800 15.5px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:transform .2s,box-shadow .25s,filter .25s}
-.dcw .dcx-order:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(110,231,160,.32);filter:brightness(1.05)}
+.dcw .dcx-card.rec:hover{translate:0 -8px;scale:1.028;z-index:4;box-shadow:0 0 55px rgba(110,231,160,.35),0 24px 60px rgba(110,231,160,.28)}
+.dcw .dcx-order{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border:0;border-radius:14px;cursor:pointer;background:linear-gradient(120deg,var(--a1),var(--a2));color:#10131f;font:800 15.5px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .25s,filter .25s}
+.dcw .dcx-order:hover{transform:translateY(-2px) scale(1.025);box-shadow:0 12px 30px rgba(110,231,160,.35);filter:brightness(1.05)}
 .dcw .dcx-order:focus-visible,.dcw .dcx-tab:focus-visible,.dcw .dcx-step:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .dcw .dcx-badge{position:absolute;top:-13px;right:18px;margin:0;padding:6px 12px;border-radius:999px;font:800 11px/1 system-ui,-apple-system,"Segoe UI",Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;background:#0f2a22;color:var(--a1);border:1px solid rgba(110,231,160,.5)}
 .dcw .dcx-card h3{margin:16px 0 0;font-size:24px;font-weight:700;letter-spacing:-.01em;color:#fff}
