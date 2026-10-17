@@ -44,14 +44,14 @@ try {
         offer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
       };
 
-      // TLD Database matching user screenshot & popular extensions
+      // TLD Database with BDT / Taka pricing matching user request
       var TLD_CATALOG = [
         {
           tld: '.to',
           pic: 'pic-to',
           icon: ICONS.cocktail,
-          price: '$39.98/yr',
-          retail: '$39.98/yr',
+          price: 'BDT 4,790/yr',
+          retail: 'BDT 4,790/yr',
           discount: null,
           star: false,
           info: false,
@@ -61,8 +61,8 @@ try {
           tld: '.org',
           pic: 'pic-org',
           icon: ICONS.sprout,
-          price: '$8.48/yr',
-          retail: '$14.48/yr',
+          price: 'BDT 1,020/yr',
+          retail: 'BDT 1,740/yr',
           discount: '41% OFF',
           star: false,
           info: false,
@@ -72,8 +72,8 @@ try {
           tld: '.ai',
           pic: 'pic-ai',
           icon: ICONS.robot,
-          price: '$89.98/yr',
-          retail: '$89.98/yr',
+          price: 'BDT 10,790/yr',
+          retail: 'BDT 10,790/yr',
           discount: '14% OFF',
           star: false,
           info: true,
@@ -84,7 +84,7 @@ try {
           name: 'SSL Site security made simple',
           pic: 'pic-ssl',
           icon: ICONS.lock,
-          price: '$11.00/yr',
+          price: 'BDT 1,320/yr',
           retail: null,
           discount: null,
           info: true,
@@ -94,8 +94,8 @@ try {
           tld: '.net',
           pic: 'pic-net',
           icon: ICONS.globe,
-          price: '$11.98/yr',
-          retail: '$15.98/yr',
+          price: 'BDT 1,440/yr',
+          retail: 'BDT 1,920/yr',
           discount: '25% OFF',
           star: false,
           info: false,
@@ -105,8 +105,8 @@ try {
           tld: '.io',
           pic: 'pic-io',
           icon: ICONS.lightning,
-          price: '$34.98/yr',
-          retail: '$42.98/yr',
+          price: 'BDT 4,200/yr',
+          retail: 'BDT 5,160/yr',
           discount: '18% OFF',
           star: false,
           info: true,
@@ -116,8 +116,8 @@ try {
           tld: '.xyz',
           pic: 'pic-xyz',
           icon: ICONS.sparkle,
-          price: '$2.98/yr',
-          retail: '$12.98/yr',
+          price: 'BDT 360/yr',
+          retail: 'BDT 1,560/yr',
           discount: '77% OFF',
           star: false,
           info: false,
@@ -127,8 +127,8 @@ try {
           tld: '.online',
           pic: 'pic-online',
           icon: ICONS.cloud,
-          price: '$1.98/yr',
-          retail: '$32.98/yr',
+          price: 'BDT 240/yr',
+          retail: 'BDT 3,960/yr',
           discount: '94% OFF',
           star: false,
           info: false,
@@ -138,8 +138,8 @@ try {
           tld: '.tech',
           pic: 'pic-tech',
           icon: ICONS.laptop,
-          price: '$4.98/yr',
-          retail: '$21.98/yr',
+          price: 'BDT 600/yr',
+          retail: 'BDT 2,640/yr',
           discount: '77% OFF',
           star: false,
           info: false,
@@ -179,8 +179,8 @@ try {
 
         var ctaHtml = isTaken
           ? '<button class="dom-btn-offer" type="button" data-action="offer" data-domain="' + parsed.full + '">' + ICONS.offer + ' Make offer</button>'
-          : '<div class="dom-exact-price-tag"><div class="p-main">$10.98/yr</div><div class="p-sub">Retail $14.98/yr</div></div>' +
-            '<button class="dom-cart-btn" type="button" data-domain="' + parsed.full + '" data-price="$10.98/yr">' + ICONS.cart + ' Add to cart</button>';
+          : '<div class="dom-exact-price-tag"><div class="p-main">BDT 1,320/yr</div><div class="p-sub">Retail BDT 1,740/yr</div></div>' +
+            '<button class="dom-cart-btn" type="button" data-domain="' + parsed.full + '" data-price="BDT 1,320/yr">' + ICONS.cart + ' Add to cart</button>';
 
         var isFav = !!favorites[parsed.full];
 
@@ -377,13 +377,23 @@ try {
           var price = cartBtn.getAttribute('data-price');
           var wasAdded = cartBtn.classList.contains('added');
 
+          if (window.UnifiedCart) {
+            window.UnifiedCart.add({
+              name: domain,
+              details: 'Domain Registration (1 Year)',
+              price: price,
+              period: '/yr',
+              quantity: 1
+            });
+          }
+
           if (!wasAdded) {
             cartBtn.classList.add('added');
             cartBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Added';
             setTimeout(function() {
               cartBtn.classList.remove('added');
               cartBtn.innerHTML = ICONS.cart + ' Add to cart';
-            }, 3000);
+            }, 2500);
           }
           return;
         }
