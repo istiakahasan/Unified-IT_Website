@@ -4,8 +4,6 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  order: 3;
-  margin-left: auto;
   z-index: 32;
 }
 
