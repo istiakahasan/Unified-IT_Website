@@ -29,20 +29,19 @@ for(var k=1;k<=np;k++)h+='<button type="button" data-p="'+k+'"'+(k===page?' clas
 h+='<button type="button" data-p="'+(page+1)+'"'+(page>=np?' disabled':'')+' aria-label="Next page">&rsaquo;</button>';pn.innerHTML=h}
 function spRows(){var ac=$('.cxpc.on'),nm=ac.getAttribute('data-n'),rt=ac.querySelector('input[name^=rt]:checked'),py=ac.querySelector('input[name^=pay]:checked');
 return rt?[['Savings plan',nm],['Reservation term',rt.value],['Payment option',py.value]]:[['Savings plan',nm],['Reservation term','No commitment']]}
-function vRows(n){var sl=$('#vvol'),vt=sl.options[sl.selectedIndex].text,nm=sl.value?(sl.value==='custom'?'Custom size':vt.replace(/ \(.*$/,'')):'Disk offering',amt=parseFloat($('#vamt').value)||0,u=$('#vunit').value,sn=$('#vsnap').value,io=$('#viops').value.trim(),tp=$('#vtp').value.trim(),tu=$('#vtpu').value,gb=amt*(u==='TB'?1024:1),tot=gb*n,fmt=function(v){return v>=1024?(Math.round(v/1024*100)/100)+' TB':(Math.round(v*100)/100)+' GB'},c=$('#vcalc');
-$('#viopl').textContent=nm;$('#vtpl').textContent=nm;
-c.innerHTML=amt?'<div>'+n+' instance'+(n>1?'s':'')+' &times; <b>'+amt+' '+u+'</b> = <b>'+fmt(tot)+'</b> total storage</div>'+(sl.value?'<div>Storage type: <b>'+sl.value+'</b></div>':'')+'<div>Snapshot frequency: <b>'+sn+'</b></div>'+(io?'<div>IOPS per volume: <b>'+io+'</b></div>':'')+(tp?'<div>Throughput per volume: <b>'+tp+' '+tu+'</b></div>':'')+'<div>Pricing is confirmed in your quote.</div>':'<div>No additional storage selected.</div><div>Pricing is confirmed in your quote.</div>';
+function vRows(n){var sl=$('#vvol'),vt=sl.options[sl.selectedIndex].text,nm=sl.value?(sl.value==='custom'?'Custom size':vt.replace(/ \(.*$/,'')):'Disk offering',amt=parseFloat($('#vamt').value)||0,u=$('#vunit').value,sn=$('#vsnap').value,tp=$('#vtp').value.trim(),tu=$('#vtpu').value,gb=amt*(u==='TB'?1024:1),tot=gb*n,fmt=function(v){return v>=1024?(Math.round(v/1024*100)/100)+' TB':(Math.round(v*100)/100)+' GB'},c=$('#vcalc');
+$('#vtpl').textContent=nm;
+c.innerHTML=amt?'<div>'+n+' instance'+(n>1?'s':'')+' &times; <b>'+amt+' '+u+'</b> = <b>'+fmt(tot)+'</b> total storage</div>'+(sl.value?'<div>Storage type: <b>'+sl.value+'</b></div>':'')+'<div>Snapshot frequency: <b>'+sn+'</b></div>'+(tp?'<div>Throughput per volume: <b>'+tp+' '+tu+'</b></div>':'')+'<div>Pricing is confirmed in your quote.</div>':'<div>No additional storage selected.</div><div>Pricing is confirmed in your quote.</div>';
 if(!amt)return (sl.value?[['Storage type',sl.value]]:[]).concat([['Storage','None']]);
-var r=(sl.value?[['Storage type',sl.value]]:[]).concat([['Storage per instance',amt+' '+u],['Total storage',fmt(tot)],['Snapshots',sn]]);if(io)r.push(['IOPS per volume',io]);if(tp)r.push(['Throughput per volume',tp+' '+tu]);return r}
+var r=(sl.value?[['Storage type',sl.value]]:[]).concat([['Storage per instance',amt+' '+u],['Total storage',fmt(tot)],['Snapshots',sn]]);if(tp)r.push(['Throughput per volume',tp+' '+tu]);return r}
 function upd(){
 P.querySelectorAll('.cxr label').forEach(function(l){l.classList.toggle('on',l.querySelector('input').checked)});
-P.querySelectorAll('.cxwo').forEach(function(l){l.classList.toggle('on',l.querySelector('input').checked)});
 loc.hidden=$('input[name=cm]:checked').value==='all';
 var no=sel<0,d=no?['','None selected',0,0,0,0,'']:DATA[sel],cu=d[0]==='Custom';cc.hidden=!cu;$('#spt').textContent=d[1];$('#spo').textContent=cos.value;
 var n=Math.max(1,Math.min(50,parseInt(cn.value,10)||1)),cores=cu?Math.max(1,parseInt(cp.value,10)||1):d[2],gb=cu?Math.max(1,parseInt(cmm.value,10)||1):d[3];
 cch.innerHTML=no?'No instance selected':'Chosen instance: <b>'+d[1]+'</b><em>|</em>Type: <b>'+cit.value+'</b><em>|</em>Family: <b>'+d[0]+'</b><em>|</em><b>'+cores+' vCPU</b><em>|</em><b>'+gb+' GiB Memory</b>';
-var all=$('input[name=cm]:checked').value==='all',wl=$('input[name=wl]:checked').value;
-var R=[['Location',all?'All locations':lt.value],['Region',all?'All regions':rg.value],['Instance',cit.value],['Operating system',cos.value],['Workload',wl],['Offering',d[1]]].concat(no?[['Instances',n]]:[['Family',d[0]],['Instances',n],['Total vCPUs',cores*n],['Total memory',(gb*n)+' GB']]);
+var all=$('input[name=cm]:checked').value==='all';
+var R=[['Location',all?'All locations':lt.value],['Region',all?'All regions':rg.value],['Instance',cit.value],['Operating system',cos.value],['Offering',d[1]]].concat(no?[['Instances',n]]:[['Family',d[0]],['Instances',n],['Total vCPUs',cores*n],['Total memory',(gb*n)+' GB']]);
 if(no){}else if(!cu)R=R.concat([['Storage per instance',d[4]+' GB'],['Network','25 Gbps'],['Base price (per instance)',money(d[5])+' / month'],['Estimated monthly total',money(d[5]*n)]]);else R.push(['Base price','Custom quote']);
 R=R.concat(vRows(n)).concat(spRows());
 sm.innerHTML=R.map(function(r){return '<div><dt>'+r[0]+'</dt><dd>'+r[1]+'</dd></div>'}).join('');
