@@ -16,7 +16,7 @@ addEventListener('scroll',function(){document.body.classList.remove('mgo')},{pas
 /* ---- Link routing to service pages ---- */
 try {
 (function(){
-  var hd=document.getElementById('hdr'),mm=document.getElementById('mm'),mg=document.getElementById('mega');
+  var hd=document.getElementById('hdr'),mm=document.getElementById('mm'),mg=document.getElementById('mega'),svc=document.getElementById('svc');
   var ROUTE_MAP={
     'services':'p-cloud',
     'services/cloud-vps':'vps',
@@ -67,7 +67,7 @@ try {
     }
   }
 
-  [hd,mm,mg].forEach(function(n){if(n)n.addEventListener('click',nav)});
+  [hd,mm,mg,svc].forEach(function(n){if(n)n.addEventListener('click',nav)});
 })();
 } catch (err) { console.error("[Link routing]", err); }
 /* ---- Mega-menu placement ---- */
