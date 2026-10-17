@@ -16,16 +16,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Read prices from digicert.com
-        run: node scripts/update-digicert-prices.mjs
+      - name: Refresh DigiCert and Comodo / Namecheap SSL prices
+        run: |
+          node scripts/update-digicert-prices.mjs
+          node scripts/update-comodo-prices.mjs
       - name: Commit if prices changed
         run: |
-          if git diff --quiet; then
+          if git diff --quiet assets/js/data/; then
             echo "No price changes."
           else
             git config user.name  "price-sync[bot]"
             git config user.email "price-sync@users.noreply.github.com"
-            git add assets/js/data/digicert-prices.js
-            git commit -m "chore: update DigiCert list prices"
+            git add assets/js/data/digicert-prices.js assets/js/data/comodo-prices.js
+            git commit -m "chore: update DigiCert & Comodo SSL list prices"
             git push
           fi

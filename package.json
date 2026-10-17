@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node scripts/serve.js",
-    "update:prices": "node scripts/update-digicert-prices.mjs"
+    "update:prices": "node scripts/update-digicert-prices.mjs && node scripts/update-comodo-prices.mjs",
+    "update:digicert": "node scripts/update-digicert-prices.mjs",
+    "update:comodo": "node scripts/update-comodo-prices.mjs"
   },
   "keywords": [
     "unified-cloud",

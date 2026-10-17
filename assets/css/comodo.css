@@ -1,0 +1,498 @@
+/* Comodo / Namecheap SSL Certificate Catalogue (#pg-ssl) */
+#pg-ssl .ccw {
+  display: none;
+}
+
+#pg-ssl.cm-on .ccw {
+  display: block;
+}
+
+/* When either modern catalog is active, hide the legacy generic blocks */
+#pg-ssl.dc-on .vg,
+#pg-ssl.dc-on .cartsec,
+#pg-ssl.cm-on .vg,
+#pg-ssl.cm-on .cartsec {
+  display: none;
+}
+
+/* Header & Controls */
+.ccw .ccx-head {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-bottom: 32px;
+}
+
+.ccw .ccx-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.ccw .ccx-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #fff;
+}
+
+.ccw .ccx-subtitle {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: #a5b4fc;
+}
+
+/* Duration / Years Selector */
+.ccw .ccx-years-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(150, 130, 255, 0.16);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.ccw .ccx-years-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ccw .ccx-years-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ccw .ccx-year-tab {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font: 600 13.5px system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+  transition: all 0.25s ease;
+}
+
+.ccw .ccx-year-tab:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ccw .ccx-year-tab.on {
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+  color: #0b0f19;
+  border-color: transparent;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(93, 224, 196, 0.25);
+}
+
+.ccw .ccx-years-badge {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--a1);
+  font-weight: 600;
+}
+
+/* Filter & Search Toolbar */
+.ccw .ccx-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ccw .ccx-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ccw .ccx-filter-btn {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  font: 500 13px system-ui, -apple-system, Inter, sans-serif;
+  transition: all 0.2s ease;
+}
+
+.ccw .ccx-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+
+.ccw .ccx-filter-btn.on {
+  background: rgba(93, 224, 196, 0.15);
+  border-color: rgba(93, 224, 196, 0.5);
+  color: #5de0c4;
+  font-weight: 700;
+}
+
+.ccw .ccx-tools-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.ccw .ccx-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ccw .ccx-search svg {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.ccw .ccx-search input {
+  padding: 8px 14px 8px 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 13.5px;
+  outline: none;
+  min-width: 190px;
+  transition: border-color 0.2s;
+}
+
+.ccw .ccx-search input:focus {
+  border-color: var(--a1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ccw .ccx-sort {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #111429;
+  color: #e2e8f0;
+  font-size: 13.5px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Package Cards Grid */
+.ccw .ccx-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ccw .ccx-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 24px;
+  background: linear-gradient(165deg, rgba(22, 17, 60, 0.65), rgba(10, 8, 34, 0.75));
+  border: 1px solid rgba(150, 130, 255, 0.22);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s, box-shadow 0.35s, transform 0.25s;
+}
+
+.ccw .ccx-card:hover {
+  border-color: rgba(190, 160, 255, 0.55);
+  box-shadow: 0 24px 60px rgba(120, 90, 255, 0.25);
+  transform: translateY(-3px);
+}
+
+.ccw .ccx-card.rec {
+  border: 2px solid transparent;
+  background: linear-gradient(165deg, #181248, #0b0828) padding-box,
+              linear-gradient(135deg, var(--a1), var(--a2)) border-box;
+  box-shadow: 0 0 44px rgba(93, 224, 196, 0.18);
+}
+
+.ccw .ccx-badge {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font: 800 11px/1 system-ui, -apple-system, Inter, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #0d2822;
+  color: var(--a1);
+  border: 1px solid rgba(93, 224, 196, 0.5);
+  box-shadow: 0 4px 12px rgba(93, 224, 196, 0.25);
+}
+
+.ccw .ccx-pill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ccw .ccx-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.ccw .ccx-tag.dv {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.ccw .ccx-tag.ov {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.ccw .ccx-tag.ev {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.ccw .ccx-card h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.ccw .ccx-desc {
+  margin: 8px 0 16px;
+  min-height: 3.8em;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #c5c9e6;
+}
+
+/* Fast Specs Highlights */
+.ccw .ccx-specs-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 18px;
+}
+
+.ccw .ccx-spec-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.ccw .ccx-spec-item span {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.ccw .ccx-spec-item b {
+  font-size: 13.5px;
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+/* Price Section */
+.ccw .ccx-price-section {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ccw .ccx-price-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ccw .ccx-price-line b {
+  font-size: clamp(1.6rem, 2.3vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.ccw .ccx-price-line span {
+  font-size: 13.5px;
+  color: #94a3b8;
+}
+
+.ccw .ccx-package-total {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #c5c9e6;
+}
+
+.ccw .ccx-package-total b {
+  color: #fff;
+}
+
+.ccw .ccx-discount-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(93, 224, 196, 0.15);
+  color: var(--a1);
+  border: 1px solid rgba(93, 224, 196, 0.35);
+}
+
+/* Order Now CTA */
+.ccw .ccx-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+  color: #0b0f19;
+  font: 800 15px system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+  transition: transform 0.2s, box-shadow 0.25s, filter 0.25s;
+}
+
+.ccw .ccx-order:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(93, 224, 196, 0.32);
+  filter: brightness(1.05);
+}
+
+.ccw .ccx-order:focus-visible,
+.ccw .ccx-year-tab:focus-visible,
+.ccw .ccx-filter-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Features checklist */
+.ccw .ccx-features {
+  margin: 18px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #dfe3ff;
+}
+
+.ccw .ccx-features li {
+  position: relative;
+  padding-left: 20px;
+  line-height: 1.45;
+}
+
+.ccw .ccx-features li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.5em;
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--a1);
+  border-bottom: 2px solid var(--a1);
+  transform: rotate(-45deg) translateY(-50%);
+}
+
+.ccw .ccx-learn {
+  margin-top: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--a1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ccw .ccx-learn:hover {
+  text-decoration: underline;
+}
+
+/* Footer note */
+.ccw .ccx-note {
+  margin: 28px 0 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.ccw .ccx-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 16px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 1050px) {
+  .ccw .ccx-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .ccw .ccx-grid {
+    grid-template-columns: 1fr;
+  }
+  .ccw .ccx-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ccw .ccx-tools-right {
+    width: 100%;
+    margin-left: 0;
+  }
+  .ccw .ccx-search {
+    flex: 1;
+  }
+  .ccw .ccx-search input {
+    width: 100%;
+  }
+}

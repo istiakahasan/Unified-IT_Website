@@ -26,21 +26,23 @@ index.html
 | 4 | `assets/js/config.js` |
 | 5 | `assets/js/data/service-pages.js` |
 | 6 | `assets/js/data/digicert-prices.js` |
-| 7 | `assets/js/modules/flight-scene.js` |
-| 8 | `assets/js/modules/services-gallery.js` |
-| 9 | `assets/js/modules/latency-widget.js` |
-| 10 | `assets/js/modules/about-page.js` |
-| 11 | `assets/js/modules/header-nav.js` |
-| 12 | `assets/js/modules/partner-page.js` |
-| 13 | `assets/js/modules/hosting-overlays.js` |
-| 14 | `assets/js/modules/service-modal.js` |
-| 15 | `assets/js/modules/dynamic-services.js` |
-| 16 | `assets/js/modules/ssl-configurator.js` |
-| 17 | `assets/js/modules/digicert-catalog.js` |
-| 18 | `assets/js/modules/vps-matrix.js` |
-| 19 | `assets/js/modules/storage-calc.js` |
-| 20 | `assets/js/modules/ui-toggles.js` |
-| 21 | `assets/js/app.js` |
+| 7 | `assets/js/data/comodo-prices.js` |
+| 8 | `assets/js/modules/flight-scene.js` |
+| 9 | `assets/js/modules/services-gallery.js` |
+| 10 | `assets/js/modules/latency-widget.js` |
+| 11 | `assets/js/modules/about-page.js` |
+| 12 | `assets/js/modules/header-nav.js` |
+| 13 | `assets/js/modules/partner-page.js` |
+| 14 | `assets/js/modules/hosting-overlays.js` |
+| 15 | `assets/js/modules/service-modal.js` |
+| 16 | `assets/js/modules/dynamic-services.js` |
+| 17 | `assets/js/modules/ssl-configurator.js` |
+| 18 | `assets/js/modules/digicert-catalog.js` |
+| 19 | `assets/js/modules/comodo-catalog.js` |
+| 20 | `assets/js/modules/vps-matrix.js` |
+| 21 | `assets/js/modules/storage-calc.js` |
+| 22 | `assets/js/modules/ui-toggles.js` |
+| 23 | `assets/js/app.js` |
 
 (`data/model-data.js` is added by a small inline script only when the page runs on `file://`.)
 
@@ -67,7 +69,8 @@ index.html
 | `window.__UF` (footer builder) | `dynamic-services` | `dynamic-services` |
 | `window.anime` | anime.js | `services-gallery` |
 | `window.DIGICERT_PRICES` | `data/digicert-prices.js` (rewritten daily by `scripts/update-digicert-prices.mjs`) | `digicert-catalog` |
-| `window.UnifiedCart` (`add({n, d, p, q})`) | `ssl-configurator` (cart drawer) | `digicert-catalog` |
+| `window.COMODO_PRICES` | `data/comodo-prices.js` (rewritten daily by `scripts/update-comodo-prices.mjs`) | `comodo-catalog` |
+| `window.UnifiedCart` (`add({n, d, p, q})`) | `ssl-configurator` (cart drawer) | `digicert-catalog`, `comodo-catalog` |
 
 ## Adding a service page
 
