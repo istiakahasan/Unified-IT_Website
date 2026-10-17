@@ -38,7 +38,7 @@ try {
   // ---- animated service logos (stroke-drawn SVG) ----
   var ICONS=[
     '<path d="M28 62h46a14 14 0 0 0 2-27.8A20 20 0 0 0 38 30a17 17 0 0 0-10 32z"/><path d="M40 72h20M50 62v10M38 48h24"/>',
-    '<path d="M50 16l4 14 14 4-14 4-4 14-4-14-14-4 14-4zM76 56l2.5 8.5 8.5 2.5-8.5 2.5-2.5 8.5-2.5-8.5-8.5-2.5 8.5-2.5zM24 64l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/><circle cx="50" cy="50" r="14"/><path d="M50 36v-6M50 70v-6M36 50h-6M70 50h-6"/>',
+    '<path d="M50 14L81.2 32v36L50 86 18.8 68V32Z"/><circle cx="50" cy="50" r="16"/><circle cx="50" cy="50" r="7"/><path d="M50 14v20M50 66v20M81.2 32L64 42M18.8 68L36 58M81.2 68L64 58M18.8 32L36 42"/><circle cx="50" cy="14" r="3.5"/><circle cx="81.2" cy="32" r="3.5"/><circle cx="81.2" cy="68" r="3.5"/><circle cx="50" cy="86" r="3.5"/><circle cx="18.8" cy="68" r="3.5"/><circle cx="18.8" cy="32" r="3.5"/><path d="M50 46l2 4-2 4-2-4z"/>',
     '<circle cx="50" cy="50" r="13"/><circle cx="50" cy="50" r="28"/><path d="M50 14v8M50 78v8M14 50h8M78 50h8M24.5 24.5l6 6M69.5 69.5l6 6M75.5 24.5l-6 6M30.5 69.5l-6 6"/>',
     '<rect x="14" y="26" width="72" height="48" rx="6"/><path d="M16 30l34 26 34-26"/>',
     '<rect x="22" y="12" width="42" height="56" rx="5"/><path d="M31 26h24M31 36h24M31 46h14"/><circle cx="68" cy="66" r="9"/><path d="M52 90c2-12 10-16 16-16s14 4 16 16"/>',
@@ -110,103 +110,6 @@ try {
     innerAIWire.material.opacity = 0.45 + S.pulse * 0.35;
   };
 
-  // ---- Agentic AI Hero Core (slide 2): Autonomous AI Neural Agent Core, Gyroscopic Reasoning Rings & Synaptic Probes on right side ----
-  var agentHero = new THREE.Group();
-  agentHero.scale.setScalar(0.001);
-  scene.add(agentHero);
-  (function(){
-    var agentNodes=[],pulses=[],gr=agentHero;
-    var solidMat=new THREE.MeshStandardMaterial({color:0x1b1344,metalness:.6,roughness:.3,transparent:true,opacity:.82,emissive:0x3a1470,emissiveIntensity:.6});
-    var lineMat=new THREE.LineBasicMaterial({color:0x5cf0ff,transparent:true,opacity:.75});
-    var glowMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
-
-    // 1. Central Multi-Faceted Neural Core
-    var outerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.05, 1), solidMat);
-    gr.add(outerCore);
-    var outerWire = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.05, 1)), lineMat);
-    gr.add(outerWire);
-
-    // Glowing Inner Cognitive Reactor
-    var innerCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.55), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.88, blending:THREE.AdditiveBlending}));
-    gr.add(innerCore);
-
-    // 2. 3 Interlocking Gyroscopic Reasoning Rings
-    var ringA = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.02, 8, 64), lineMat);
-    ringA.rotation.x = Math.PI/3; ringA.rotation.y = 0.4; gr.add(ringA);
-    var ringB = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.02, 8, 64), lineMat);
-    ringB.rotation.x = -Math.PI/3; ringB.rotation.y = -0.4; gr.add(ringB);
-    var ringC = new THREE.Mesh(new THREE.TorusGeometry(2.25, 0.02, 8, 64), lineMat);
-    ringC.rotation.z = Math.PI/4; gr.add(ringC);
-
-    // 3. 4 Autonomous Agent Capability Nodes (Reasoning, Tools, Memory, Action)
-    var rayGeo = new THREE.BufferGeometry();
-    var rayMat = new THREE.LineBasicMaterial({color:0x5cf0ff, transparent:true, opacity:0.65, blending:THREE.AdditiveBlending});
-    var rayLine = new THREE.LineSegments(rayGeo, rayMat);
-    gr.add(rayLine);
-
-    for (var a=0; a<4; a++) {
-      var ag = new THREE.Group();
-      ag.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.24), solidMat));
-      ag.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.24)), lineMat));
-      var aLed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({color:0xffffff}));
-      ag.add(aLed);
-      gr.add(ag);
-      agentNodes.push({g:ag, angle:a*(Math.PI/2), led:aLed});
-
-      // Synaptic pulse capsule
-      var pkt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.06), glowMat);
-      gr.add(pkt);
-      pulses.push({m:pkt, offset:a*1.2});
-    }
-
-    // 4. Base platform ring + Quantum Thought Wave ripple
-    var ring = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.02, 8, 72), lineMat);
-    ring.rotation.x = Math.PI/2; ring.position.y = -1.8; gr.add(ring);
-    var rip = new THREE.Mesh(new THREE.RingGeometry(0.98, 1.0, 72), new THREE.MeshBasicMaterial({color:0x5cf0ff, transparent:true, opacity:0.5, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false}));
-    rip.rotation.x = -Math.PI/2; rip.position.y = -1.8; gr.add(rip);
-
-    gr.userData = {
-      solid: { material: solidMat },
-      wire: { material: lineMat },
-      tick: function(t, hue, w, S) {
-        outerCore.rotation.y = t * 0.4; outerCore.rotation.x = t * 0.2;
-        outerWire.rotation.y = t * 0.4; outerWire.rotation.x = t * 0.2;
-        innerCore.rotation.y = -t * 1.5; innerCore.rotation.z = t * 0.8;
-        innerCore.material.color.setHSL(hue, 0.95, 0.78 + 0.22*Math.sin(t*3.2));
-
-        ringA.rotation.z = t * 0.35;
-        ringB.rotation.z = -t * 0.45;
-        ringC.rotation.y = t * 0.3;
-
-        var rayPoints = [];
-        agentNodes.forEach(function(item, idx) {
-          var ang = item.angle + t*0.6;
-          var rad = 2.15 + Math.sin(t*1.8 + idx)*0.15;
-          var px = Math.cos(ang) * rad;
-          var pz = Math.sin(ang) * rad;
-          var py = Math.sin(t*2.2 + idx*1.4) * 0.4;
-          item.g.position.set(px, py, pz);
-          item.g.rotation.y = ang + t;
-          item.led.material.color.setHSL((hue + 0.1)%1, 0.9, 0.85);
-
-          rayPoints.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(px, py, pz));
-
-          var pulseProgress = ((t*1.6 + pulses[idx].offset) % 1);
-          pulses[idx].m.position.set(px * pulseProgress, py * pulseProgress, pz * pulseProgress);
-          pulses[idx].m.lookAt(px, py, pz);
-        });
-        rayGeo.setFromPoints(rayPoints);
-        rayMat.color.setHSL(hue, 0.9, 0.75);
-        glowMat.color.setHSL((hue+0.05)%1, 0.9, 0.85);
-
-        var r = (t*0.35) % 1;
-        rip.scale.setScalar(0.7 + r*0.75);
-        rip.material.opacity = 0.5 * (1 - r);
-        rip.material.color.setHSL(hue, 0.85, 0.7);
-        ring.material.color.setHSL(hue, 0.85, 0.7);
-      }
-    };
-  })();
 
   // ---- anime.js: ambient pulse + click burst ----
   var S={pulse:.6,burst:0},A=window.anime;
@@ -266,29 +169,11 @@ try {
       if(u.tick)u.tick(t,hue,w,S);
     });
 
-    // 3D Agentic AI Hero Core on the right side of slide 2
-    if(agentHero){
-      var dHero=Math.abs(sp-1),wHero=ease(Math.max(0,1-dHero));
-      if(!mob && wHero>.005){
-        agentHero.visible=true;
-        agentHero.scale.setScalar(Math.max(wHero,0.001));
-        var dirHero=sp-1;
-        agentHero.position.set(3.0 + dirHero*-2, dirHero*1.6 + Math.sin(t*.8+1)*.15, -Math.abs(dirHero)*3);
-        agentHero.rotation.y=Math.sin(t*.45)*.55 + m.x*.35;
-        agentHero.rotation.x=.08 + Math.sin(t*.3)*.03 - m.y*.1;
-        if(agentHero.userData && agentHero.userData.tick){
-          agentHero.userData.tick(t,hue,wHero,S);
-        }
-      } else {
-        agentHero.visible=false;
-      }
-    }
-
     logos.forEach(function(L,i){
       var d=sp-i,w=ease(Math.max(0,1-Math.abs(d)*1.15));
       var draw=ease(Math.min(1,Math.max(0,(w-.12)/.72)));
       L.style.left=mob?'50%':(i%2?'73%':'27%');L.style.top=mob?'25%':'50%';
-      L.style.opacity=i===1?0:Math.min(1,w*1.6);
+      L.style.opacity=Math.min(1,w*1.6);
       L.style.setProperty('--p',draw.toFixed(3));
       L.style.setProperty('--g','hsl('+(hue*360)+',90%,65%)');
       L.style.transform='translate(-50%,-50%) scale('+((mob?.7:1)*(.72+.28*w+S.burst*.14))+') rotate('+(-d*28)+'deg)';
