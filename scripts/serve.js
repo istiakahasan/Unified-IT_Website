@@ -24,7 +24,10 @@ http.createServer((req, res) => {
   if (file !== ROOT && !file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end('Forbidden'); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' });
+    res.writeHead(200, {
+      'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    });
     res.end(data);
   });
 }).listen(PORT, () => console.log('Unified Cloud running at http://localhost:' + PORT));
