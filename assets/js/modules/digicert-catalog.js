@@ -49,7 +49,7 @@ try {
       '<button class="dcx-step" type="button" data-k="' + key + '" data-f="' + field + '" data-d="1" aria-label="More ' + label + '">+</button></span></div>';
   }
 
-  function card(plan, tab) {
+  function card(plan, tab, idx) {
     var t = TABS[tab], o = opt(tab, plan), key = tab + ':' + plan.id;
     var year = bdt(usd(plan, tab, o)), month = Math.round(year / 12);
     var inc = plan.includes.map(function (x) { return '<li>' + esc(x.replace('{V}', t.v)) + '</li>'; }).join('');
@@ -61,7 +61,7 @@ try {
       opts = '<div class="dcx-opt"><b>Number of domains to protect?</b>' + stepper(key, 'std', 'Standard domains', 'mydomain.com', o.std) +
         (t.v === 'OV' ? stepper(key, 'wc', 'Wildcard domains', '*.mydomain.com', o.wc) : '') + '</div>';
     }
-    return '<article class="dcx-card' + (plan.recommended ? ' rec' : '') + '">' +
+    return '<article class="dcx-card' + (plan.recommended ? ' rec' : '') + '" style="--i:' + (idx || 0) + '">' +
       '<button class="dcx-order" type="button" data-k="' + key + '">Order Now <span aria-hidden="true">&rarr;</span></button>' +
       (plan.recommended ? '<span class="dcx-badge">Recommended</span>' : '') +
       '<h3>' + esc(plan.name) + ' - ' + t.v + '</h3>' +
@@ -83,20 +83,33 @@ try {
     var when = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     return 'Prices in BDT at 1 USD = ' + S.rate.toFixed(2) + ' BDT (' + (S.live ? 'live rate, ' : 'reference rate, ') + when + '). Based on DigiCert list prices.';
   }
-  function render() {
+  function render(animate) {
     w.innerHTML = '<div class="dcx-head"><h2 class="dcx-title">Select Your Cert</h2><div class="dcx-tabs" role="tablist">' +
       TABS.map(function (t, i) { return '<button class="dcx-tab' + (i === S.tab ? ' on' : '') + '" type="button" role="tab" aria-selected="' + (i === S.tab) + '" data-t="' + i + '">' + t.label + '</button>'; }).join('') +
-      '</div></div><div class="dcx-grid">' + D.plans.map(function (p) { return card(p, S.tab); }).join('') + '</div><p class="dcx-note">' + noteText() + '</p>';
+      '</div></div><div class="dcx-grid">' + D.plans.map(function (p, i) { return card(p, S.tab, i); }).join('') + '</div><p class="dcx-note">' + noteText() + '</p>';
+
+    if (animate === false) {
+      w.querySelectorAll('.dcx-card').forEach(function(c) {
+        c.style.animation = 'none';
+        c.style.opacity = '1';
+      });
+    }
   }
 
   function find(key) { var a = key.split(':'); return { tab: +a[0], plan: D.plans.filter(function (p) { return p.id === a[1]; })[0] }; }
 
   w.addEventListener('click', function (e) {
     var t = e.target.closest ? e.target : e.target.parentNode, b;
-    if ((b = t.closest('.dcx-tab'))) { S.tab = +b.getAttribute('data-t'); render(); return; }
+    if ((b = t.closest('.dcx-tab'))) {
+      S.tab = +b.getAttribute('data-t');
+      render(true);
+      return;
+    }
     if ((b = t.closest('.dcx-step'))) {
       var k = find(b.getAttribute('data-k')), o = opt(k.tab, k.plan), f = b.getAttribute('data-f'), d = +b.getAttribute('data-d');
-      o[f] = Math.max(f === 'std' ? 1 : 0, Math.min(99, o[f] + d)); render(); return;
+      o[f] = Math.max(f === 'std' ? 1 : 0, Math.min(99, o[f] + d));
+      render(false);
+      return;
     }
     if ((b = t.closest('.dcx-order'))) {
       var c = find(b.getAttribute('data-k')), oo = opt(c.tab, c.plan);
@@ -106,14 +119,19 @@ try {
   w.addEventListener('change', function (e) {
     var b = e.target.closest && e.target.closest('.dcx-wild');
     if (!b) return;
-    var k = find(b.getAttribute('data-k')); opt(k.tab, k.plan).wild = b.checked; render();
+    var k = find(b.getAttribute('data-k')); opt(k.tab, k.plan).wild = b.checked;
+    render(false);
     var again = w.querySelector('.dcx-wild[data-k="' + b.getAttribute('data-k') + '"]'); if (again) again.focus();
   });
 
-  /* Show the window for DigiCert, the generic cards for the other brand */
-  function sync() { var b = P.querySelector('.btog button.on'); P.classList.toggle('dc-on', !b || b.getAttribute('data-b') === 'DigiCert'); }
-  P.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.btog button')) setTimeout(sync, 0); });
-  sync(); render();
+  if (window.syncSSLProvider) {
+    var onBtn = P.querySelector('.ssl-tog button.on, .btog button.on');
+    var b = onBtn ? onBtn.getAttribute('data-b') : 'DigiCert';
+    window.syncSSLProvider(b, false);
+  } else {
+    P.classList.toggle('dc-on', !P.classList.contains('cm-on'));
+  }
+  render(true);
 
   /* Live USD to BDT rate: cached for 6 hours, silently falls back to the reference rate */
   (function () {

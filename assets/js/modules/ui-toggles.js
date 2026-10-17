@@ -39,3 +39,14 @@ document.addEventListener('click', function(e) {
   }
 });
 } catch (err) { console.error("[Cyber Security toggle]", err); }
+/* ---- SSL Provider DigiCert vs Comodo toggle ---- */
+try {
+document.addEventListener('click', function(e) {
+  var b = e.target.closest && e.target.closest('.ssl-tog button, #pg-ssl .btog button');
+  if (!b) return;
+  var brand = b.getAttribute('data-b') || b.textContent.trim();
+  if (window.syncSSLProvider) {
+    window.syncSSLProvider(brand, true);
+  }
+});
+} catch (err) { console.error("[SSL Provider toggle]", err); }

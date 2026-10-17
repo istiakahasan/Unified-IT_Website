@@ -130,7 +130,7 @@ try {
       return list;
     }
 
-    function card(plan) {
+    function card(plan, idx) {
       var pr = calculatePrices(plan, S.years);
       var valClass = plan.validation.toLowerCase();
       var includesHtml = plan.includes.map(function (it) {
@@ -140,7 +140,7 @@ try {
       var discountBadge = pr.savingsPct > 0 ?
         '<span class="ccx-discount-pill">Save ' + pr.savingsPct + '% with ' + S.years + '-year plan</span>' : '';
 
-      return '<article class="ccx-card' + (plan.recommended ? ' rec' : '') + '">' +
+      return '<article class="ccx-card' + (plan.recommended ? ' rec' : '') + '" style="--i:' + (idx || 0) + '">' +
         (plan.badge ? '<span class="ccx-badge">' + esc(plan.badge) + '</span>' : '') +
         '<div class="ccx-pill-tags">' +
           '<span class="ccx-tag ' + valClass + '">' + esc(plan.validationName) + '</span>' +
@@ -194,7 +194,7 @@ try {
       }).join('');
 
       var cardsHtml = filteredPlans.length ?
-        filteredPlans.map(function (p) { return card(p); }).join('') :
+        filteredPlans.map(function (p, i) { return card(p, i); }).join('') :
         '<div class="ccx-empty">No SSL certificates match your filter criteria. Try clearing search or filters.</div>';
 
       w.innerHTML =
@@ -289,7 +289,7 @@ try {
         if (grid) {
           var filtered = filterAndSortPlans();
           grid.innerHTML = filtered.length ?
-            filtered.map(function (p) { return card(p); }).join('') :
+            filtered.map(function (p, i) { return card(p, i); }).join('') :
             '<div class="ccx-empty">No SSL certificates match your search query.</div>';
         }
       }
@@ -302,25 +302,12 @@ try {
       }
     });
 
-    /* Brand synchronization: DigiCert vs Comodo */
-    function syncBrand() {
-      var onBtn = P.querySelector('.btog button.on');
-      var brand = onBtn ? onBtn.getAttribute('data-b') : 'DigiCert';
-      var isComodo = brand === 'Comodo';
-      var isDigiCert = brand === 'DigiCert' || !isComodo;
-
-      P.classList.toggle('cm-on', isComodo);
-      P.classList.toggle('dc-on', isDigiCert);
-    }
-
-    P.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('.btog button')) {
-        setTimeout(syncBrand, 10);
-      }
-    });
-
-    syncBrand();
     render();
+    if (window.syncSSLProvider) {
+      var onBtn = P.querySelector('.ssl-tog button.on, .btog button.on');
+      var brand = onBtn ? onBtn.getAttribute('data-b') : 'DigiCert';
+      window.syncSSLProvider(brand, false);
+    }
 
     /* Live USD to BDT rate synchronization */
     (function () {

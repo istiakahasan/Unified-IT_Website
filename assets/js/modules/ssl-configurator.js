@@ -1,13 +1,54 @@
 /**
  * SSL page (#pg-ssl): brand switch and add-to-cart drawer (priced and quote-only items).
  */
-/* ---- Brand switch ---- */
+/* ---- Reactive SSL Provider switch (DigiCert vs Comodo) ---- */
 try {
-(function(){var P=document.getElementById('pg-ssl');if(!P)return;
-function set(b){P.querySelectorAll('.btog button').forEach(function(x){x.classList.toggle('on',x===b)});var br=b.getAttribute('data-b');P.querySelectorAll('.vc h3').forEach(function(h){if(!h.dataset.n)h.dataset.n=h.textContent;h.textContent=br+' '+h.dataset.n})}
-P.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.btog button');if(b)set(b)});
-var f=P.querySelector('.btog button');if(f)set(f)})();
-} catch (err) { console.error("[Brand switch]", err); }
+  (function() {
+    function setSSLProvider(brand, reanimate) {
+      var P = document.getElementById('pg-ssl');
+      if (!P) return;
+      var isComodo = brand === 'Comodo';
+
+      // Update toggle buttons active state (.ssl-tog or .btog)
+      P.querySelectorAll('.ssl-tog button, .btog button').forEach(function(btn) {
+        var b = btn.getAttribute('data-b') || btn.textContent.trim();
+        btn.classList.toggle('on', isComodo ? b === 'Comodo' : b === 'DigiCert');
+      });
+
+      // Synchronously toggle provider container classes on #pg-ssl
+      P.classList.toggle('cm-on', isComodo);
+      P.classList.toggle('dc-on', !isComodo);
+
+      // Re-trigger reactive staggered entrance animation on active catalog cards
+      var activeContainer = isComodo ? P.querySelector('#ccw') : P.querySelector('#dcw');
+      if (activeContainer && reanimate !== false) {
+        var cards = activeContainer.querySelectorAll('.dcx-card, .ccx-card');
+        cards.forEach(function(card, idx) {
+          card.style.setProperty('--i', idx);
+          card.style.animation = 'none';
+          void card.offsetWidth;
+          card.style.animation = '';
+        });
+      }
+    }
+
+    window.syncSSLProvider = setSSLProvider;
+
+    document.addEventListener('click', function(e) {
+      var b = e.target.closest && e.target.closest('#pg-ssl .ssl-tog button, #pg-ssl .btog button');
+      if (!b) return;
+      var brand = b.getAttribute('data-b') || b.textContent.trim();
+      setSSLProvider(brand, true);
+    });
+
+    var P = document.getElementById('pg-ssl');
+    if (P) {
+      var activeBtn = P.querySelector('.ssl-tog button.on, .btog button.on');
+      var initBrand = activeBtn ? (activeBtn.getAttribute('data-b') || activeBtn.textContent.trim()) : 'DigiCert';
+      setSSLProvider(initBrand, false);
+    }
+  })();
+} catch (err) { console.error("[SSL Provider switch]", err); }
 /* ---- Cart drawer ---- */
 try {
 (function(){var P=document.getElementById('pg-ssl');if(!P)return;

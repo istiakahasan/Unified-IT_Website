@@ -69,75 +69,13 @@ window.SERVICE_PAGES = {
     "a1": "#6ee7a0",
     "a2": "#5ac8ff",
     "ic": "lock",
-    "cards": [
-      [
-        "Domain Validation SSL",
-        "BEST FOR",
-        "Personal websites, Blogs, Small websites, Landing pages",
-        [
-          "Quick verification",
-          "Affordable protection",
-          "HTTPS encryption",
-          "Basic website security",
-          "Security level: Standard"
-        ],
-        0
-      ],
-      [
-        "Organization Validation SSL",
-        "BEST FOR",
-        "Businesses, Corporate websites, Organizations",
-        [
-          "Business identity verification",
-          "Higher trust level",
-          "Professional certificate information",
-          "Strong encryption",
-          "Security level: Advanced"
-        ],
-        1
-      ],
-      [
-        "Extended Validation SSL",
-        "BEST FOR",
-        "Financial services, Large businesses, Enterprise websites",
-        [
-          "Advanced organization verification",
-          "Maximum business trust",
-          "Enterprise security standards",
-          "Premium validation process",
-          "Security level: Maximum"
-        ],
-        0
-      ],
-      [
-        "Wildcard SSL",
-        "PROTECT MULTIPLE SUBDOMAINS",
-        "Secure your main domain and unlimited subdomains with one certificate.",
-        [
-          "shop.yourcompany.com",
-          "mail.yourcompany.com",
-          "portal.yourcompany.com",
-          "app.yourcompany.com",
-          "Security level: Flexible"
-        ],
-        0
-      ],
-      [
-        "Multi-Domain SSL",
-        "SECURE MULTIPLE WEBSITES",
-        "Ideal for businesses managing multiple domains or applications.",
-        [
-          "Multiple domain protection",
-          "Centralized management",
-          "Reduced administration",
-          "Cost efficiency",
-          "Security level: Enterprise"
-        ],
-        0
-      ]
-    ],
-    "pre": "<section class=\"dsec\" style=\"--i:0;margin-bottom:34px\"><div class=\"dlab\">SSL Certificates</div><h2 class=\"dh\">Choose your certificate provider</h2><div class=\"btog\" role=\"tablist\"><button class=\"on\" data-b=\"DigiCert\" type=\"button\">DigiCert</button><button data-b=\"Comodo\" type=\"button\">Comodo</button></div></section>",
-    "post": "<section class=\"dsec cartsec\" style=\"--i:3\"><div class=\"cartbox\"><div class=\"dlab\">Ready to order?</div><label class=\"cxfld\">Certificate<select id=\"ssel\"><option>Domain Validation SSL</option><option>Organization Validation SSL</option><option>Extended Validation SSL</option><option>Wildcard SSL</option><option>Multi-Domain SSL</option></select></label><label class=\"cxfld\">Quantity<span class=\"cxnum\"><button type=\"button\" data-d=\"-1\" aria-label=\"Fewer\">&minus;</button><input id=\"sqty\" type=\"number\" min=\"1\" max=\"50\" value=\"1\"><button type=\"button\" data-d=\"1\" aria-label=\"More\">+</button></span></label><button class=\"cartbtn\" id=\"addcart\" type=\"button\"><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"18\" cy=\"20\" r=\"1.4\"/><path d=\"M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6\"/><path d=\"M13 5v4M11 7h4\"/></svg> Add to cart</button><button class=\"learn\" id=\"learn\" type=\"button\">Learn more <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17L17 7M9 7h8v8\"/></svg></button></div></section>"
+  "ssl": {
+    "h": 200,
+    "a1": "#5de0c4",
+    "a2": "#5bc8ff",
+    "ic": "lock",
+    "cards": [],
+    "pre": "<section class=\"dsec\" style=\"--i:0;margin-bottom:34px\"><div class=\"dlab\">SSL Certificates</div><h2 class=\"dh\">Choose your certificate provider</h2><div class=\"btog ssl-tog\" role=\"tablist\"><button class=\"on\" data-b=\"DigiCert\" type=\"button\">DigiCert</button><button data-b=\"Comodo\" type=\"button\">Comodo</button></div></section>"
   },
   "domain": {
     "h": 225,
