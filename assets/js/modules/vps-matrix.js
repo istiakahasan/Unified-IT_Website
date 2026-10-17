@@ -50,6 +50,37 @@ bt.href='mailto:info@unifiedit.xyz?subject='+encodeURIComponent('Cloud '+cit.val
 P.addEventListener('input',function(e){if(e.target===cis){page=1;render()}upd()});
 P.addEventListener('change',function(e){var t=e.target;if(t.id==='vvol'&&!t.value)$('#vamt').value='';if(t===ps||t===fv||t===fm||t===fs||t===fn){page=1;render()}upd()});
 P.addEventListener('click',function(e){var t=e.target,x;
+if((x=t.closest('#cqt'))){
+  e.preventDefault();
+  e.stopPropagation();
+  var no=sel<0,d=no?DATA[0]:DATA[sel],cu=d[0]==='Custom';
+  var n=Math.max(1,Math.min(50,parseInt(cn.value,10)||1));
+  var cores=cu?Math.max(1,parseInt(cp.value,10)||1):d[2];
+  var gb=cu?Math.max(1,parseInt(cmm.value,10)||1):d[3];
+  var disk=cu?0:d[4];
+  var unitPrice=cu?0:(d[5]||0);
+  var addAmt=parseFloat($('#vamt').value)||0;
+  var addUnit=$('#vunit').value||'GB';
+  var addType=$('#vvol').value||'';
+  var extraStorage=addAmt?(' + '+addAmt+addUnit+' '+addType):'';
+  var acPlan=$('.cxpc.on')||$('.cxpc');
+  var planName=acPlan?acPlan.getAttribute('data-n'):'Flexible Plan';
+  var payRadio=acPlan?acPlan.querySelector('input[name^=pay]:checked'):null;
+  var payTerm=payRadio?payRadio.value:'No upfront';
+  var instTitle='Cloud '+cit.value+' - '+d[1];
+  var details=cores+' vCPU · '+gb+' GB RAM · '+(disk?disk+' GB NVMe':'Custom Storage')+extraStorage+' · '+cos.value+' ('+planName+', '+payTerm+')';
+  if(window.UnifiedCart){
+    window.UnifiedCart.add({
+      name:instTitle,
+      details:details,
+      price:unitPrice,
+      period:'/mo',
+      quantity:n
+    });
+    window.UnifiedCart.openDrawer();
+  }
+  return;
+}
 if((x=t.closest('.itrow'))){var ni=+x.getAttribute('data-i');sel=(sel===ni)?-1:ni;render();upd();return}
 if((x=t.closest('#ittabs button'))){tab=x.getAttribute('data-t');page=1;render();return}
 if((x=t.closest('.cxpc'))&&!x.classList.contains('on')){P.querySelectorAll('.cxpc').forEach(function(y){y.classList.toggle('on',y===x)});x.querySelector('input[name=sp]').checked=true;upd()}

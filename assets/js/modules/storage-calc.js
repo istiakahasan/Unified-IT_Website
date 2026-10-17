@@ -30,6 +30,28 @@ h+='<button type="button" data-p="'+(S.page+1)+'"'+(S.page>=np?' disabled':'')+'
 P.querySelectorAll('.cxr label').forEach(function(x){x.classList.toggle('on',x.querySelector('input').checked)});sloc.hidden=P.querySelector('input[name=sm]:checked').value==='all';
 summary()}
 P.addEventListener('click',function(e){var t=e.target,x;
+if((x=t.closest('#sqt'))){
+  e.preventDefault();
+  e.stopPropagation();
+  var ks=Object.keys(sel).filter(function(k){return sel[k]});
+  var n=Math.max(1,Math.min(50,parseInt(P.querySelector('#sinst').value,10)||1));
+  var amt=parseFloat(P.querySelector('#samt').value)||0;
+  var un=P.querySelector('#sunit').value||'GB';
+  var ty=P.querySelector('#svol').value||'NVMe';
+  var offerings=ks.length?ks.join(', '):'Standard Storage';
+  var extra=amt?(' · '+amt+un+' '+ty):'';
+  var reg=(P.querySelector('#srg')||{}).value||'Dhaka';
+  if(window.UnifiedCart){
+    window.UnifiedCart.add({
+      name:'Cloud Storage ('+(ks[0]||'Volume')+')',
+      details:offerings+extra+' · '+reg,
+      price:0,
+      quantity:n
+    });
+    window.UnifiedCart.openDrawer();
+  }
+  return;
+}
 if((x=t.closest('.dkrow'))){var n=x.getAttribute('data-n');sel[n]=!sel[n];render();return}
 if((x=t.closest('[data-all]'))){var l=list(),a=(S.page-1)*S.per,pg=l.slice(a,a+S.per),all=pg.every(function(r){return sel[r[0]]});pg.forEach(function(r){sel[r[0]]=!all});render();return}
 if((x=t.closest('[data-k]'))){var k=x.getAttribute('data-k');if(S.k===k)S.d=-S.d;else{S.k=k;S.d=1}render();return}

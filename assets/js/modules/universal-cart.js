@@ -523,6 +523,29 @@
       });
       return;
     }
+
+    // 7. Cloud Configurator (#cqt) & Storage (#sqt)
+    var cqtBtn = t.closest('#cqt') || t.closest('#sqt');
+    if (cqtBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var pCloud = document.getElementById('pg-cloud');
+      if (pCloud && t.closest('#cqt')) {
+        var instName = (pCloud.querySelector('#spt') || {}).textContent || '1 Core-1GB RAM-HDD';
+        var osName = (pCloud.querySelector('#spo') || {}).textContent || 'Linux';
+        var citVal = (pCloud.querySelector('#cit') || {}).value || 'VPS';
+        var qtyVal = parseInt((pCloud.querySelector('#cn') || {}).value, 10) || 1;
+        add({
+          name: 'Cloud ' + citVal + ' - ' + instName,
+          details: osName + ' (Configured Instance)',
+          price: 350,
+          period: '/mo',
+          quantity: qtyVal
+        });
+        openDrawer();
+      }
+      return;
+    }
   });
 
   // Close dropdown on Escape key
