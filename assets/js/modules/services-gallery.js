@@ -129,7 +129,7 @@ try {
     var rip=new THREE.Mesh(new THREE.RingGeometry(.98,1,72),new THREE.MeshBasicMaterial({color:0xc08cff,transparent:true,opacity:.5,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
     rip.rotation.x=-Math.PI/2;rip.position.y=-1.9;gr.add(rip);
     gr.scale.setScalar(.001);
-    gr.userData={solid:{material:solidMat},wire:{material:lineMat},upright:true,dx:3.6,
+    gr.userData={solid:{material:solidMat},wire:{material:lineMat},upright:true,dx:5.8,
       tick:function(t,hue,w,S){
         leds.forEach(function(L){var a=.5+.5*Math.sin(t*2.2+L.k*.9);L.m.material.color.setHSL((hue+(L.power?.08:0))%1,.9,L.power?.82:.38+.4*a);});
         flows.forEach(function(F){F.m.position.y=((t*.9+F.o)%3.4)-1.7;});
@@ -202,7 +202,7 @@ try {
       var d=sp-i,w=ease(Math.max(0,1-Math.abs(d)*1.15));
       var draw=ease(Math.min(1,Math.max(0,(w-.12)/.72)));
       L.style.left=mob?'50%':(i%2?'73%':'27%');L.style.top=mob?'25%':'50%';
-      L.style.opacity=(mob&&i===1)?0:Math.min(1,w*1.6);
+      L.style.opacity=i===1?0:Math.min(1,w*1.6);
       L.style.setProperty('--p',draw.toFixed(3));
       L.style.setProperty('--g','hsl('+(hue*360)+',90%,65%)');
       L.style.transform='translate(-50%,-50%) scale('+((mob?.7:1)*(.72+.28*w+S.burst*.14))+') rotate('+(-d*28)+'deg)';
