@@ -1,0 +1,26 @@
+{
+  "name": "unified-cloud",
+  "version": "1.0.0",
+  "description": "Unified Cloud - Enterprise Cloud Infrastructure Platform",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node scripts/serve.js",
+    "update:prices": "node scripts/update-digicert-prices.mjs"
+  },
+  "keywords": [
+    "unified-cloud",
+    "cloud-hosting",
+    "vps",
+    "threejs",
+    "webgl",
+    "three-js-landing"
+  ],
+  "author": "Unified IT",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

@@ -1,0 +1,47 @@
+/* DigiCert certificate window (SSL page) and priced cart lines */
+#pg-ssl .dcw{display:none}
+#pg-ssl.dc-on .dcw{display:block}
+#pg-ssl.dc-on .vg,#pg-ssl.dc-on .cartsec{display:none}
+.dcw .dcx-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px 26px}
+.dcw .dcx-title{margin:0;font-size:clamp(1.5rem,2.6vw,2rem);font-weight:700;letter-spacing:-.01em;color:#fff}
+.dcw .dcx-tabs{display:inline-flex;flex-wrap:wrap;gap:6px;padding:5px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
+.dcw .dcx-tab{border:0;cursor:pointer;padding:11px 20px;border-radius:999px;background:transparent;color:#cfcbe8;font:700 14px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:background .25s,color .25s}
+.dcw .dcx-tab:hover{background:rgba(255,255,255,.1);color:#fff}
+.dcw .dcx-tab.on{background:linear-gradient(120deg,var(--a1),var(--a2));color:#1a0d00}
+.dcw .dcx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:30px}
+.dcw .dcx-card{position:relative;display:flex;flex-direction:column;padding:20px 20px 22px;border-radius:22px;background:linear-gradient(165deg,rgba(26,20,70,.6),rgba(10,8,34,.7));border:1px solid rgba(150,130,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:border-color .3s,box-shadow .35s}
+.dcw .dcx-card:hover{border-color:rgba(190,160,255,.5);box-shadow:0 24px 60px rgba(150,110,255,.22)}
+.dcw .dcx-card.rec{border:2px solid transparent;background:linear-gradient(165deg,#1b1450,#0b0828) padding-box,linear-gradient(135deg,var(--a1),var(--a2)) border-box;box-shadow:0 0 44px rgba(110,231,160,.16)}
+.dcw .dcx-order{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border:0;border-radius:14px;cursor:pointer;background:linear-gradient(120deg,var(--a1),var(--a2));color:#10131f;font:800 15.5px system-ui,-apple-system,"Segoe UI",Inter,sans-serif;transition:transform .2s,box-shadow .25s,filter .25s}
+.dcw .dcx-order:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(110,231,160,.32);filter:brightness(1.05)}
+.dcw .dcx-order:focus-visible,.dcw .dcx-tab:focus-visible,.dcw .dcx-step:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.dcw .dcx-badge{position:absolute;top:-13px;right:18px;margin:0;padding:6px 12px;border-radius:999px;font:800 11px/1 system-ui,-apple-system,"Segoe UI",Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;background:#0f2a22;color:var(--a1);border:1px solid rgba(110,231,160,.5)}
+.dcw .dcx-card h3{margin:16px 0 0;font-size:24px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.dcw .dcx-desc{margin:10px 0 0;min-height:4.6em;font-size:15px;line-height:1.55;color:#c5c9e6}
+.dcw .dcx-opt,.dcw .dcx-opt *{text-transform:none;letter-spacing:normal;font-family:inherit;font-weight:500}
+.dcw .dcx-opt b{font-weight:700}
+.dcw .dcx-opt{margin:16px 0 0;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);display:grid;gap:10px;font-size:14.5px;color:#e4e8ff}
+.dcw .dcx-chk{display:flex;align-items:center;gap:10px;cursor:pointer}
+.dcw .dcx-chk input{width:18px;height:18px;accent-color:var(--a1);cursor:pointer}
+.dcw .dcx-sub{margin:0;font-size:13.5px;line-height:1.5;color:#9fb0e8}
+.dcw .dcx-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dcw .dcx-row span small{display:block;font-size:12.5px;color:#9fb0e8}
+.dcw .dcx-num{display:inline-flex;align-items:center;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);overflow:hidden}
+.dcw .dcx-step{width:34px;height:34px;border:0;background:transparent;color:#fff;font-size:18px;cursor:pointer}
+.dcw .dcx-step:hover{background:rgba(255,255,255,.12)}
+.dcw .dcx-num b{min-width:32px;text-align:center;font-size:15px}
+.dcw .dcx-price{padding-top:22px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.dcw .dcx-price b{font-size:clamp(1.6rem,2.3vw,2.1rem);font-weight:800;letter-spacing:-.02em;color:#fff}
+.dcw .dcx-price span{font-size:14px;color:#c5c9e6}
+.dcw .dcx-sum{margin:8px 0 0;font-size:14px;line-height:1.5;color:#c5c9e6}
+.dcw .dcx-sum b{color:#fff;white-space:nowrap}
+.dcw .dcx-fine{margin:4px 0 0;font-size:12px;line-height:1.45;color:#8d94bd}
+.dcw .dcx-inc{margin:16px 0 0;padding:16px 0 0;border-top:1px solid rgba(255,255,255,.12);list-style:none;display:grid;gap:8px;font-size:14px;color:#dfe3ff}
+.dcw .dcx-inc li{position:relative;padding-left:22px;line-height:1.45}
+.dcw .dcx-inc li:before{content:"";position:absolute;left:2px;top:.5em;width:10px;height:6px;border-left:2px solid var(--a1);border-bottom:2px solid var(--a1);transform:rotate(-45deg) translateY(-50%)}
+.dcw .dcx-more{margin-top:14px;font-size:14px;font-weight:600;color:var(--a1);text-decoration:none}
+.dcw .dcx-more:hover{text-decoration:underline}
+.dcw .dcx-note{margin:22px 0 0;font-size:13px;color:#8d94bd}
+@media(max-width:1000px){.dcw .dcx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.dcw .dcx-grid{grid-template-columns:1fr}.dcw .dcx-tab{padding:10px 14px;font-size:13px}}
+#cart .cid{margin:6px 0 0;font-size:13px;line-height:1.4;color:#9fb0e8}

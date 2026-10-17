@@ -1,0 +1,12 @@
+# Compare wildcard TLS/SSL certificates
+## Basic - OV
+### Wildcard domains *.mydomain.com
+$82/ month / wildcard domain
+subscription $1,164.00
+## Secure Site - OV
+$206/ month / wildcard domain
+subscription $2,964.00
+Recommended
+## Secure Site Pro - OV
+$411/ month / wildcard domain
+subscription $5,880.00

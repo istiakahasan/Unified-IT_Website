@@ -1,7 +1,0 @@
-/* Design tokens, reset and page defaults */
-:root{--fg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fg:#f6f1ff}}
-:root[data-theme="dark"]{--fg:#f6f1ff}
-*{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:linear-gradient(#2f6fd6,#bfe0ff);color:var(--fg);font-family:Inter,system-ui,sans-serif;overflow-x:hidden}

@@ -1,0 +1,4 @@
+/* Design tokens: colour scheme variables */
+:root{--fg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fg:#f6f1ff}}
+:root[data-theme="dark"]{--fg:#f6f1ff}
