@@ -24,6 +24,18 @@
 
   <!-- Modular Stylesheet Bundle -->
   <link rel="stylesheet" href="assets/css/main.css">
+
+  <!-- Immediate Hash Redirect to Standalone Partner Program -->
+  <script>
+    if (location.hash === '#partner' || location.hash === '#pg-partner' || location.hash.indexOf('#partner') === 0) {
+      location.replace('/partners');
+    }
+    window.addEventListener('hashchange', function() {
+      if (location.hash === '#partner' || location.hash === '#pg-partner' || location.hash.indexOf('#partner') === 0) {
+        location.replace('/partners');
+      }
+    });
+  </script>
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -32,9 +44,373 @@
 <div class="layer" id="b"><h2>Enterprise Cloud Infrastructure.</h2></div>
 <div class="layer" id="c"><h3>Look closer.</h3><p>Every pixel on this screen is rendered live.</p></div>
 
-<header id="hdr"><a class="hlogo" href="https://unified.it.com/" target="_blank" rel="noopener" aria-label="Unified Cloud"><img alt="Unified Cloud" src="assets/images/logo.png"></a><nav class="nv l" aria-label="Primary"><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/agentic-ai" target="_blank" rel="noopener">Agentic AI</a></nav><nav class="nv r" aria-label="Secondary"><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain</a><a href="https://unified.it.com/partner" target="_blank" rel="noopener">Partner</a></nav><div class="hdr-actions"><div class="hdr-cart-wrap" id="hdr-cart-wrap"><button class="hdr-cart-btn" id="hdr-cart-btn" type="button" aria-label="Shopping Cart"><span class="hdr-cart-ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg><span class="hdr-cart-badge" id="hdr-cart-badge" style="display:none">0</span></span><span class="hdr-cart-cur">৳ BDT</span></button><div class="hdr-cart-dropdown" id="hdr-cart-dropdown" role="dialog" aria-label="Your Cart"><div class="hcd-header"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg>Your Cart</h4><button class="hcd-close" id="hcd-close-btn" type="button" aria-label="Close cart">&times;</button></div><div class="hcd-items-list" id="hcd-items-list"><div class="hcd-empty">Your cart is empty.</div></div><div class="hcd-subtotal-row"><span>Subtotal</span><b id="hcd-subtotal-val">৳0.00</b></div><button class="hcd-view-cart-btn" id="hcd-view-cart-btn" type="button">View Cart</button></div></div><a class="pbtn" href="https://billing.unifiedit.xyz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h3a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-3M10 17l5-5-5-5M15 12H3"/></svg>Login</a><button class="burger" aria-label="Menu" onclick="document.body.classList.toggle('mmo')"><span></span><span></span><span></span></button></div></header><div id="mm"><a class="mm-cart-link" id="mm-cart-link" href="#cart"><span style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg>Your Cart (৳ BDT)</span><b id="mm-cart-badge">0</b></a><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/agentic-ai" target="_blank" rel="noopener">Agentic AI</a><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain</a><a href="https://unified.it.com/partner" target="_blank" rel="noopener">Partner</a></div><span class="hcount" id="count">01 / 09</span>
+<header id="hdr"><a class="hlogo" href="https://unified.it.com/" target="_blank" rel="noopener" aria-label="Unified Cloud"><img alt="Unified Cloud" src="assets/images/logo.png"></a><nav class="nv l" aria-label="Primary"><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/agentic-ai" target="_blank" rel="noopener">Agentic AI</a></nav><nav class="nv r" aria-label="Secondary"><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain</a><a href="/partners" id="hdr-partner-link">Partner</a></nav><div class="hdr-actions"><div class="hdr-cart-wrap" id="hdr-cart-wrap"><button class="hdr-cart-btn" id="hdr-cart-btn" type="button" aria-label="Shopping Cart"><span class="hdr-cart-ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg><span class="hdr-cart-badge" id="hdr-cart-badge" style="display:none">0</span></span><span class="hdr-cart-cur">৳ BDT</span></button><div class="hdr-cart-dropdown" id="hdr-cart-dropdown" role="dialog" aria-label="Your Cart"><div class="hcd-header"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg>Your Cart</h4><button class="hcd-close" id="hcd-close-btn" type="button" aria-label="Close cart">&times;</button></div><div class="hcd-items-list" id="hcd-items-list"><div class="hcd-empty">Your cart is empty.</div></div><div class="hcd-subtotal-row"><span>Subtotal</span><b id="hcd-subtotal-val">৳0.00</b></div><button class="hcd-view-cart-btn" id="hcd-view-cart-btn" type="button">View Cart</button></div></div><a class="pbtn" href="https://billing.unifiedit.xyz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h3a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-3M10 17l5-5-5-5M15 12H3"/></svg>Login</a><button class="burger" aria-label="Menu" onclick="document.body.classList.toggle('mmo')"><span ></span><span></span><span></span></button></div></header><div id="mm"><a class="mm-cart-link" id="mm-cart-link" href="#cart"><span style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg>Your Cart (৳ BDT)</span><b id="mm-cart-badge">0</b></a><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/agentic-ai" target="_blank" rel="noopener">Agentic AI</a><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain</a><a href="/partners" id="mm-partner-link">Partner</a></div><span class="hcount" id="count">01 / 09</span>
 <div id="mega" role="menu" aria-label="Cloud services"><div class="mgh">CLOUD SERVICES</div><div class="mgg"><a class="sv" style="--c:#2563eb;--i:0" href="https://unified.it.com/services/cloud-vps" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></span><b>VPS</b><small>Virtual Private Server</small><i>Order Now</i></a><a class="sv" style="--c:#f97316;--i:1" href="https://unified.it.com/services/dedicated-server" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14h18v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M5.5 14l2-8a2 2 0 0 1 2-1.5h5a2 2 0 0 1 2 1.5l2 8"/><path d="M7 17h.01"/></svg></span><b>VDS</b><small>Virtual Dedicated Server</small><i>Order Now</i></a><a class="sv" style="--c:#0ea5e9;--i:2" href="https://unified.it.com/services/cloud-storage" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.2 9.2 4.4 4.4 0 0 0 7 18z"/></svg></span><b>Storage</b><small>Cloud Storage</small><i>Order Now</i></a></div></div>
-<section id="partner" class="pg" style="--a1:#5de0c4;--a2:#5b8cff" aria-label="Partner"><canvas id="pdust" hidden></canvas><main class="vw"><div class="dm"><section class="dsec" style="--i:0;margin-bottom:34px"><div class="dlab">Partner</div><h2 class="dh">Reseller Hosting</h2></section><div class="wpg"><div class="vc wp" style="--i:0;--c1:#5de0c4;--c2:#5bc8ff"><div class="wh"><h3>Reseller Plan-01</h3></div><div class="ek"><b>20</b> <span>cPANEL ACCOUNTS</span></div><p class="vd"><b>BDT 24,500 Tk</b> <i>Annually</i></p><div class="vsp"></div><ul class="el"><li>100GB SSD Space</li><li>500 Traffic/month</li><li>1 CPU Core Limit</li><li>1 GB RAM</li><li>Latest cPanel</li><li>BD Data Center</li><li>24x7 Online Support</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc wp" style="--i:1;--c1:#5bc8ff;--c2:#7b93ff"><div class="wh"><h3>Reseller Plan-02</h3></div><div class="ek"><b>30</b> <span>cPANEL ACCOUNTS</span></div><p class="vd"><b>BDT 48,500 Tk</b> <i>Annually</i></p><div class="vsp"></div><ul class="el"><li>100GB SSD Space</li><li>1TB Traffic/month</li><li>2CPU Core Limit</li><li>2GB RAM</li><li>Latest cPanel</li><li>BD Data Center</li><li>24x7 Online Support</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc wp" style="--i:2;--c1:#9b86ff;--c2:#d27bff"><div class="wh"><h3>Reseller Plan-03</h3></div><div class="ek"><b>50</b> <span>cPANEL ACCOUNTS</span></div><p class="vd"><b>BDT 59,500 Tk</b> <i>Annually</i></p><div class="vsp"></div><ul class="el"><li>150GB SSD Space</li><li>2TB Traffic/Month</li><li>3CPU Core Limit</li><li>3GB RAM</li><li>Latest cPanel</li><li>BD Data Center</li><li>24x7 Online Support</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc wp" style="--i:3;--c1:#ff8bd0;--c2:#ffb36b"><div class="wh"><h3>Reseller Plan-04</h3></div><div class="ek"><b>100</b> <span>cPANEL ACCOUNTS</span></div><p class="vd"><b>BDT 94,500 Tk</b> <i>Annually</i></p><div class="vsp"></div><ul class="el"><li>300GB SSD Space</li><li>5TB Traffic/Month</li><li>4CPU Core Limit</li><li>4GB RAM</li><li>Latest cPanel</li><li>BD Data Center</li><li>24x7 Online Support</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div></div></div><footer class="ft rv"><div class="fb"><p>Bangladesh&#39;s enterprise cloud — built on Dhaka soil for garments, banking, and healthcare that cannot afford latency.</p><a href="tel:09617200800">09617-200800</a><a href="mailto:info@unifiedit.xyz">info@unifiedit.xyz</a><span>Mannan Tower (3rd Floor), Ka 96/3 Progati Sharani, Dhaka 1229, Bangladesh</span></div><div><h4>Products</h4><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/services/microsoft" target="_blank" rel="noopener">Microsoft 365</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL Certificates</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain Registration</a><a href="https://unified.it.com/services/cloud-storage" target="_blank" rel="noopener">Cloud Storage</a><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security Services</a></div><div><h4>Company</h4><a href="https://unified.it.com/services" target="_blank" rel="noopener">Services</a><a href="https://unified.it.com/pricing" target="_blank" rel="noopener">Pricing</a><a href="https://unified.it.com/blog" target="_blank" rel="noopener">Blog</a><a href="https://unified.it.com/career" target="_blank" rel="noopener">Careers</a></div><div><h4>Support</h4><a href="https://billing.unifiedit.xyz" target="_blank" rel="noopener">Client Portal</a><a href="https://unified.it.com/contact" target="_blank" rel="noopener">Contact Sales</a></div><p class="fc">© 2026 Unified Information Technology Limited. All rights reserved.</p></footer></main></section>
+<section id="partner" class="pg" style="--a1:#5de0c4;--a2:#5b8cff" aria-label="Partner"><canvas id="pdust" hidden></canvas><main class="vw"><div class="dm">
+  <!-- Partner Program Hero -->
+  <section class="dsec" style="--i:0;margin-bottom:24px;text-align:center;">
+    <div class="dlab">Cloud Partner Program</div>
+    <h2 class="dh" style="font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.15;margin-bottom:14px;">
+      Grow Your Business with Our <span style="background:linear-gradient(100deg,#9fe9ee,#5ad1d6 50%,#7ab8ff);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;">Cloud Partner Program</span>
+    </h2>
+    <p style="max-width:760px;margin:0 auto 28px;color:#c4d7e0;font-size:15px;line-height:1.6;">
+      Empower your hosting business, IT agency, or consultancy with our carrier-grade cloud infrastructure. Resell high-performance Cloud VPS, Bare Metal Dedicated Servers, and Object Storage with automated Apache CloudStack provisioning and centralized WHMCS billing.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:30px;">
+      <a class="vb" href="#inpage-apply" style="padding:14px 28px;border-radius:12px;background:linear-gradient(120deg,#2aa7c4,#3f86e8);font-size:15px;">Become a Partner</a>
+      <a class="vb" href="#inpage-benefits" style="padding:14px 26px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);font-size:15px;">Explore Partner Benefits</a>
+      <a class="vb" href="/partner/dashboard" style="padding:14px 24px;border-radius:12px;background:rgba(93,224,196,0.15);border:1px solid rgba(93,224,196,0.3);color:var(--ptn-cyan);font-size:15px;">Open Partner Portal &rarr;</a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;max-width:960px;margin:0 auto 40px;text-align:left;">
+      <div class="chip" style="padding:16px 20px;">
+        <b style="font-size:22px;color:#fff;margin-bottom:2px;">&lt; 2ms</b>
+        <p style="font-size:13px;color:#94a3b8;margin:0;">Ultra-Low Latency in Dhaka Soil</p>
+      </div>
+      <div class="chip" style="padding:16px 20px;">
+        <b style="font-size:22px;color:var(--ptn-cyan);margin-bottom:2px;">Up to 25%</b>
+        <p style="font-size:13px;color:#94a3b8;margin:0;">Wholesale Reseller Margin</p>
+      </div>
+      <div class="chip" style="padding:16px 20px;">
+        <b style="font-size:22px;color:#fff;margin-bottom:2px;">100% API</b>
+        <p style="font-size:13px;color:#94a3b8;margin:0;">CloudStack &amp; WHMCS Automation</p>
+      </div>
+      <div class="chip" style="padding:16px 20px;">
+        <b style="font-size:22px;color:var(--ptn-cyan);margin-bottom:2px;">24/7/365</b>
+        <p style="font-size:13px;color:#94a3b8;margin:0;">Direct Priority Escalation Desk</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Tier Profit Calculator -->
+  <section class="ptn-calc-wrap" id="inpage-calc" style="margin-bottom:60px;">
+    <div class="ptn-calc-header">
+      <div class="ptn-pill-tag">Interactive Estimator</div>
+      <h3>Partner Profit &amp; Margin Calculator</h3>
+      <p style="color:var(--ptn-text-muted);font-size:14px;margin:0;">
+        Slide to see how much your agency earns based on monthly cloud infrastructure spend.
+      </p>
+    </div>
+    <div class="ptn-calc-grid">
+      <div class="ptn-calc-inputs">
+        <div class="ptn-slider-group">
+          <label>
+            <span>Monthly Client Infrastructure Spending</span>
+            <strong id="in-spend-label" style="color:var(--ptn-cyan);font-size:16px;">৳150,000 / month</strong>
+          </label>
+          <input type="range" id="in-spend-slider" min="10000" max="1000000" step="10000" value="150000">
+        </div>
+        <div class="ptn-slider-group">
+          <label>
+            <span>Estimated Number of Managed Client Accounts</span>
+            <strong id="in-clients-label" style="color:#fff;font-size:16px;">25 Clients</strong>
+          </label>
+          <input type="range" id="in-clients-slider" min="1" max="200" step="1" value="25">
+        </div>
+      </div>
+      <div class="ptn-calc-kpis">
+        <div class="ptn-kpi-box">
+          <div class="ptn-kpi-val" id="in-tier-qualified">Gold Partner</div>
+          <div class="ptn-kpi-lbl">Qualified Partner Tier</div>
+        </div>
+        <div class="ptn-kpi-box">
+          <div class="ptn-kpi-val" id="in-discount-pct">15%</div>
+          <div class="ptn-kpi-lbl">Wholesale Discount Margin</div>
+        </div>
+        <div class="ptn-kpi-box">
+          <div class="ptn-kpi-val" id="in-monthly-savings">৳22,500</div>
+          <div class="ptn-kpi-lbl">Monthly Partner Savings</div>
+        </div>
+        <div class="ptn-kpi-box" style="border-color:rgba(93,224,196,0.4);">
+          <div class="ptn-kpi-val" id="in-annual-profit" style="color:#4ade80;">৳270,000</div>
+          <div class="ptn-kpi-lbl">Annual Recurring Profit</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partner Benefits Cards -->
+  <section id="inpage-benefits" style="margin-bottom:60px;">
+    <div class="ptn-section-head">
+      <div class="ptn-pill-tag">Enterprise Capabilities</div>
+      <h2>Partner Program Benefits</h2>
+      <p>Clearly structured for immediate deployment and tier-based growth.</p>
+    </div>
+    <div class="ptn-benefits-grid">
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Competitive Reseller Pricing</h3>
+        <p class="ptn-benefit-desc">Wholesale margins on Cloud VPS, Bare Metal Dedicated, and Storage.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Recurring Revenue Streams</h3>
+        <p class="ptn-benefit-desc">Predictable monthly margins applied automatically to client renewals.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-tier">Gold &amp; Platinum Tier</span>
+        <h3 class="ptn-benefit-title">White-Label Hosting &amp; Portals</h3>
+        <p class="ptn-benefit-desc">Brand with vanity nameservers and custom SSL portals.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Apache CloudStack REST API</h3>
+        <p class="ptn-benefit-desc">Programmatic VM provisioning, snapshots, and quota enforcement.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Centralized WHMCS Billing</h3>
+        <p class="ptn-benefit-desc">Automated invoicing, customer orchestration, and credit tracking.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Technical Onboarding Guides</h3>
+        <p class="ptn-benefit-desc">Developer documentation, API Postman collections, and knowledge base.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-tier">Silver &amp; Above</span>
+        <h3 class="ptn-benefit-title">Priority Support Escalation</h3>
+        <p class="ptn-benefit-desc">Direct line to L2/L3 cloud infrastructure engineers with emergency SLAs.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-tier">Approval Required</span>
+        <h3 class="ptn-benefit-title">Zero-Downtime Server Migration</h3>
+        <p class="ptn-benefit-desc">Free migration assistance by DevOps engineers for eligible tiers.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-tier">Silver &amp; Above</span>
+        <h3 class="ptn-benefit-title">Partner Marketing Resources</h3>
+        <p class="ptn-benefit-desc">Co-branded pitch decks, technical whitepapers, and sales collateral.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Dual Referral + Reseller Model</h3>
+        <p class="ptn-benefit-desc">Earn up to 10% cash commission on client referrals with no billing overhead.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+        <h3 class="ptn-benefit-title">Usage Reports &amp; Analytics</h3>
+        <p class="ptn-benefit-desc">Real-time resource utilization, invoice tracking, and customer telemetry.</p>
+      </div>
+      <div class="ptn-benefit-card">
+        <span class="ptn-benefit-tag ptn-tag-tier">Subject to Eligibility</span>
+        <h3 class="ptn-benefit-title">Trial Credits &amp; Sandbox</h3>
+        <p class="ptn-benefit-desc">Test infrastructure credits to benchmark deployments prior to live launch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partner Tiers Cards -->
+  <section id="inpage-tiers" style="margin-bottom:60px;">
+    <div class="ptn-section-head">
+      <div class="ptn-pill-tag">Tier Matrix</div>
+      <h2>Configurable Partner Tiers</h2>
+      <p>Progressive tiers with automatic qualification and administrative agreement capabilities.</p>
+    </div>
+    <div class="ptn-tiers-grid">
+      <div class="ptn-tier-card">
+        <h3 class="ptn-tier-name">Registered</h3>
+        <div class="ptn-tier-discount">5% <small>Margin</small></div>
+        <div class="ptn-tier-spend">৳0 minimum monthly spend</div>
+        <ul class="ptn-tier-features">
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 5% Cloud VPS &amp; Dedicated discount</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Standard email &amp; portal support</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> CloudStack API access</li>
+        </ul>
+        <a href="#inpage-apply" class="ptn-btn ptn-btn-secondary">Apply for Registered</a>
+      </div>
+      <div class="ptn-tier-card">
+        <h3 class="ptn-tier-name">Silver</h3>
+        <div class="ptn-tier-discount">10% <small>Margin</small></div>
+        <div class="ptn-tier-spend">৳30,000 / month eligible spend</div>
+        <ul class="ptn-tier-features">
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 10% wholesale reseller discount</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Business-hours priority support queue</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Partner marketing resources</li>
+        </ul>
+        <a href="#inpage-apply" class="ptn-btn ptn-btn-secondary">Apply for Silver</a>
+      </div>
+      <div class="ptn-tier-card featured">
+        <div class="ptn-pill-tag" style="position:absolute;top:-14px;right:20px;margin:0;background:var(--ptn-cyan);color:#070a14;">Most Popular</div>
+        <h3 class="ptn-tier-name">Gold</h3>
+        <div class="ptn-tier-discount">15% <small>Margin</small></div>
+        <div class="ptn-tier-spend">৳120,000 / month eligible spend</div>
+        <ul class="ptn-tier-features">
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 15% wholesale infrastructure margin</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Priority 24/7 technical support desk</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Dedicated Account Manager</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> White-label hosting &amp; custom DNS</li>
+        </ul>
+        <a href="#inpage-apply" class="ptn-btn ptn-btn-primary">Apply for Gold</a>
+      </div>
+      <div class="ptn-tier-card">
+        <h3 class="ptn-tier-name">Platinum</h3>
+        <div class="ptn-tier-discount">20% - 25% <small>Margin</small></div>
+        <div class="ptn-tier-spend">৳360,000 / month eligible spend</div>
+        <ul class="ptn-tier-features">
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 20% standard, up to 25% strategic contract</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Dedicated Solutions Architect</li>
+          <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Free hands-on server migration assistance</li>
+        </ul>
+        <a href="#inpage-apply" class="ptn-btn ptn-btn-secondary">Apply for Platinum</a>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="ptn-table-wrap">
+      <table class="ptn-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Registered</th>
+            <th>Silver</th>
+            <th>Gold</th>
+            <th>Platinum</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Wholesale Margin</strong></td>
+            <td>5%</td><td>10%</td><td>15%</td><td>20% - 25%</td>
+          </tr>
+          <tr>
+            <td><strong>Spend Requirement</strong></td>
+            <td>৳0 (None)</td><td>৳30,000 / mo</td><td>৳120,000 / mo</td><td>৳360,000 / mo</td>
+          </tr>
+          <tr>
+            <td><strong>Support Level</strong></td>
+            <td>Standard Email/Portal</td><td>Business-Hours Priority</td><td>24/7 Priority Desk</td><td>Dedicated Architect</td>
+          </tr>
+          <tr>
+            <td><strong>White-Labeling</strong></td>
+            <td>None</td><td>Optional</td><td>Full Branding</td><td>Full + Vanity SSL</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ptn-notice-box" style="margin-top:20px;">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <strong>Pricing Exclusions Notice:</strong> Third-party licenses (cPanel, Microsoft 365), SSL certificates (wholesale matrices), domain registry fees, and payment gateway costs carry distinct pass-through rules and are excluded from standard core discounts.
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section style="margin-bottom:60px;">
+    <div class="ptn-section-head">
+      <div class="ptn-pill-tag">Simple Process</div>
+      <h2>How It Works</h2>
+    </div>
+    <div class="ptn-steps-grid">
+      <div class="ptn-step-card">
+        <div class="ptn-step-num">01</div>
+        <h3 class="ptn-step-title">Submit Application</h3>
+        <p class="ptn-step-desc">Complete the form with your business profile and expected infrastructure needs.</p>
+      </div>
+      <div class="ptn-step-card">
+        <div class="ptn-step-num">02</div>
+        <h3 class="ptn-step-title">Verification</h3>
+        <p class="ptn-step-desc">Our partner desk verifies company identity and tax details within 24-48 hours.</p>
+      </div>
+      <div class="ptn-step-card">
+        <div class="ptn-step-num">03</div>
+        <h3 class="ptn-step-title">Tier &amp; API Setup</h3>
+        <p class="ptn-step-desc">Receive your credentials, wholesale discount rate, and CloudStack API keys.</p>
+      </div>
+      <div class="ptn-step-card">
+        <div class="ptn-step-num">04</div>
+        <h3 class="ptn-step-title">Sell &amp; Scale</h3>
+        <p class="ptn-step-desc">Provision cloud services for clients and monitor MRR in your partner dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partner Application Form -->
+  <section class="ptn-form-section" id="inpage-apply" style="margin-bottom:60px;">
+    <div class="ptn-section-head" style="margin-bottom:24px;">
+      <div class="ptn-pill-tag">Partner Registration</div>
+      <h2>Become a Cloud Partner</h2>
+      <p>Submit your application below. Applications remain pending until authorized admin review.</p>
+    </div>
+    <div id="inpage-feedback" class="ptn-form-status"></div>
+    <form id="inpage-partner-form">
+      <div class="ptn-form-grid">
+        <div class="ptn-field">
+          <label for="inp-fullName">Full Name *</label>
+          <input type="text" id="inp-fullName" class="ptn-input" placeholder="e.g. Istiak Hasan" required>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-bizName">Business Name *</label>
+          <input type="text" id="inp-bizName" class="ptn-input" placeholder="e.g. Apex Cloud Solutions" required>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-email">Business Email *</label>
+          <input type="email" id="inp-email" class="ptn-input" placeholder="partner@yourcompany.com" required>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-phone">Phone with Country Code *</label>
+          <input type="tel" id="inp-phone" class="ptn-input" placeholder="+880 1711-223344" required>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-country">Country *</label>
+          <select id="inp-country" class="ptn-select" required>
+            <option value="Bangladesh" selected>Bangladesh</option>
+            <option value="Singapore">Singapore</option>
+            <option value="United States">United States</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-bizType">Business Type *</label>
+          <select id="inp-bizType" class="ptn-select" required>
+            <option value="Hosting Provider" selected>Hosting Provider / Reseller</option>
+            <option value="Software Agency">Software &amp; Web Development Agency</option>
+            <option value="IT Consultant">IT Consultant / MSP</option>
+            <option value="System Integrator">System Integrator</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-spend">Estimated Monthly Spend *</label>
+          <select id="inp-spend" class="ptn-select" required>
+            <option value="৳0 - ৳30,000">৳0 - ৳30,000 / mo (Registered Target)</option>
+            <option value="৳30,000 - ৳120,000" selected>৳30,000 - ৳120,000 / mo (Silver Target)</option>
+            <option value="৳120,000 - ৳360,000">৳120,000 - ৳360,000 / mo (Gold Target)</option>
+            <option value="৳360,000+">৳360,000+ / mo (Platinum Target)</option>
+          </select>
+        </div>
+        <div class="ptn-field">
+          <label for="inp-model">Partnership Model *</label>
+          <select id="inp-model" class="ptn-select" required>
+            <option value="Reseller" selected>Reseller (Wholesale Discount)</option>
+            <option value="Referral">Referral (Commission Model)</option>
+            <option value="Both">Both (Hybrid Model)</option>
+          </select>
+        </div>
+        <div class="ptn-field ptn-form-full">
+          <label for="inp-desc">Brief Business Description *</label>
+          <textarea id="inp-desc" class="ptn-textarea" rows="3" placeholder="Describe your client workloads, current datacenter setup, and migration plans..." required></textarea>
+        </div>
+        <div class="ptn-field ptn-form-full">
+          <label class="ptn-checkbox-label">
+            <input type="checkbox" id="inp-agree" required>
+            <span>I accept the Cloud Partner Agreement and Privacy Policy.</span>
+          </label>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button type="submit" id="inp-submit-btn" class="ptn-btn ptn-btn-primary" style="padding:16px 40px;width:100%;max-width:320px;">
+          Submit Application
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+<footer class="ft rv"><div class="fb"><p>Bangladesh&#39;s enterprise cloud — built on Dhaka soil for garments, banking, and healthcare that cannot afford latency.</p><a href="tel:09617200800">09617-200800</a><a href="mailto:info@unifiedit.xyz">info@unifiedit.xyz</a><span>Mannan Tower (3rd Floor), Ka 96/3 Progati Sharani, Dhaka 1229, Bangladesh</span></div><div><h4>Products</h4><a href="https://unified.it.com/services" target="_blank" rel="noopener">Cloud Service</a><a href="https://unified.it.com/services/manage-hosting" target="_blank" rel="noopener">Hosting</a><a href="https://unified.it.com/services/email-hosting" target="_blank" rel="noopener">Email</a><a href="https://unified.it.com/services/microsoft" target="_blank" rel="noopener">Microsoft 365</a><a href="https://unified.it.com/services/ssl-certification" target="_blank" rel="noopener">SSL Certificates</a><a href="https://unified.it.com/services/domain-registration" target="_blank" rel="noopener">Domain Registration</a><a href="https://unified.it.com/services/cloud-storage" target="_blank" rel="noopener">Cloud Storage</a><a href="https://unified.it.com/services/cyber-security" target="_blank" rel="noopener">Cyber Security Services</a></div><div><h4>Company</h4><a href="https://unified.it.com/services" target="_blank" rel="noopener">Services</a><a href="https://unified.it.com/pricing" target="_blank" rel="noopener">Pricing</a><a href="https://unified.it.com/blog" target="_blank" rel="noopener">Blog</a><a href="https://unified.it.com/career" target="_blank" rel="noopener">Careers</a></div><div><h4>Support</h4><a href="/partner/dashboard">Partner Portal</a><a href="/admin/partners">Admin Console</a><a href="https://billing.unifiedit.xyz" target="_blank" rel="noopener">Client Portal</a><a href="https://unified.it.com/contact" target="_blank" rel="noopener">Contact Sales</a></div><p class="fc">© 2026 Unified Information Technology Limited. All rights reserved.</p></footer></main></section>
 <section id="vps" aria-label="Cloud VPS plans"><main class="vw"><div class="vlogo" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fc0ff"/><stop offset="1" stop-color="#d08bff"/></linearGradient></defs><g class="orb" fill="none" stroke="url(#vg)" stroke-width="1.6" stroke-linecap="round"><circle cx="100" cy="100" r="92" stroke-dasharray="2 9" opacity=".7"/><circle cx="100" cy="8" r="3.5" fill="#cfa8ff" stroke="none"/><circle cx="192" cy="100" r="2.5" fill="#8fc0ff" stroke="none"/></g><g fill="none" stroke="url(#vg)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M52 132h96a30 30 0 0 0 4-59.6A42 42 0 0 0 70 66a34 34 0 0 0-18 66z"/><rect x="80" y="82" width="40" height="11" rx="3.5"/><rect x="80" y="97" width="40" height="11" rx="3.5"/><rect x="80" y="112" width="40" height="11" rx="3.5"/><path d="M86 87.5h.1M86 102.5h.1M86 117.5h.1M96 87.5h18M96 102.5h18M96 117.5h18"/></g></svg></div><div class="vg"><div class="vc" style="--i:0"><h3>Starter VPS</h3><p class="vd">Personal websites, blogs, small business sites, development servers</p><div class="vsp"></div><div class="vr"><span>vCPU</span><b>1</b></div><div class="vr"><span>RAM</span><b>2 GB</b></div><div class="vr"><span>NVMe SSD</span><b>40 GB</b></div><div class="vr"><span>Bandwidth</span><b>2 TB</b></div><div class="vch"><span>IPv4 Address</span><span>Linux OS</span><span>Weekly Backup</span></div><a class="vb" href="https://unified.it.com/services/cloud-vps" target="_blank" rel="noopener">Deploy Starter VPS</a></div><div class="vc pop" style="--i:1"><span class="badge">MOST POPULAR</span><h3>Business VPS</h3><p class="vd">Company websites, CRM systems, small ERP deployments, online stores</p><div class="vsp"></div><div class="vr"><span>vCPU</span><b>2</b></div><div class="vr"><span>RAM</span><b>4 GB</b></div><div class="vr"><span>NVMe SSD</span><b>80 GB</b></div><div class="vr"><span>Bandwidth</span><b>4 TB</b></div><div class="vch"><span>Dedicated IP</span><span>Daily Backup</span><span>DDoS Protection</span></div><a class="vb" href="https://unified.it.com/services/cloud-vps" target="_blank" rel="noopener">Deploy Business VPS</a></div><div class="vc" style="--i:2"><h3>Professional VPS</h3><p class="vd">Medium-sized businesses, SaaS platforms, business applications, database servers</p><div class="vsp"></div><div class="vr"><span>vCPU</span><b>4</b></div><div class="vr"><span>RAM</span><b>8 GB</b></div><div class="vr"><span>NVMe SSD</span><b>160 GB</b></div><div class="vr"><span>Bandwidth</span><b>6 TB</b></div><div class="vch"><span>Daily Backup</span><span>Premium Support</span><span>Advanced Firewall</span></div><a class="vb" href="https://unified.it.com/services/cloud-vps" target="_blank" rel="noopener">Deploy Professional VPS</a></div><div class="vc" style="--i:3"><h3>Enterprise VPS</h3><p class="vd">Enterprise applications, high-traffic websites, ERP systems, mission-critical workloads</p><div class="vsp"></div><div class="vr"><span>vCPU</span><b>8+</b></div><div class="vr"><span>RAM</span><b>16+ GB</b></div><div class="vr"><span>Storage</span><b>Enterprise NVMe</b></div><div class="vr"><span>Scalability</span><b>Unlimited</b></div><div class="vch"><span>High Availability</span><span>Dedicated Support</span><span>Advanced Security</span></div><a class="vb" href="https://unified.it.com/services/cloud-vps" target="_blank" rel="noopener">Deploy Enterprise VPS</a></div></div></main></section>
 <section id="vds" aria-label="Dedicated server (VDS) plans"><main class="vw"><div class="vlogo" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="vg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fc0ff"/><stop offset="1" stop-color="#d08bff"/></linearGradient></defs><g class="orb" fill="none" stroke="url(#vg2)" stroke-width="1.6" stroke-linecap="round"><circle cx="100" cy="100" r="92" stroke-dasharray="2 9" opacity=".7"/><circle cx="100" cy="8" r="3.5" fill="#cfa8ff" stroke="none"/><circle cx="192" cy="100" r="2.5" fill="#8fc0ff" stroke="none"/></g><g fill="none" stroke="url(#vg2)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><rect x="54" y="56" width="92" height="28" rx="8"/><rect x="54" y="86" width="92" height="28" rx="8"/><rect x="54" y="116" width="92" height="28" rx="8"/><path d="M70 70h.1M70 100h.1M70 130h.1M90 70h40M90 100h40M90 130h40"/></g></svg></div><div class="vg"><div class="vc" style="--i:0"><h3>Essential Server</h3><p class="vd">Corporate websites, business applications, medium databases, development environments</p><div class="vsp"></div><div class="vr"><span>CPU</span><b>Intel Xeon</b></div><div class="vr"><span>RAM</span><b>32 GB ECC</b></div><div class="vr"><span>Storage</span><b>2×1 TB NVMe</b></div><div class="vr"><span>RAID</span><b>RAID 1</b></div><div class="vch"><span>1 Gbps Port</span><span>10 TB Bandwidth</span><span>Remote Management</span></div><a class="vb" href="https://unified.it.com/services/dedicated-server" target="_blank" rel="noopener">Configure Essential Server</a></div><div class="vc pop" style="--i:1"><span class="badge">MOST POPULAR</span><h3>Business Server</h3><p class="vd">ERP systems, CRM platforms, e-commerce, virtualization</p><div class="vsp"></div><div class="vr"><span>CPU</span><b>Xeon / EPYC</b></div><div class="vr"><span>RAM</span><b>64 GB ECC</b></div><div class="vr"><span>Storage</span><b>2×2 TB NVMe</b></div><div class="vr"><span>RAID</span><b>RAID 1/10</b></div><div class="vch"><span>1 Gbps Dedicated Port</span><span>Premium DDoS Protection</span><span>Daily Backup</span></div><a class="vb" href="https://unified.it.com/services/dedicated-server" target="_blank" rel="noopener">Configure Business Server</a></div><div class="vc" style="--i:2"><h3>Professional Server</h3><p class="vd">High-traffic websites, large databases, SaaS platforms, enterprise workloads</p><div class="vsp"></div><div class="vr"><span>CPU</span><b>Dual Xeon / EPYC</b></div><div class="vr"><span>RAM</span><b>128 GB ECC</b></div><div class="vr"><span>Storage</span><b>4× NVMe SSD</b></div><div class="vr"><span>RAID</span><b>Hardware Controller</b></div><div class="vch"><span>Multiple IP Addresses</span><span>High Availability Options</span></div><a class="vb" href="https://unified.it.com/services/dedicated-server" target="_blank" rel="noopener">Configure Professional Server</a></div><div class="vc" style="--i:3"><h3>Enterprise Server</h3><p class="vd">Mission-critical infrastructure, AI &amp; machine learning, private cloud, large-scale ERP deployments</p><div class="vsp"></div><div class="vr"><span>CPU</span><b>Custom Options</b></div><div class="vr"><span>RAM</span><b>256+ GB ECC</b></div><div class="vr"><span>Storage</span><b>Enterprise NVMe</b></div><div class="vr"><span>RAID</span><b>RAID 10</b></div><div class="vch"><span>Redundant Networking</span><span>Premium Managed Support</span><span>Custom Infrastructure Design</span></div><a class="vb" href="https://unified.it.com/services/dedicated-server" target="_blank" rel="noopener">Configure Enterprise Server</a></div></div></main></section>
 <section id="bem" aria-label="Email plans" style="display:none"><main class="vw"><div class="vlogo" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="vg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a80"/><stop offset="1" stop-color="#8fa8ff"/></linearGradient></defs><g class="orb" fill="none" stroke="url(#vg3)" stroke-width="1.6" stroke-linecap="round"><circle cx="100" cy="100" r="92" stroke-dasharray="2 9" opacity=".7"/><circle cx="100" cy="8" r="3.5" fill="#ffb199" stroke="none"/><circle cx="192" cy="100" r="2.5" fill="#8fa8ff" stroke="none"/></g><g fill="none" stroke="url(#vg3)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><rect x="40" y="62" width="120" height="82" rx="12"/><path d="M44 70l56 40 56-40"/><path d="M62 128l26-22M138 128l-26-22"/></g></svg></div><div class="bill" role="group" aria-label="Billing period"><button type="button" class="on" data-b="m">Monthly</button><button type="button" data-b="y">Yearly</button></div><div class="vg"><div class="vc ml" style="--i:0;--c1:#6b8cff;--c2:#7be0ff"><div class="mlh"><svg class="mli" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg><h3>Basic</h3></div><div class="ek"><b>5 GB</b> <span>MAILBOX</span></div><div class="mlm"><i style="width:10%"></i></div><p class="vd"><b data-m="BDT 200 Tk" data-y="BDT 2,400 Tk">BDT 200 Tk</b> <i data-m="Monthly" data-y="Yearly">Monthly</i></p><div class="vsp"></div><ul class="el"><li>Rock-solid security</li><li>Spam filter</li><li>Active Sync</li><li>Calendar service</li><li>30 Days Retention policy</li><li>Flexible Hybrid Solutions (with Google email, Microsoft email, etc.)</li><li>Zero Downtime Migrations</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc ml" style="--i:1;--c1:#4fc3ff;--c2:#6ee7c8"><div class="mlh"><svg class="mli" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg><h3>Standard</h3></div><div class="ek"><b>20 GB</b> <span>MAILBOX</span></div><div class="mlm"><i style="width:40%"></i></div><p class="vd"><b data-m="BDT 250 Tk" data-y="BDT 3,000 Tk">BDT 250 Tk</b> <i data-m="Monthly" data-y="Yearly">Monthly</i></p><div class="vsp"></div><ul class="el"><li>Rock-solid security</li><li>Spam filter</li><li>Active Sync</li><li>Calendar service</li><li>30 Days Retention policy</li><li>Flexible Hybrid Solutions (with Google email, Microsoft email, etc.)</li><li>Zero Downtime Migrations</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc ml" style="--i:2;--c1:#ff8a6b;--c2:#ffb36b"><div class="mlh"><svg class="mli" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg><h3>Premium</h3></div><div class="ek"><b>50 GB</b> <span>MAILBOX</span></div><div class="mlm"><i style="width:100%"></i></div><p class="vd"><b data-m="BDT 300 Tk" data-y="BDT 3,600 Tk">BDT 300 Tk</b> <i data-m="Monthly" data-y="Yearly">Monthly</i></p><div class="vsp"></div><ul class="el"><li>Rock-solid security</li><li>Spam filter</li><li>Active Sync</li><li>Calendar service</li><li>30 Days Retention policy</li><li>Flexible Hybrid Solutions (with Google email, Microsoft email, etc.)</li><li>Zero Downtime Migrations</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div><div class="vc ml arch" style="--i:3;--c1:#ff7ab8;--c2:#b58cff"><div class="mlr">UNLIMITED ARCHIVE</div><div class="mlh"><svg class="mli" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg><h3>Premium with Archive Unlimited</h3></div><div class="ek"><b>Unlimited</b> <span>MAILBOX</span></div><div class="mlm"><i style="width:100%"></i></div><div class="mlinf"><b>&infin;</b> Unlimited Archiving</div><p class="vd"><b data-m="BDT 400 Tk" data-y="BDT 4,800 Tk">BDT 400 Tk</b> <i data-m="Monthly" data-y="Yearly">Monthly</i></p><div class="vsp"></div><ul class="el"><li>Rock-solid security</li><li>Spam filter</li><li>Active Sync</li><li>Calendar service</li><li>30 Days Retention policy</li><li>Flexible Hybrid Solutions (with Google email, Microsoft email, etc.)</li><li>Unlimited Archiving</li><li>Zero Downtime Migrations</li></ul><a class="vb" href="mailto:info@unifiedit.xyz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg> Order Now</a></div></div></main></section>
@@ -134,11 +510,11 @@ void main(){
 <script src="assets/js/modules/services-gallery.js?v=20261017e"></script>
 <script src="assets/js/modules/latency-widget.js"></script>
 <script src="assets/js/modules/about-page.js"></script>
-<script src="assets/js/modules/header-nav.js?v=20261017c"></script>
-<script src="assets/js/modules/partner-page.js"></script>
+<script src="assets/js/modules/header-nav.js?v=20261018e"></script>
+<script src="assets/js/modules/partner-page.js?v=20261018e"></script>
 <script src="assets/js/modules/hosting-overlays.js"></script>
 <script src="assets/js/modules/service-modal.js"></script>
-<script src="assets/js/modules/dynamic-services.js"></script>
+<script src="assets/js/modules/dynamic-services.js?v=20261018e"></script>
 <script src="assets/js/modules/universal-cart.js?v=20261017a"></script>
 <script src="assets/js/modules/ssl-configurator.js"></script>
 <script src="assets/js/modules/digicert-catalog.js"></script>
@@ -150,5 +526,26 @@ void main(){
 
 <!-- Entry point -->
 <script src="assets/js/app.js"></script>
+
+<!-- Global Direct Navigation Enforcer for Partner Program -->
+<script>
+  (function() {
+    document.addEventListener('click', function(e) {
+      var a = e.target.closest && e.target.closest('a');
+      if (!a) return;
+      var h = a.getAttribute('href') || '';
+      if (h === '/partners' || h === '/partner' || h === '/partners/' || h === '/partner/' ||
+          h === '#partner' || h === '#pg-partner' ||
+          h === 'https://unified.it.com/partner' || h === 'https://unified.it.com/partners' ||
+          (h.indexOf('/partner') > -1 && h.indexOf('/partner/dashboard') === -1 && h.indexOf('/admin/partner') === -1)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        document.body.classList.remove('mgo', 'mmo');
+        window.location.href = '/partners';
+      }
+    }, true);
+  })();
+</script>
 </body>
 </html>

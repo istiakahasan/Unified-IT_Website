@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Administrative Partner Management Panel for Unified Cloud. Review applications, configure tiers, product pricing rules, and commission payouts.">
+  <meta name="theme-color" content="#070a14">
+  <base href="/">
+  <title>Admin Partner Management - Unified Cloud</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    /* ==========================================================================
+       Unified Cloud Admin Console - Enterprise Design System & Background Themes
+       ========================================================================== */
+    :root {
+      --ptn-admin-gold: #facc15;
+      --ptn-admin-gold-glow: rgba(250, 204, 21, 0.25);
+      --ptn-admin-amber: #f59e0b;
+      --ptn-admin-blue: #38bdf8;
+    }
+
+    /* Theme Option 1: Cosmic Deep Space (Website Default Theme) */
+    body.ptn-portal-body,
+    body.ptn-portal-body[data-admin-theme="cosmic"] {
+      --admin-bg-base: radial-gradient(ellipse at 50% 20%, hsl(200, 52%, 18%) 0%, hsl(206, 58%, 10%) 42%, hsl(212, 64%, 4%) 88%);
+      --admin-orb-1: radial-gradient(circle, rgba(93, 224, 196, 0.35), transparent 70%);
+      --admin-orb-2: radial-gradient(circle, rgba(63, 134, 232, 0.28), transparent 70%);
+      --admin-orb-3: radial-gradient(circle, rgba(194, 123, 255, 0.22), transparent 70%);
+      --admin-grid-color: rgba(255, 255, 255, 0.025);
+      --admin-accent-glow: rgba(93, 224, 196, 0.35);
+    }
+
+    /* Theme Option 2: Twilight Horizon (Website 3D Flight Scene Sky) */
+    body.ptn-portal-body[data-admin-theme="twilight"] {
+      --admin-bg-base: radial-gradient(ellipse at 50% 15%, #2a1147 0%, #15092a 45%, #0b0216 90%);
+      --admin-orb-1: radial-gradient(circle, rgba(154, 47, 185, 0.38), transparent 70%);
+      --admin-orb-2: radial-gradient(circle, rgba(109, 56, 204, 0.32), transparent 70%);
+      --admin-orb-3: radial-gradient(circle, rgba(59, 87, 216, 0.28), transparent 70%);
+      --admin-grid-color: rgba(217, 168, 255, 0.03);
+      --admin-accent-glow: rgba(194, 123, 255, 0.35);
+    }
+
+    /* Theme Option 3: Cyber Matrix Grid (Enterprise Datacenter Telemetry) */
+    body.ptn-portal-body[data-admin-theme="cyber"] {
+      --admin-bg-base: radial-gradient(ellipse at 50% 25%, #071f2b 0%, #04121d 48%, #02080e 92%);
+      --admin-orb-1: radial-gradient(circle, rgba(0, 245, 212, 0.32), transparent 70%);
+      --admin-orb-2: radial-gradient(circle, rgba(0, 187, 249, 0.26), transparent 70%);
+      --admin-orb-3: radial-gradient(circle, rgba(16, 185, 129, 0.22), transparent 70%);
+      --admin-grid-color: rgba(0, 245, 212, 0.04);
+      --admin-accent-glow: rgba(0, 245, 212, 0.35);
+    }
+
+    /* Theme Option 4: Midnight Obsidian (Executive Stealth Dark Mode) */
+    body.ptn-portal-body[data-admin-theme="obsidian"] {
+      --admin-bg-base: radial-gradient(ellipse at 50% 20%, #111827 0%, #090d16 52%, #03060a 95%);
+      --admin-orb-1: radial-gradient(circle, rgba(51, 65, 85, 0.4), transparent 70%);
+      --admin-orb-2: radial-gradient(circle, rgba(71, 85, 105, 0.28), transparent 70%);
+      --admin-orb-3: radial-gradient(circle, rgba(30, 41, 59, 0.35), transparent 70%);
+      --admin-grid-color: rgba(255, 255, 255, 0.015);
+      --admin-accent-glow: rgba(148, 163, 184, 0.25);
+    }
+
+    body.ptn-portal-body {
+      background: var(--admin-bg-base);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #fff;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      position: relative;
+      transition: background 0.4s ease;
+    }
+
+    /* Ambient atmospheric glow elements */
+    .ambient-grid {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(var(--admin-grid-color) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--admin-grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 1;
+      transition: background-image 0.4s ease;
+    }
+
+    .ambient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.32;
+      transition: background 0.5s ease;
+    }
+    .ambient-orb-1 {
+      top: -120px;
+      left: 15%;
+      width: 550px;
+      height: 550px;
+      background: var(--admin-orb-1);
+    }
+    .ambient-orb-2 {
+      top: 35%;
+      right: 5%;
+      width: 600px;
+      height: 600px;
+      background: var(--admin-orb-2);
+    }
+    .ambient-orb-3 {
+      bottom: -150px;
+      left: 8%;
+      width: 500px;
+      height: 500px;
+      background: var(--admin-orb-3);
+    }
+
+    .ptn-ambient-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .ptn-container {
+      position: relative;
+      z-index: 2;
+    }
+
+    .ptn-admin-section { display: none; }
+    .ptn-admin-section.active { display: block; }
+
+    /* Admin top nav enhancements */
+    .admin-nav-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--ptn-text-muted);
+    }
+    .status-dot-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 10px #4ade80;
+      margin-right: 5px;
+    }
+
+    /* Executive KPI Strip */
+    .admin-kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .admin-kpi-box {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--ptn-radius);
+      padding: 18px 20px;
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .admin-kpi-box:hover {
+      border-color: rgba(93, 224, 196, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    }
+    .admin-kpi-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(93, 224, 196, 0.5), transparent);
+    }
+    .admin-kpi-lbl {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ptn-text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .admin-kpi-val {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .admin-kpi-desc {
+      font-size: 11.5px;
+      color: var(--ptn-text-subtle);
+      margin-top: 4px;
+    }
+
+    /* Theme Option Dropdown Styling */
+    .admin-theme-dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      background: #0b1122;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 260px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.8);
+      z-index: 120;
+    }
+    .admin-theme-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #fff;
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-theme-option-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .admin-theme-option-btn.active {
+      background: rgba(93, 224, 196, 0.12);
+      border-color: rgba(93, 224, 196, 0.35);
+    }
+    .theme-color-chip {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Segmented Tab Bar */
+    .admin-tabs-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      background: rgba(10, 15, 30, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .admin-tabs-wrap::-webkit-scrollbar {
+      display: none;
+    }
+    .admin-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ptn-text-muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .admin-tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .admin-tab-btn.active {
+      color: #070a14;
+      background: linear-gradient(120deg, #5de0c4, #3f86e8);
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(93, 224, 196, 0.35);
+    }
+    .admin-tab-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    .admin-tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.12);
+      color: inherit;
+    }
+    .admin-tab-btn.active .admin-tab-badge {
+      background: rgba(7, 10, 20, 0.25);
+      color: #070a14;
+    }
+    .admin-tab-badge.badge-pending {
+      background: #f59e0b;
+      color: #070a14;
+      font-weight: 800;
+    }
+
+    /* Toolbar Filter Bar */
+    .admin-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 14px 18px;
+      border-radius: 12px;
+    }
+    .admin-search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 14px;
+      flex: 1;
+      max-width: 380px;
+    }
+    .admin-search-box input {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      width: 100%;
+    }
+    .admin-search-box input::placeholder {
+      color: var(--ptn-text-subtle);
+    }
+
+    /* Modal Overlay & Card */
+    .ptn-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 15, 0.82);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 120;
+      padding: 20px;
+    }
+    .ptn-modal {
+      background: #0d1326;
+      border: 1px solid var(--ptn-border);
+      border-radius: var(--ptn-radius);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 30px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85);
+      position: relative;
+    }
+    .ptn-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .ptn-modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--ptn-text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .ptn-modal-close-btn:hover { color: #fff; }
+
+    .ptn-badge-tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* Table Actions */
+    .ptn-table-action-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .ptn-table-action-btn:hover {
+      background: var(--ptn-cyan);
+      color: #070a14;
+      border-color: var(--ptn-cyan);
+    }
+    .ptn-table-action-btn.btn-gold:hover {
+      background: var(--ptn-admin-gold);
+      color: #070a14;
+      border-color: var(--ptn-admin-gold);
+    }
+    .ptn-table-action-btn.btn-danger:hover {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    /* Code elements */
+    code, .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body class="ptn-portal-body">
+  <!-- Atmospheric background layers compatible with main website -->
+  <div class="ambient-grid"></div>
+  <div class="ambient-orb ambient-orb-1"></div>
+  <div class="ambient-orb ambient-orb-2"></div>
+  <div class="ambient-orb ambient-orb-3"></div>
+  <canvas id="ptn-canvas" class="ptn-ambient-canvas"></canvas>
+
+  <!-- Top Navigation Bar -->
+  <header class="ptn-nav">
+    <div class="ptn-container ptn-nav-inner">
+      <a href="/partners" class="ptn-nav-logo" style="gap: 10px;">
+        <img src="assets/images/logo.png" alt="Unified Cloud" width="32" height="32" style="display:inline-block; vertical-align:middle; object-fit:contain; border-radius:6px;">
+        <span>Unified Cloud</span>
+        <span class="ptn-nav-badge" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
+          Admin Console
+        </span>
+      </a>
+
+      <!-- Live platform status chips -->
+      <div class="admin-nav-meta" id="admin-nav-meta" style="display:none;">
+        <span title="Apache CloudStack Orchestration API"><span class="status-dot-pulse"></span>CloudStack Live</span>
+        <span style="opacity: 0.3;">&bull;</span>
+        <span title="WHMCS Automated Billing Engine"><span class="status-dot-pulse"></span>WHMCS Sync</span>
+        <span style="opacity: 0.3;">&bull;</span>
+        <span id="live-bst-clock" class="mono" style="color: var(--ptn-cyan);">--:--:-- BST</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- Background Theme Option Selector -->
+        <div style="position: relative; display: inline-block;" id="theme-dropdown-wrap">
+          <button id="admin-theme-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <span id="theme-btn-icon">🌌</span>
+            <span id="theme-btn-label">Cosmic Deep Space</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div id="admin-theme-dropdown" class="admin-theme-dropdown-menu">
+            <div style="padding: 6px 10px 4px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ptn-text-muted); font-weight:700;">
+              Website-Compatible Backgrounds
+            </div>
+            <button type="button" class="admin-theme-option-btn active" data-theme="cosmic">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #5de0c4, #0c1a2c); border: 1.5px solid #5de0c4;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌌 Cosmic Deep Space</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Website signature navy &amp; cyan nebular stardust</div>
+              </div>
+            </button>
+            <button type="button" class="admin-theme-option-btn" data-theme="twilight">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #c27bff, #1b0b30); border: 1.5px solid #c27bff;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌆 Twilight Horizon</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Homepage 3D flight sky violet-indigo</div>
+              </div>
+            </button>
+            <button type="button" class="admin-theme-option-btn" data-theme="cyber">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #00f5d4, #03121b); border: 1.5px solid #00f5d4;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">⚡ Cyber Matrix Grid</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Datacenter server grid &amp; neon telemetry</div>
+              </div>
+            </button>
+            <button type="button" class="admin-theme-option-btn" data-theme="obsidian">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #94a3b8, #0a0e17); border: 1.5px solid #94a3b8;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌑 Midnight Obsidian</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Minimalist stealth dark command mode</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Export menu dropdown -->
+        <div style="position: relative; display: inline-block;" id="export-dropdown-wrap">
+          <button id="export-menu-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display:none;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Export CSV &blacktriangledown;
+          </button>
+          <div id="export-dropdown-menu" style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:#0c1224; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px; min-width:180px; box-shadow:0 10px 30px rgba(0,0,0,0.6); z-index:100;">
+            <a href="/api/admin/export?type=partners" download style="display:block; padding:8px 12px; font-size:12.5px; color:#fff; text-decoration:none; border-radius:6px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">Export Partners CSV</a>
+            <a href="/api/admin/export?type=applications" download style="display:block; padding:8px 12px; font-size:12.5px; color:#fff; text-decoration:none; border-radius:6px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">Export Applications CSV</a>
+            <a href="/api/admin/export?type=audit" download style="display:block; padding:8px 12px; font-size:12.5px; color:#fff; text-decoration:none; border-radius:6px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">Export Audit Trail CSV</a>
+          </div>
+        </div>
+
+        <a href="/partners" class="ptn-btn ptn-btn-secondary ptn-btn-sm">Public Site</a>
+        <a href="/partner/dashboard" class="ptn-btn ptn-btn-secondary ptn-btn-sm">Partner Portal</a>
+        <button id="admin-logout-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display:none;">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ptn-container">
+    <!-- Unauthenticated Administrator Login View -->
+    <div id="admin-login-view" class="ptn-login-card" style="border-color: rgba(250, 204, 21, 0.35);">
+      <div class="ptn-pill-tag" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
+        Administrator Authentication Required
+      </div>
+      <h2 style="margin: 14px 0 8px; font-size: 24px;">Admin Management Console</h2>
+      <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin-bottom: 24px; line-height: 1.5;">
+        Session-backed RBAC authentication is enforced. Enter your administrator credentials to manage partner tiers, review onboarding requests, and audit payouts.
+      </p>
+
+      <div id="admin-login-error" class="ptn-form-status error" style="margin-bottom: 16px;"></div>
+
+      <form id="admin-login-form" style="text-align: left;">
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="admin-email">Administrator Email</label>
+          <input type="email" id="admin-email" class="ptn-input" value="admin@unified.test" required>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 24px;">
+          <label for="admin-password">Password</label>
+          <input type="password" id="admin-password" class="ptn-input" value="AdminSecure2026!" required>
+        </div>
+
+        <button type="submit" id="admin-login-submit" class="ptn-btn ptn-btn-primary" style="width: 100%; background: linear-gradient(120deg, #d97706, #2563eb);">
+          Sign In to Administrator Console
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12.5px; color: var(--ptn-text-muted);">
+        <strong>Demo Admin:</strong> <code>admin@unified.test</code> / <code>AdminSecure2026!</code>
+      </div>
+    </div>
+
+    <!-- Authenticated Admin Dashboard -->
+    <div id="admin-dashboard-view" style="display: none; padding-top: 20px; padding-bottom: 80px;">
+      <!-- Dashboard Title Header -->
+      <div class="ptn-dash-header" style="margin-bottom: 24px;">
+        <div>
+          <div class="ptn-pill-tag" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
+            Central Partner Management Desk
+          </div>
+          <h1 style="margin: 8px 0 4px; font-size: 28px;">Partner Program Control Center</h1>
+          <p style="color: var(--ptn-text-muted); font-size: 14px; margin: 0;">
+            Logged in as <strong style="color: #fff;" id="admin-user-email">admin@unified.test</strong> &middot; Multi-Tenant Database: <code style="color: var(--ptn-cyan);">data/partner-system.db</code>
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="admin-refresh-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Toast Banner -->
+      <div id="admin-action-banner" class="ptn-form-status success" style="margin-bottom: 24px;"></div>
+
+      <!-- Executive KPI Overview Strip -->
+      <div class="admin-kpi-strip">
+        <div class="admin-kpi-box" data-goto-tab="tab-apps" title="Click to view Pending Partner Applications">
+          <div class="admin-kpi-lbl">
+            <span>Pending Review</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#facc15" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="admin-kpi-val" id="kpi-pending-apps" style="color: #facc15;">--</div>
+          <div class="admin-kpi-desc">Applications awaiting verification &rarr;</div>
+        </div>
+
+        <div class="admin-kpi-box" data-goto-tab="tab-partners" title="Click to view Active Reseller Organizations">
+          <div class="admin-kpi-lbl">
+            <span>Active Partners</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ptn-cyan)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="admin-kpi-val" id="kpi-active-partners" style="color: var(--ptn-cyan);">--</div>
+          <div class="admin-kpi-desc">Active reseller organizations &rarr;</div>
+        </div>
+
+        <div class="admin-kpi-box" data-goto-tab="tab-partners" title="Click to inspect Network Spend breakdown">
+          <div class="admin-kpi-lbl">
+            <span>Network Spend (BDT)</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="admin-kpi-val" id="kpi-network-spend" style="color: #60a5fa;">--</div>
+          <div class="admin-kpi-desc">Monthly eligible cloud spend &rarr;</div>
+        </div>
+
+        <div class="admin-kpi-box" data-goto-tab="tab-payouts" title="Click to review Commission Settlements Queue">
+          <div class="admin-kpi-lbl">
+            <span>Pending Payouts</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#4ade80" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div class="admin-kpi-val" id="kpi-pending-payouts" style="color: #4ade80;">--</div>
+          <div class="admin-kpi-desc">Commission settlements queue &rarr;</div>
+        </div>
+
+        <div class="admin-kpi-box" data-goto-tab="tab-audit" title="Click to inspect Platform Infrastructure & Security Trail">
+          <div class="admin-kpi-lbl">
+            <span>Infrastructure Core</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c084fc" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          </div>
+          <div class="admin-kpi-val" style="font-size: 20px; color: #4ade80;">2/2 Online</div>
+          <div class="admin-kpi-desc">CloudStack &bull; WHMCS Live &rarr;</div>
+        </div>
+      </div>
+
+      <!-- Segmented Navigation Tabs with Badges -->
+      <nav class="admin-tabs-wrap" role="tablist">
+        <button class="admin-tab-btn active" data-tab="tab-apps">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Partner Applications
+          <span class="admin-tab-badge" id="badge-apps-count">0</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-partners">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Partner Directory
+          <span class="admin-tab-badge" id="badge-partners-count">0</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-tier-config">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Tier Configuration
+          <span class="admin-tab-badge">4 Tiers</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-pricing-rules">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Product Pricing Rules
+          <span class="admin-tab-badge" id="badge-rules-count">12</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-payouts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Commission Payouts
+          <span class="admin-tab-badge" id="badge-payouts-count">0</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-audit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security Audit Trail
+          <span class="admin-tab-badge" id="badge-audit-count">50</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: APPLICATIONS -->
+      <section id="tab-apps" class="ptn-admin-section active">
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="app-search-input" placeholder="Search applications by company, contact, email...">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 12.5px; color: var(--ptn-text-muted);">Status:</label>
+            <select id="app-filter-status" class="ptn-select" style="padding: 6px 14px; font-size: 13px;">
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING" selected>Pending Review</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Reference #</th>
+                <th>Company / Contact</th>
+                <th>Email &amp; Phone</th>
+                <th>Business Type</th>
+                <th>Target Spend (BDT)</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-apps-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: ACTIVE PARTNERS -->
+      <section id="tab-partners" class="ptn-admin-section">
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="partner-search-input" placeholder="Search partners by company name, ID, or email...">
+          </div>
+          <div style="font-size: 13px; color: var(--ptn-text-muted);">
+            All margin adjustments synchronize in real-time with WHMCS billing quotes.
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Partner ID</th>
+                <th>Company &amp; Website</th>
+                <th>Contact Person</th>
+                <th>Assigned Tier</th>
+                <th>Monthly Spend (BDT)</th>
+                <th>Status</th>
+                <th>Management Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-partners-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: TIER CONFIGURATION -->
+      <section id="tab-tier-config" class="ptn-admin-section">
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0; font-size: 20px;">Configurable Wholesale Partner Tiers</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+            Adjust base discount rates, monthly spending qualification thresholds in Bangladeshi Taka (৳ BDT), and support SLAs.
+          </p>
+        </div>
+
+        <div id="tiers-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB 4: PRICING RULES & EXCLUSIONS -->
+      <section id="tab-pricing-rules" class="ptn-admin-section">
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="rules-search-input" placeholder="Search products by code, name, category...">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 12.5px; color: var(--ptn-text-muted);">Category:</label>
+            <select id="rules-filter-cat" class="ptn-select" style="padding: 6px 14px; font-size: 13px;">
+              <option value="ALL" selected>All Categories</option>
+              <option value="Cloud VPS">Cloud VPS</option>
+              <option value="Dedicated Server">Dedicated Server</option>
+              <option value="Reseller Hosting">Reseller Hosting</option>
+              <option value="Cloud Storage">Cloud Storage</option>
+              <option value="SaaS License">SaaS License</option>
+              <option value="SSL">SSL</option>
+              <option value="Domain">Domain</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Product Code</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Base Monthly Price (BDT)</th>
+                <th>Discountable?</th>
+                <th>Max Discount Ceiling</th>
+                <th>Exclusion / Margins Policy</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-rules-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 5: COMMISSION PAYOUTS -->
+      <section id="tab-payouts" class="ptn-admin-section">
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0; font-size: 20px;">Partner Commission Payout Approvals</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+            Review partner payout requests and record bank/credit settlement references in BDT. Minimum payout validation: ৳5,000.
+          </p>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Payout ID</th>
+                <th>Partner Organization</th>
+                <th>Amount (BDT)</th>
+                <th>Payment Method &amp; Account</th>
+                <th>Requested Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-payouts-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 6: SECURITY AUDIT TRAIL -->
+      <section id="tab-audit" class="ptn-admin-section">
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="audit-search-input" placeholder="Filter audit trail by action, actor, or entity...">
+          </div>
+          <div style="font-size: 12.5px; color: var(--ptn-text-muted);">
+            All administrative events are recorded with client IP and cryptographically verifiable actor sessions.
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor Type</th>
+                <th>Actor Email</th>
+                <th>Action</th>
+                <th>Entity Affected</th>
+                <th>Client IP</th>
+                <th>Details Payload</th>
+              </tr>
+            </thead>
+            <tbody id="admin-audit-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- MODAL 1: Full Application Details Modal -->
+  <div id="app-detail-modal" class="ptn-modal-overlay">
+    <div class="ptn-modal">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">Partner Application Details</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="app-detail-modal">&times;</button>
+      </div>
+
+      <div id="modal-detail-content" style="font-size: 13.5px; line-height: 1.6;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+        <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="app-detail-modal">Close</button>
+        <button type="button" id="modal-open-approve-btn" class="ptn-btn ptn-btn-primary ptn-btn-sm">Proceed to Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Approve Application Modal -->
+  <div id="approve-modal" class="ptn-modal-overlay">
+    <div class="ptn-modal">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">Approve Partner Application</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="approve-modal">&times;</button>
+      </div>
+      <p id="modal-app-info" style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 20px;"></p>
+
+      <form id="approve-form">
+        <input type="hidden" id="modal-app-id">
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-tier-select">Assign Partner Tier *</label>
+          <select id="modal-tier-select" class="ptn-select" required>
+            <option value="tier-registered">Registered Partner (5% Margin - ৳0 spend)</option>
+            <option value="tier-silver" selected>Silver Partner (10% Margin - ৳30,000 spend)</option>
+            <option value="tier-gold">Gold Partner (15% Margin - ৳120,000 spend)</option>
+            <option value="tier-platinum">Platinum Partner (20% - 25% Margin - ৳360,000 spend)</option>
+          </select>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-initial-pass">Initial Partner Password</label>
+          <input type="text" id="modal-initial-pass" class="ptn-input mono" value="PartnerInitial2026!" required>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-admin-notes">Administrative Onboarding Notes</label>
+          <textarea id="modal-admin-notes" class="ptn-textarea" rows="3" placeholder="Verified trade license and tax compliance. Assigned to standard onboarding."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="approve-modal">Cancel</button>
+          <button type="submit" class="ptn-btn ptn-btn-primary ptn-btn-sm">Confirm Approval &amp; Create Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Strategic Commercial Agreement Modal -->
+  <div id="agreement-modal" class="ptn-modal-overlay">
+    <div class="ptn-modal">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">Issue Strategic Agreement</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="agreement-modal">&times;</button>
+      </div>
+      <p id="modal-agreement-partner-name" style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 20px;"></p>
+
+      <form id="agreement-form">
+        <input type="hidden" id="modal-agreement-partner-id">
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-custom-rate">Custom Commercial Discount Rate (Decimal e.g. 0.22 for 22%) *</label>
+          <input type="number" step="0.01" min="0" max="0.25" id="modal-custom-rate" class="ptn-input" value="0.22" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="ptn-field">
+            <label for="modal-effective-from">Effective From</label>
+            <input type="date" id="modal-effective-from" class="ptn-input" required>
+          </div>
+          <div class="ptn-field">
+            <label for="modal-effective-until">Effective Until</label>
+            <input type="date" id="modal-effective-until" class="ptn-input" value="2027-12-31" required>
+          </div>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-credit-limit">Commercial Credit Limit (৳ BDT)</label>
+          <input type="number" id="modal-credit-limit" class="ptn-input" value="1200000">
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-agreement-notes">Agreement Terms &amp; Justification</label>
+          <textarea id="modal-agreement-notes" class="ptn-textarea" rows="3" placeholder="Strategic enterprise reseller contract with 22% margin across core compute and 30-day net terms."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="agreement-modal">Cancel</button>
+          <button type="submit" class="ptn-btn ptn-btn-primary ptn-btn-sm">Issue Agreement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Edit Pricing Rule Modal -->
+  <div id="rule-edit-modal" class="ptn-modal-overlay">
+    <div class="ptn-modal">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">Edit Product Eligibility Rule</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="rule-edit-modal">&times;</button>
+      </div>
+      <p id="modal-rule-title" style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 20px;"></p>
+
+      <form id="rule-edit-form">
+        <input type="hidden" id="modal-rule-id">
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label class="ptn-checkbox-label">
+            <input type="checkbox" id="modal-rule-discountable">
+            <span>Eligible for Partner Tier Margin Discounts</span>
+          </label>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-rule-ceiling">Max Partner Discount Ceiling (Decimal e.g. 0.25 for 25%)</label>
+          <input type="number" step="0.01" min="0" max="0.50" id="modal-rule-ceiling" class="ptn-input" value="0.25" required>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-rule-commission">Fixed Referral Commission Rate (Decimal e.g. 0.10 for 10%)</label>
+          <input type="number" step="0.01" min="0" max="0.30" id="modal-rule-commission" class="ptn-input" value="0.10" required>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-rule-reason">Exclusion Reason / Margin Policy Note</label>
+          <textarea id="modal-rule-reason" class="ptn-textarea" rows="3" placeholder="Core compute and storage services qualify for standard partner tier discount."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="rule-edit-modal">Cancel</button>
+          <button type="submit" class="ptn-btn ptn-btn-primary ptn-btn-sm">Save Rule Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="assets/js/vendor/three.min.js"></script>
+  <script>
+    // =========================================================================
+    // 1. Ambient Dynamic Three.js Particle Background (Compatible with Website)
+    // =========================================================================
+    try {
+      const cv = document.getElementById('ptn-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 10;
+
+      const N = 1800;
+      const pos = new Float32Array(N * 3);
+      const sd = new Float32Array(N);
+      const sz = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 32;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 18;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 18 - 2;
+        sd[i] = Math.random();
+        sz[i] = 0.5 + Math.random() * 1.8;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+
+      particleMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uPx: { value: renderer.getPixelRatio() },
+          uTint: { value: new THREE.Color().setHSL(190 / 360, 0.85, 0.65) }
+        },
+        vertexShader: `
+          attribute float aSeed;
+          attribute float aSize;
+          uniform float uTime, uPx;
+          varying float vTw;
+          void main() {
+            vec3 p = position;
+            float sp = 0.15 + aSeed * 0.45;
+            p.y = mod(p.y - uTime * sp + 9.0, 18.0) - 9.0;
+            p.x += sin(uTime * 0.3 + aSeed * 18.0) * 0.25;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            vTw = pow(0.5 + 0.5 * sin(uTime * (1.2 + aSeed * 3.0)), 4.0);
+            gl_PointSize = aSize * (1.0 + vTw * 1.5) * (30.0 / -mv.z) * uPx;
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTint;
+          varying float vTw;
+          void main() {
+            vec2 uv = gl_PointCoord - 0.5;
+            float d = length(uv);
+            float gl = smoothstep(0.5, 0.0, d);
+            vec3 col = mix(uTint, vec3(0.9, 0.98, 1.0), vTw * 0.7);
+            float a = gl * gl * 0.55;
+            gl_FragColor = vec4(col * a, a);
+          }
+        `
+      });
+      scene.add(new THREE.Points(geo, particleMat));
+
+      function onResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener('resize', onResize);
+      onResize();
+
+      const clock = new THREE.Clock();
+      function renderLoop() {
+        requestAnimationFrame(renderLoop);
+        if (particleMat) {
+          particleMat.uniforms.uTime.value = clock.getElapsedTime();
+          particleMat.uniforms.uPx.value = renderer.getPixelRatio();
+        }
+        renderer.render(scene, camera);
+      }
+      renderLoop();
+    } catch (e) {
+      console.warn('[ThreeJS ambient background]', e);
+    }
+
+    // =========================================================================
+    // Background Theme Management (Compatible with Website Presets)
+    // =========================================================================
+    const THEMES = {
+      cosmic: {
+        name: 'Cosmic Deep Space',
+        icon: '🌌',
+        color: new THREE.Color().setHSL(190 / 360, 0.85, 0.65)
+      },
+      twilight: {
+        name: 'Twilight Horizon',
+        icon: '🌆',
+        color: new THREE.Color().setHSL(280 / 360, 0.85, 0.68)
+      },
+      cyber: {
+        name: 'Cyber Matrix Grid',
+        icon: '⚡',
+        color: new THREE.Color().setHSL(165 / 360, 0.95, 0.62)
+      },
+      obsidian: {
+        name: 'Midnight Obsidian',
+        icon: '🌑',
+        color: new THREE.Color().setHSL(215 / 360, 0.25, 0.80)
+      }
+    };
+
+    function applyAdminTheme(themeKey) {
+      if (!THEMES[themeKey]) themeKey = 'cosmic';
+      document.body.setAttribute('data-admin-theme', themeKey);
+
+      const themeBtnIcon = document.getElementById('theme-btn-icon');
+      const themeBtnLabel = document.getElementById('theme-btn-label');
+      if (themeBtnIcon) themeBtnIcon.textContent = THEMES[themeKey].icon;
+      if (themeBtnLabel) themeBtnLabel.textContent = THEMES[themeKey].name;
+
+      document.querySelectorAll('.admin-theme-option-btn').forEach(btn => {
+        if (btn.getAttribute('data-theme') === themeKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      if (particleMat && particleMat.uniforms && particleMat.uniforms.uTint) {
+        particleMat.uniforms.uTint.value = THEMES[themeKey].color;
+      }
+
+      localStorage.setItem('unified_admin_theme', themeKey);
+    }
+
+    const themeBtn = document.getElementById('admin-theme-btn');
+    const themeDropdown = document.getElementById('admin-theme-dropdown');
+    if (themeBtn && themeDropdown) {
+      themeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        themeDropdown.style.display = themeDropdown.style.display === 'block' ? 'none' : 'block';
+      });
+      document.addEventListener('click', () => {
+        themeDropdown.style.display = 'none';
+      });
+      document.querySelectorAll('.admin-theme-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const selected = btn.getAttribute('data-theme');
+          applyAdminTheme(selected);
+          themeDropdown.style.display = 'none';
+          showBanner(`Background theme switched to ${THEMES[selected].name}`);
+        });
+      });
+    }
+
+    // Apply saved theme on boot
+    applyAdminTheme(localStorage.getItem('unified_admin_theme') || 'cosmic');
+
+    // Live BST Dhaka Clock
+    function updateClock() {
+      const now = new Date();
+      const options = { timeZone: 'Asia/Dhaka', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      const clockEl = document.getElementById('live-bst-clock');
+      if (clockEl) {
+        clockEl.textContent = `Dhaka: ${now.toLocaleTimeString('en-US', options)} (BST)`;
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // =========================================================================
+    // 2. Authentication & Admin Application Core
+    // =========================================================================
+    let cachedApps = [];
+    let cachedPartners = [];
+    let cachedRules = [];
+    let cachedAudit = [];
+    let cachedPayouts = [];
+
+    async function checkAdminAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.authenticated && data.user.role === 'ADMIN') {
+          showAdminDashboard(data.user);
+        } else {
+          showAdminLogin();
+        }
+      } catch {
+        showAdminLogin();
+      }
+    }
+
+    function showAdminLogin() {
+      document.getElementById('admin-login-view').style.display = 'block';
+      document.getElementById('admin-dashboard-view').style.display = 'none';
+      document.getElementById('admin-logout-btn').style.display = 'none';
+      document.getElementById('export-menu-btn').style.display = 'none';
+      document.getElementById('admin-nav-meta').style.display = 'none';
+    }
+
+    function showAdminDashboard(user) {
+      document.getElementById('admin-login-view').style.display = 'none';
+      document.getElementById('admin-dashboard-view').style.display = 'block';
+      document.getElementById('admin-logout-btn').style.display = 'inline-flex';
+      document.getElementById('export-menu-btn').style.display = 'inline-flex';
+      document.getElementById('admin-nav-meta').style.display = 'flex';
+      if (user && user.email) {
+        document.getElementById('admin-user-email').textContent = user.email;
+      }
+
+      refreshAllData();
+    }
+
+    // Refresh all data
+    async function refreshAllData() {
+      await Promise.all([
+        loadApplications(),
+        loadPartners(),
+        loadTiers(),
+        loadPricingRules(),
+        loadPayouts(),
+        loadAuditLogs()
+      ]);
+      updateKpis();
+    }
+
+    document.getElementById('admin-refresh-btn').addEventListener('click', () => {
+      refreshAllData();
+      showBanner('Refreshed latest data across all modules.');
+    });
+
+    // Update Executive KPI Strip
+    function updateKpis() {
+      const pendingApps = cachedApps.filter(a => a.status === 'PENDING').length;
+      document.getElementById('kpi-pending-apps').textContent = pendingApps;
+      document.getElementById('badge-apps-count').textContent = pendingApps;
+      if (pendingApps > 0) {
+        document.getElementById('badge-apps-count').className = 'admin-tab-badge badge-pending';
+      } else {
+        document.getElementById('badge-apps-count').className = 'admin-tab-badge';
+      }
+
+      const activePartners = cachedPartners.filter(p => p.status === 'ACTIVE').length;
+      document.getElementById('kpi-active-partners').textContent = activePartners;
+      document.getElementById('badge-partners-count').textContent = cachedPartners.length;
+
+      const totalSpend = cachedPartners.reduce((acc, p) => acc + Number(p.monthly_eligible_spend || 0), 0);
+      document.getElementById('kpi-network-spend').textContent = '৳' + totalSpend.toLocaleString('en-US');
+
+      const pendingPayouts = cachedPayouts.filter(p => p.status === 'PENDING');
+      const pendingPayoutSum = pendingPayouts.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+      document.getElementById('kpi-pending-payouts').textContent = '৳' + pendingPayoutSum.toLocaleString('en-US');
+      document.getElementById('badge-payouts-count').textContent = pendingPayouts.length;
+
+      document.getElementById('badge-rules-count').textContent = cachedRules.length;
+      document.getElementById('badge-audit-count').textContent = cachedAudit.length;
+    }
+
+    // Admin Login
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById('admin-login-error');
+      errBox.style.display = 'none';
+
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.message || 'Login failed');
+        if (data.user.role !== 'ADMIN') throw new Error('Account does not possess administrator privileges.');
+        showAdminDashboard(data.user);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      }
+    });
+
+    // Logout
+    document.getElementById('admin-logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      showAdminLogin();
+    });
+
+    // Tab Switching
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ptn-admin-section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    // Wire KPI Box Clicks to Navigate directly to Relevant Tabs
+    document.querySelectorAll('.admin-kpi-box[data-goto-tab]').forEach(kpi => {
+      kpi.addEventListener('click', () => {
+        const targetTab = kpi.getAttribute('data-goto-tab');
+        const tabBtn = document.querySelector(`.admin-tab-btn[data-tab="${targetTab}"]`);
+        if (tabBtn) {
+          tabBtn.click();
+          if (targetTab === 'tab-apps') {
+            const statusSelect = document.getElementById('app-filter-status');
+            if (statusSelect && statusSelect.value !== 'PENDING') {
+              statusSelect.value = 'PENDING';
+              loadApplications();
+            }
+          }
+        }
+      });
+    });
+
+    // Export Dropdown
+    const exportBtn = document.getElementById('export-menu-btn');
+    const exportMenu = document.getElementById('export-dropdown-menu');
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportMenu.style.display = exportMenu.style.display === 'block' ? 'none' : 'block';
+    });
+    document.addEventListener('click', () => { exportMenu.style.display = 'none'; });
+
+    // Toast Notification Banner
+    function showBanner(msg) {
+      const banner = document.getElementById('admin-action-banner');
+      banner.textContent = msg;
+      banner.style.display = 'block';
+      setTimeout(() => { banner.style.display = 'none'; }, 6000);
+    }
+
+    // Modal Close Helper
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modalId = btn.getAttribute('data-close');
+        document.getElementById(modalId).style.display = 'none';
+      });
+    });
+
+    // =========================================================================
+    // 3. Tab 1: Partner Applications Management
+    // =========================================================================
+    async function loadApplications() {
+      const status = document.getElementById('app-filter-status').value;
+      const res = await fetch(`/api/admin/applications?status=${status}`);
+      const data = await res.json();
+      cachedApps = data.applications || [];
+      renderApplications();
+    }
+
+    function renderApplications() {
+      const query = (document.getElementById('app-search-input').value || '').toLowerCase().trim();
+      const filtered = cachedApps.filter(a => {
+        if (!query) return true;
+        return a.company_name.toLowerCase().includes(query) ||
+               a.contact_name.toLowerCase().includes(query) ||
+               a.email.toLowerCase().includes(query) ||
+               a.reference_no.toLowerCase().includes(query);
+      });
+
+      const tbody = document.getElementById('admin-apps-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No partner applications found matching criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(a => `
+        <tr>
+          <td><strong style="color:var(--ptn-cyan);">${a.reference_no}</strong></td>
+          <td>
+            <strong style="color:#fff;">${a.company_name}</strong><br>
+            <small style="color:var(--ptn-text-muted);">${a.contact_name}</small>
+          </td>
+          <td>${a.email}<br><small style="color:var(--ptn-text-muted);">${a.phone}</small></td>
+          <td>${a.business_type}</td>
+          <td><strong>${a.estimated_monthly_spend}</strong><br><small style="color:var(--ptn-text-muted);">${a.expected_customers}</small></td>
+          <td>
+            <span class="${a.status === 'APPROVED' ? 'ptn-badge-running' : a.status === 'PENDING' ? 'ptn-badge-pending' : 'ptn-badge-pending'}" style="${a.status === 'REJECTED' ? 'background:rgba(239,68,68,0.2); color:#f87171;' : ''}">
+              ${a.status}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="ptn-table-action-btn view-app-btn" data-id="${a.id}">
+                Details
+              </button>
+              ${a.status === 'PENDING' ? `
+                <button class="ptn-table-action-btn approve-app-btn" data-id="${a.id}" data-ref="${a.reference_no}" data-company="${a.company_name}" style="background:var(--ptn-cyan); color:#070a14;">
+                  Approve
+                </button>
+                <button class="ptn-table-action-btn btn-danger reject-app-btn" data-id="${a.id}">
+                  Reject
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      // Wire View Details Modal
+      document.querySelectorAll('.view-app-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const app = cachedApps.find(x => x.id === id);
+          if (!app) return;
+          showAppDetailModal(app);
+        });
+      });
+
+      // Wire Approve Modal
+      document.querySelectorAll('.approve-app-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openApproveModal(btn.getAttribute('data-id'), btn.getAttribute('data-ref'), btn.getAttribute('data-company'));
+        });
+      });
+
+      // Wire Reject Action
+      document.querySelectorAll('.reject-app-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to decline this partner application?')) return;
+          const res = await fetch(`/api/admin/applications/${btn.getAttribute('data-id')}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminNotes: 'Declined during review.' })
+          });
+          const data = await res.json();
+          showBanner(data.message);
+          loadApplications();
+        });
+      });
+    }
+
+    document.getElementById('app-search-input').addEventListener('input', renderApplications);
+    document.getElementById('app-filter-status').addEventListener('change', loadApplications);
+
+    function showAppDetailModal(app) {
+      const container = document.getElementById('modal-detail-content');
+      const services = (app.services_of_interest || '').split(',').map(s => `<span class="ptn-badge-tag">${s.trim()}</span>`).join(' ');
+
+      container.innerHTML = `
+        <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--ptn-cyan); font-weight:700;">${app.reference_no}</span>
+            <span class="ptn-badge-pending">${app.status}</span>
+          </div>
+          <h4 style="margin:0 0 4px; font-size:18px; color:#fff;">${app.company_name}</h4>
+          <p style="margin:0; color:var(--ptn-text-muted); font-size:13px;">Applicant: ${app.contact_name} &bull; ${app.email} &bull; ${app.phone}</p>
+          ${app.website ? `<p style="margin:4px 0 0; font-size:13px;"><a href="${app.website}" target="_blank" style="color:var(--ptn-cyan);">${app.website}</a></p>` : ''}
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div><strong style="color:var(--ptn-text-muted);">Country:</strong> ${app.country}</div>
+          <div><strong style="color:var(--ptn-text-muted);">Business Type:</strong> ${app.business_type}</div>
+          <div><strong style="color:var(--ptn-text-muted);">Partnership Model:</strong> ${app.partnership_model}</div>
+          <div><strong style="color:var(--ptn-text-muted);">Expected Customers:</strong> ${app.expected_customers}</div>
+          <div style="grid-column:1/-1;"><strong style="color:var(--ptn-text-muted);">Target Monthly Spend:</strong> <span style="color:#60a5fa; font-weight:700;">${app.estimated_monthly_spend}</span></div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <strong style="display:block; margin-bottom:6px; color:var(--ptn-text-muted);">Services of Interest:</strong>
+          <div>${services || 'None specified'}</div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <strong style="display:block; margin-bottom:6px; color:var(--ptn-text-muted);">Business &amp; Infrastructure Description:</strong>
+          <p style="background:rgba(0,0,0,0.3); padding:12px; border-radius:8px; margin:0; line-height:1.5;">${app.business_description}</p>
+        </div>
+      `;
+
+      const proceedBtn = document.getElementById('modal-open-approve-btn');
+      if (app.status === 'PENDING') {
+        proceedBtn.style.display = 'inline-flex';
+        proceedBtn.onclick = () => {
+          document.getElementById('app-detail-modal').style.display = 'none';
+          openApproveModal(app.id, app.reference_no, app.company_name);
+        };
+      } else {
+        proceedBtn.style.display = 'none';
+      }
+
+      document.getElementById('app-detail-modal').style.display = 'flex';
+    }
+
+    function openApproveModal(id, ref, company) {
+      document.getElementById('modal-app-id').value = id;
+      document.getElementById('modal-app-info').textContent = `Application ${ref} - ${company}`;
+      document.getElementById('approve-modal').style.display = 'flex';
+    }
+
+    // Approve Form Submit
+    document.getElementById('approve-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const appId = document.getElementById('modal-app-id').value;
+      const tierId = document.getElementById('modal-tier-select').value;
+      const adminNotes = document.getElementById('modal-admin-notes').value;
+      const initialPassword = document.getElementById('modal-initial-pass').value;
+
+      const res = await fetch(`/api/admin/applications/${appId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tierId, adminNotes, initialPassword })
+      });
+      const data = await res.json();
+      document.getElementById('approve-modal').style.display = 'none';
+      showBanner(data.message);
+      refreshAllData();
+    });
+
+    // =========================================================================
+    // 4. Tab 2: Partner Directory
+    // =========================================================================
+    async function loadPartners() {
+      const res = await fetch('/api/admin/partners');
+      const data = await res.json();
+      cachedPartners = data.partners || [];
+      renderPartners();
+    }
+
+    function renderPartners() {
+      const query = (document.getElementById('partner-search-input').value || '').toLowerCase().trim();
+      const filtered = cachedPartners.filter(p => {
+        if (!query) return true;
+        return p.company_name.toLowerCase().includes(query) ||
+               p.contact_name.toLowerCase().includes(query) ||
+               p.email.toLowerCase().includes(query) ||
+               p.id.toLowerCase().includes(query);
+      });
+
+      const tbody = document.getElementById('admin-partners-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No partner records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => `
+        <tr>
+          <td><code style="color:var(--ptn-cyan);">${p.id}</code></td>
+          <td>
+            <strong style="color:#fff;">${p.company_name}</strong><br>
+            <small style="color:var(--ptn-text-muted);">${p.business_type} &bull; ${p.country}</small>
+          </td>
+          <td>${p.contact_name}<br><small style="color:var(--ptn-text-muted);">${p.email}</small></td>
+          <td>
+            <select class="ptn-select ptn-tier-switch" data-id="${p.id}" style="padding:4px 8px; font-size:12px;">
+              <option value="tier-registered" ${p.tier_id === 'tier-registered' ? 'selected' : ''}>Registered (5%)</option>
+              <option value="tier-silver" ${p.tier_id === 'tier-silver' ? 'selected' : ''}>Silver (10%)</option>
+              <option value="tier-gold" ${p.tier_id === 'tier-gold' ? 'selected' : ''}>Gold (15%)</option>
+              <option value="tier-platinum" ${p.tier_id === 'tier-platinum' ? 'selected' : ''}>Platinum (20-25%)</option>
+            </select>
+          </td>
+          <td><strong style="color:#60a5fa;">৳${Number(p.monthly_eligible_spend || 0).toLocaleString()}</strong></td>
+          <td>
+            <span class="${p.status === 'ACTIVE' ? 'ptn-badge-running' : 'ptn-badge-pending'}">${p.status}</span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="ptn-table-action-btn btn-gold agreement-btn" data-id="${p.id}" data-company="${p.company_name}">
+                Strategic Contract
+              </button>
+              <button class="ptn-table-action-btn toggle-status-btn" data-id="${p.id}" data-status="${p.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'}">
+                ${p.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      // Wire tier switcher
+      document.querySelectorAll('.ptn-tier-switch').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const res = await fetch(`/api/admin/partners/${sel.getAttribute('data-id')}/tier`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tierId: sel.value })
+          });
+          const data = await res.json();
+          showBanner(data.message);
+        });
+      });
+
+      // Wire Strategic Agreement Modal
+      document.querySelectorAll('.agreement-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('modal-agreement-partner-id').value = btn.getAttribute('data-id');
+          document.getElementById('modal-agreement-partner-name').textContent = `Establish Custom Strategic Agreement for: ${btn.getAttribute('data-company')}`;
+          document.getElementById('modal-effective-from').value = new Date().toISOString().slice(0, 10);
+          document.getElementById('agreement-modal').style.display = 'flex';
+        });
+      });
+
+      // Wire status toggle
+      document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/admin/partners/${btn.getAttribute('data-id')}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: btn.getAttribute('data-status') })
+          });
+          const data = await res.json();
+          showBanner(data.message);
+          loadPartners();
+        });
+      });
+    }
+
+    document.getElementById('partner-search-input').addEventListener('input', renderPartners);
+
+    // Agreement Form Submit
+    document.getElementById('agreement-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const partnerId = document.getElementById('modal-agreement-partner-id').value;
+      const customDiscountRate = document.getElementById('modal-custom-rate').value;
+      const effectiveFrom = document.getElementById('modal-effective-from').value;
+      const effectiveUntil = document.getElementById('modal-effective-until').value;
+      const creditLimit = document.getElementById('modal-credit-limit').value;
+      const notes = document.getElementById('modal-agreement-notes').value;
+
+      const res = await fetch(`/api/admin/partners/${partnerId}/agreement`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customDiscountRate, effectiveFrom, effectiveUntil, creditLimit, notes })
+      });
+      const data = await res.json();
+      document.getElementById('agreement-modal').style.display = 'none';
+      if (!res.ok || data.error) {
+        alert(data.message || 'Failed to issue agreement');
+      } else {
+        showBanner(data.message);
+        refreshAllData();
+      }
+    });
+
+    // =========================================================================
+    // 5. Tab 3: Tier Configuration Matrix
+    // =========================================================================
+    async function loadTiers() {
+      const res = await fetch('/api/admin/tiers');
+      const data = await res.json();
+      const container = document.getElementById('tiers-cards-container');
+
+      container.innerHTML = (data.tiers || []).map(t => `
+        <div class="ptn-stat-card" style="padding: 24px; position:relative;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+            <h4 style="margin: 0; font-size: 18px; color: #fff;">${t.name}</h4>
+            <span class="ptn-nav-badge">${Math.round(t.discount_rate * 100)}% Margin</span>
+          </div>
+
+          <div class="ptn-field" style="margin-bottom: 12px;">
+            <label>Discount Rate (Decimal)</label>
+            <input type="number" step="0.01" min="0" max="0.30" class="ptn-input tier-discount-input" data-id="${t.id}" value="${t.discount_rate}">
+          </div>
+
+          <div class="ptn-field" style="margin-bottom: 12px;">
+            <label>Min Monthly Spend (৳ BDT)</label>
+            <input type="number" step="1000" class="ptn-input tier-spend-input" data-id="${t.id}" value="${t.min_monthly_spend}">
+          </div>
+
+          <div class="ptn-field" style="margin-bottom: 16px;">
+            <label>Support SLA</label>
+            <input type="text" class="ptn-input tier-support-input" data-id="${t.id}" value="${t.support_level}">
+          </div>
+
+          <button class="ptn-btn ptn-btn-primary ptn-btn-sm save-tier-btn" data-id="${t.id}" style="width:100%;">
+            Save Tier Configuration
+          </button>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.save-tier-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const discount = document.querySelector(`.tier-discount-input[data-id="${id}"]`).value;
+          const spend = document.querySelector(`.tier-spend-input[data-id="${id}"]`).value;
+          const support = document.querySelector(`.tier-support-input[data-id="${id}"]`).value;
+
+          btn.disabled = true;
+          btn.textContent = 'Saving...';
+          const res = await fetch(`/api/admin/tiers/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discountRate: discount, minMonthlySpend: spend, supportLevel: support })
+          });
+          const data = await res.json();
+          btn.disabled = false;
+          btn.textContent = 'Save Tier Configuration';
+          showBanner(data.message);
+        });
+      });
+    }
+
+    // =========================================================================
+    // 6. Tab 4: Product Pricing Rules & Safeguards
+    // =========================================================================
+    async function loadPricingRules() {
+      const res = await fetch('/api/admin/pricing-rules');
+      const data = await res.json();
+      cachedRules = data.rules || [];
+      renderPricingRules();
+    }
+
+    function renderPricingRules() {
+      const query = (document.getElementById('rules-search-input').value || '').toLowerCase().trim();
+      const cat = document.getElementById('rules-filter-cat').value;
+
+      const filtered = cachedRules.filter(r => {
+        if (cat !== 'ALL' && r.category !== cat) return false;
+        if (!query) return true;
+        return r.product_code.toLowerCase().includes(query) ||
+               r.product_name.toLowerCase().includes(query) ||
+               r.category.toLowerCase().includes(query);
+      });
+
+      const tbody = document.getElementById('admin-rules-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No products match filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => `
+        <tr>
+          <td><code style="color:var(--ptn-cyan);">${r.product_code}</code></td>
+          <td><strong style="color:#fff;">${r.product_name}</strong></td>
+          <td><span class="ptn-badge-tag">${r.category}</span></td>
+          <td><strong style="color:#60a5fa;">৳${Number(r.base_price_monthly).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></td>
+          <td>
+            <span class="${r.is_discountable ? 'ptn-badge-running' : 'ptn-badge-pending'}" style="${!r.is_discountable ? 'background:rgba(239,68,68,0.2); color:#f87171;' : ''}">
+              ${r.is_discountable ? 'Eligible' : 'Excluded'}
+            </span>
+          </td>
+          <td>${Math.round(r.max_discount_rate * 100)}% Max</td>
+          <td><small style="color:var(--ptn-text-muted);">${r.exclusion_reason || 'Standard Core Infrastructure'}</small></td>
+          <td>
+            <button class="ptn-table-action-btn edit-rule-btn" data-id="${r.id}">
+              Edit
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('.edit-rule-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rule = cachedRules.find(x => x.id === btn.getAttribute('data-id'));
+          if (!rule) return;
+          document.getElementById('modal-rule-id').value = rule.id;
+          document.getElementById('modal-rule-title').textContent = `${rule.product_code} - ${rule.product_name} (${rule.category})`;
+          document.getElementById('modal-rule-discountable').checked = Boolean(rule.is_discountable);
+          document.getElementById('modal-rule-ceiling').value = rule.max_discount_rate;
+          document.getElementById('modal-rule-commission').value = rule.fixed_commission_rate || 0.10;
+          document.getElementById('modal-rule-reason').value = rule.exclusion_reason || '';
+          document.getElementById('rule-edit-modal').style.display = 'flex';
+        });
+      });
+    }
+
+    document.getElementById('rules-search-input').addEventListener('input', renderPricingRules);
+    document.getElementById('rules-filter-cat').addEventListener('change', renderPricingRules);
+
+    // Rule Edit Submit
+    document.getElementById('rule-edit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('modal-rule-id').value;
+      const isDiscountable = document.getElementById('modal-rule-discountable').checked;
+      const maxDiscountRate = document.getElementById('modal-rule-ceiling').value;
+      const fixedCommissionRate = document.getElementById('modal-rule-commission').value;
+      const exclusionReason = document.getElementById('modal-rule-reason').value;
+
+      const res = await fetch(`/api/admin/pricing-rules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDiscountable, maxDiscountRate, fixedCommissionRate, exclusionReason })
+      });
+      const data = await res.json();
+      document.getElementById('rule-edit-modal').style.display = 'none';
+      showBanner(data.message);
+      loadPricingRules();
+    });
+
+    // =========================================================================
+    // 7. Tab 5: Commission Payouts
+    // =========================================================================
+    async function loadPayouts() {
+      const res = await fetch('/api/admin/payouts');
+      const data = await res.json();
+      cachedPayouts = data.payouts || [];
+      renderPayouts();
+    }
+
+    function renderPayouts() {
+      const tbody = document.getElementById('admin-payouts-tbody');
+      if (cachedPayouts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No payout requests recorded.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = cachedPayouts.map(p => `
+        <tr>
+          <td><code style="color:var(--ptn-cyan);">${p.id}</code></td>
+          <td>
+            <strong style="color:#fff;">${p.company_name}</strong><br>
+            <small style="color:var(--ptn-text-muted);">${p.partner_email}</small>
+          </td>
+          <td><strong style="color:#4ade80; font-size:15px;">৳${Number(p.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></td>
+          <td>${p.payment_method}<br><small style="color:var(--ptn-text-muted);">${p.account_details}</small></td>
+          <td>${p.requested_at.slice(0, 10)}</td>
+          <td><span class="${p.status === 'PAID' ? 'ptn-badge-running' : 'ptn-badge-pending'}">${p.status}</span></td>
+          <td>
+            ${p.status === 'PENDING' ? `
+              <button class="ptn-table-action-btn approve-payout-btn" data-id="${p.id}" style="background:var(--ptn-cyan); color:#070a14;">
+                Approve &amp; Pay
+              </button>
+            ` : `<small style="color:var(--ptn-text-muted);">${p.transaction_ref || 'Settled'}</small>`}
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('.approve-payout-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const txRef = prompt('Enter Bank/bKash Settlement Reference Number:', 'TX-SETTLE-' + Date.now());
+          if (!txRef) return;
+          const res = await fetch(`/api/admin/payouts/${btn.getAttribute('data-id')}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionRef: txRef })
+          });
+          const data = await res.json();
+          showBanner(data.message);
+          refreshAllData();
+        });
+      });
+    }
+
+    // =========================================================================
+    // 8. Tab 6: Security Audit Trail
+    // =========================================================================
+    async function loadAuditLogs() {
+      const res = await fetch('/api/admin/audit-logs');
+      const data = await res.json();
+      cachedAudit = data.logs || [];
+      renderAuditLogs();
+    }
+
+    function renderAuditLogs() {
+      const query = (document.getElementById('audit-search-input').value || '').toLowerCase().trim();
+      const filtered = cachedAudit.filter(l => {
+        if (!query) return true;
+        return l.action.toLowerCase().includes(query) ||
+               (l.actor_email && l.actor_email.toLowerCase().includes(query)) ||
+               l.entity_type.toLowerCase().includes(query);
+      });
+
+      const tbody = document.getElementById('admin-audit-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No audit log events recorded.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(l => `
+        <tr>
+          <td><small class="mono" style="color:var(--ptn-text-muted);">${l.created_at}</small></td>
+          <td><span class="ptn-nav-badge" style="font-size:10px;">${l.actor_type}</span></td>
+          <td>${l.actor_email || 'anonymous'}</td>
+          <td><strong style="color:var(--ptn-cyan);">${l.action}</strong></td>
+          <td><code style="color:#cbd5e1;">${l.entity_type}</code></td>
+          <td><code style="color:var(--ptn-text-muted);">${l.ip_address}</code></td>
+          <td><code style="font-size:11px; max-width:240px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.details_json || '{}'}">${l.details_json || '{}'}</code></td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('audit-search-input').addEventListener('input', renderAuditLogs);
+
+    // Initial Authentication Check
+    checkAdminAuth();
+  </script>
+</body>
+</html>

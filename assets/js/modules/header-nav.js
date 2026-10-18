@@ -31,7 +31,6 @@ try {
     'services/ssl-certification':'p-ssl',
     'services/domain-registration':'p-domain',
     'agentic-ai':'p-agentic',
-    'partner':'partner',
     'contact':'p-contact',
     'signup':'p-signup'
   };
@@ -40,6 +39,15 @@ try {
     var a=e.target.closest&&e.target.closest('a');
     if(!a)return;
     var h=a.getAttribute('href')||'',B=(window.UNIFIED_CONFIG&&window.UNIFIED_CONFIG.siteUrl)||'https://unified.it.com/';
+
+    // Partner page -> direct navigation to dedicated partner page
+    if(h==='/partners'||h==='/partners/'||h==='/partner'||h==='/partner/'||h.indexOf('/partners')>-1||h.indexOf('/partner')>-1||h==='#partner'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      document.body.classList.remove('mgo','mmo');
+      window.location.href='/partners';
+      return;
+    }
 
     // Logo click -> go to homepage
     if(h===B || h===B.replace(/\/$/,'') || a.classList.contains('hlogo')){
@@ -60,6 +68,13 @@ try {
 
     if(h.indexOf(B)===0){
       var slug=h.slice(B.length).replace(/\/$/,'');
+      if(slug==='partner'||slug==='partners'){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        document.body.classList.remove('mgo','mmo');
+        window.location.href='/partners';
+        return;
+      }
       if(ROUTE_MAP.hasOwnProperty(slug)){
         e.preventDefault();
         document.body.classList.remove('mgo','mmo');

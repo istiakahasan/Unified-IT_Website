@@ -56,9 +56,11 @@ function sync(){var h=location.hash;if(h==='#email'||h==='#bem'){location.replac
 addEventListener('hashchange',sync);
 addEventListener('keydown',function(e){if(e.key==='Escape'&&curK){location.hash='';sync()}});
 /* every service link opens its own page here instead of the live site */
-var MAP={'signup':'p-signup','services/hybrid-email':'p-hybrid','agentic-ai':'p-agentic','contact':'p-contact','portal':'p-login','partner':'partner','services':'p-cloud','services/cloud-vps':'vps','services/dedicated-server':'vds','services/email-hosting':'p-email','services/email':'p-email','services/microsoft':'p-m365','services/cyber-security':'p-cyber','services/manage-hosting':'p-hosting','services/ssl-certification':'p-ssl','services/domain-registration':'p-domain','services/cloud-storage':'p-storage'};
+var MAP={'signup':'p-signup','services/hybrid-email':'p-hybrid','agentic-ai':'p-agentic','contact':'p-contact','portal':'p-login','services':'p-cloud','services/cloud-vps':'vps','services/dedicated-server':'vds','services/email-hosting':'p-email','services/email':'p-email','services/microsoft':'p-m365','services/cyber-security':'p-cyber','services/manage-hosting':'p-hosting','services/ssl-certification':'p-ssl','services/domain-registration':'p-domain','services/cloud-storage':'p-storage'};
 document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="https://unified.it.com/"],a[href^="https://billing.unifiedit.xyz"]');if(!a)return;
-var hr=a.getAttribute('href'),key=hr.indexOf('billing.')>0?'portal':hr.replace('https://unified.it.com/','').replace(/\/$/,'');if(!MAP.hasOwnProperty(key))return;
+var hr=a.getAttribute('href')||'';
+if(hr==='/partners'||hr==='/partner'||hr==='https://unified.it.com/partner'||hr==='https://unified.it.com/partners'||hr.indexOf('/partner')>-1)return; // Never touch partner links
+var key=hr.indexOf('billing.')>0?'portal':hr.replace('https://unified.it.com/','').replace(/\/$/,'');if(!MAP.hasOwnProperty(key))return;
 e.preventDefault();e.stopImmediatePropagation();document.querySelectorAll('.dd.open').forEach(function(x){x.classList.remove('open')});document.body.classList.remove('mgo','mmo');
 location.hash=MAP[key];sync()},true);
 document.addEventListener('submit',function(e){var f=e.target.closest&&e.target.closest('form[data-f]');if(!f)return;e.preventDefault();

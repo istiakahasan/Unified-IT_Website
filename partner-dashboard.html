@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Protected Partner Dashboard for Unified Cloud partners. Manage customers, CloudStack resources, telemetry, and commission payouts.">
+  <meta name="theme-color" content="#070a14">
+  <base href="/">
+  <title>Partner Portal & Dashboard - Unified Cloud</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    /* ==========================================================================
+       Unified Cloud Partner Portal - Clean Enterprise Design System
+       ========================================================================== */
+    :root {
+      --ptn-dash-gold: #facc15;
+      --ptn-dash-amber: #f59e0b;
+      --ptn-dash-blue: #38bdf8;
+    }
+
+    /* Background Theme Option 1: Cosmic Deep Space (Default Website Style) */
+    body.ptn-portal-body,
+    body.ptn-portal-body[data-partner-theme="cosmic"] {
+      --ptn-bg-base: radial-gradient(ellipse at 50% 12%, #0d1e38 0%, #071020 48%, #03060d 95%);
+      --ptn-orb-1: radial-gradient(circle, rgba(56, 189, 248, 0.16), transparent 70%);
+      --ptn-orb-2: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
+      --ptn-orb-3: radial-gradient(circle, rgba(45, 212, 191, 0.10), transparent 70%);
+      --ptn-grid-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Background Theme Option 2: Twilight Horizon (3D Flight Sky) */
+    body.ptn-portal-body[data-partner-theme="twilight"] {
+      --ptn-bg-base: radial-gradient(ellipse at 50% 15%, #2a1147 0%, #15092a 48%, #0b0216 95%);
+      --ptn-orb-1: radial-gradient(circle, rgba(154, 47, 185, 0.22), transparent 70%);
+      --ptn-orb-2: radial-gradient(circle, rgba(109, 56, 204, 0.18), transparent 70%);
+      --ptn-orb-3: radial-gradient(circle, rgba(59, 87, 216, 0.15), transparent 70%);
+      --ptn-grid-color: rgba(217, 168, 255, 0.025);
+    }
+
+    /* Background Theme Option 3: Cyber Matrix Grid (Datacenter High-Tech) */
+    body.ptn-portal-body[data-partner-theme="cyber"] {
+      --ptn-bg-base: radial-gradient(ellipse at 50% 20%, #071f2b 0%, #04121d 50%, #02080e 95%);
+      --ptn-orb-1: radial-gradient(circle, rgba(0, 245, 212, 0.18), transparent 70%);
+      --ptn-orb-2: radial-gradient(circle, rgba(0, 187, 249, 0.14), transparent 70%);
+      --ptn-orb-3: radial-gradient(circle, rgba(16, 185, 129, 0.12), transparent 70%);
+      --ptn-grid-color: rgba(0, 245, 212, 0.035);
+    }
+
+    /* Background Theme Option 4: Midnight Obsidian (Executive Clean Stealth) */
+    body.ptn-portal-body[data-partner-theme="obsidian"] {
+      --ptn-bg-base: radial-gradient(ellipse at 50% 20%, #111827 0%, #090d16 55%, #03060a 95%);
+      --ptn-orb-1: radial-gradient(circle, rgba(51, 65, 85, 0.25), transparent 70%);
+      --ptn-orb-2: radial-gradient(circle, rgba(71, 85, 105, 0.18), transparent 70%);
+      --ptn-orb-3: radial-gradient(circle, rgba(30, 41, 59, 0.22), transparent 70%);
+      --ptn-grid-color: rgba(255, 255, 255, 0.012);
+    }
+
+    body.ptn-portal-body {
+      background: var(--ptn-bg-base);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #fff;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      position: relative;
+      transition: background 0.4s ease;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ambient atmospheric glow elements */
+    .ambient-grid {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(var(--ptn-grid-color) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--ptn-grid-color) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 85%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 85%);
+      pointer-events: none;
+      z-index: 0;
+      transition: background-image 0.4s ease;
+    }
+
+    .ambient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+      transition: background 0.5s ease;
+    }
+    .ambient-orb-1 {
+      top: -100px;
+      left: 20%;
+      width: 600px;
+      height: 600px;
+      background: var(--ptn-orb-1);
+    }
+    .ambient-orb-2 {
+      top: 35%;
+      right: 8%;
+      width: 550px;
+      height: 550px;
+      background: var(--ptn-orb-2);
+    }
+    .ambient-orb-3 {
+      bottom: -120px;
+      left: 10%;
+      width: 500px;
+      height: 500px;
+      background: var(--ptn-orb-3);
+    }
+
+    .ptn-ambient-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .ptn-container {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Theme Option Dropdown Styling */
+    .partner-theme-dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      background: #0b1122;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 250px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.8);
+      z-index: 120;
+    }
+    .partner-theme-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #fff;
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .partner-theme-option-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .partner-theme-option-btn.active {
+      background: rgba(93, 224, 196, 0.12);
+      border-color: rgba(93, 224, 196, 0.35);
+    }
+    .theme-color-chip {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .ptn-dash-section { display: none; }
+    .ptn-dash-section.active { display: block; }
+    .ptn-table-action-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ptn-table-action-btn:hover {
+      background: var(--ptn-cyan);
+      color: #070a14;
+      border-color: var(--ptn-cyan);
+    }
+    .ptn-login-card {
+      max-width: 440px;
+      margin: 100px auto;
+      padding: 40px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid var(--ptn-border);
+      border-radius: var(--ptn-radius);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      text-align: center;
+    }
+    .ptn-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 12px 0 6px;
+    }
+    .ptn-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2aa7c4, #3f86e8);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+<body class="ptn-portal-body">
+  <!-- Clean atmospheric background layers -->
+  <div class="ambient-grid"></div>
+  <div class="ambient-orb ambient-orb-1"></div>
+  <div class="ambient-orb ambient-orb-2"></div>
+  <div class="ambient-orb ambient-orb-3"></div>
+  <canvas id="ptn-canvas" class="ptn-ambient-canvas"></canvas>
+
+  <!-- Top Navigation Bar -->
+  <header class="ptn-nav">
+    <div class="ptn-container ptn-nav-inner">
+      <a href="/partners" class="ptn-nav-logo">
+        <img src="assets/images/logo.png" alt="Unified Cloud" width="32" height="32" style="display:inline-block; vertical-align:middle; object-fit:contain; border-radius:6px;">
+        <span>Unified Cloud</span>
+        <span class="ptn-nav-badge">Partner Portal</span>
+      </a>
+      <div id="nav-user-area" style="display: flex; align-items: center; gap: 12px;">
+        <!-- Background Theme Option Selector -->
+        <div style="position: relative; display: inline-block;" id="ptn-theme-dropdown-wrap">
+          <button id="ptn-theme-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <span id="ptn-theme-btn-icon">🌌</span>
+            <span id="ptn-theme-btn-label">Cosmic Deep Space</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div id="ptn-theme-dropdown" class="partner-theme-dropdown-menu">
+            <div style="padding: 6px 10px 4px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ptn-text-muted); font-weight:700;">
+              Background Aesthetics
+            </div>
+            <button type="button" class="partner-theme-option-btn active" data-theme="cosmic">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #5de0c4, #0c1a2c); border: 1.5px solid #5de0c4;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌌 Cosmic Deep Space</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Website signature navy &amp; cyan nebular stardust</div>
+              </div>
+            </button>
+            <button type="button" class="partner-theme-option-btn" data-theme="twilight">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #c27bff, #1b0b30); border: 1.5px solid #c27bff;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌆 Twilight Horizon</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Homepage 3D flight sky violet-indigo</div>
+              </div>
+            </button>
+            <button type="button" class="partner-theme-option-btn" data-theme="cyber">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #00f5d4, #03121b); border: 1.5px solid #00f5d4;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">⚡ Cyber Matrix Grid</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Datacenter server grid &amp; neon telemetry</div>
+              </div>
+            </button>
+            <button type="button" class="partner-theme-option-btn" data-theme="obsidian">
+              <span class="theme-color-chip" style="background: radial-gradient(circle, #94a3b8, #0a0e17); border: 1.5px solid #94a3b8;"></span>
+              <div>
+                <div style="font-size:13px; font-weight:600;">🌑 Midnight Obsidian</div>
+                <div style="font-size:11px; color:var(--ptn-text-muted);">Minimalist stealth dark command mode</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <a href="/partners" class="ptn-btn ptn-btn-secondary ptn-btn-sm">Public Site</a>
+        <a href="/admin/partners" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="color:#fcd34d;">Admin Panel</a>
+        <button id="logout-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display:none;">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ptn-container">
+    <!-- Unauthenticated Login View -->
+    <div id="login-view" class="ptn-login-card">
+      <div class="ptn-pill-tag">Secure Partner Login</div>
+      <h2 style="margin: 12px 0 8px; font-size: 24px;">Partner Portal Access</h2>
+      <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin-bottom: 24px;">
+        Log in to access your reseller pricing, managed CloudStack resources, and commission balance.
+      </p>
+
+      <div id="login-error" class="ptn-form-status error" style="margin-bottom: 16px;"></div>
+
+      <form id="partner-login-form" style="text-align: left;">
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="login-email">Partner Email</label>
+          <input type="email" id="login-email" class="ptn-input" value="partner@unified.test" required>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 24px;">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="ptn-input" value="Partner123!" required>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="ptn-btn ptn-btn-primary" style="width: 100%;">
+          Sign In to Partner Portal
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12.5px; color: var(--ptn-text-muted);">
+        <strong>Demo Account:</strong> <code>partner@unified.test</code> / <code>Partner123!</code>
+      </div>
+    </div>
+
+    <!-- Authenticated Dashboard View -->
+    <div id="dashboard-view" style="display: none; padding-bottom: 80px;">
+      <div class="ptn-dash-header">
+        <div>
+          <div class="ptn-pill-tag" id="partner-status-tag">Active Gold Partner</div>
+          <h1 id="partner-company-title" style="margin: 8px 0 4px; font-size: 28px;">Apex Cloud Solutions Ltd.</h1>
+          <p style="color: var(--ptn-text-muted); font-size: 14px; margin: 0;">
+            Account ID: <code id="partner-id-display">ptn-apex-101</code> &middot; Contact: <span id="partner-contact-name">Istiak Hasan</span>
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="quick-ticket-btn" class="ptn-btn ptn-btn-secondary ptn-btn-sm">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Priority Ticket
+          </button>
+          <button id="request-payout-btn" class="ptn-btn ptn-btn-primary ptn-btn-sm">
+            Request Payout
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="ptn-dash-tabs">
+        <button class="ptn-dash-tab active" data-tab="tab-overview">Overview</button>
+        <button class="ptn-dash-tab" data-tab="tab-customers">Managed Customers & Services</button>
+        <button class="ptn-dash-tab" data-tab="tab-analytics">Partner Analytics</button>
+        <button class="ptn-dash-tab" data-tab="tab-referrals">Referrals & Commissions</button>
+        <button class="ptn-dash-tab" data-tab="tab-docs">Docs & Announcements</button>
+      </div>
+
+      <!-- TAB 1: OVERVIEW -->
+      <section id="tab-overview" class="ptn-dash-section active">
+        <!-- KPI Cards -->
+        <div class="ptn-kpi-grid">
+          <div class="ptn-kpi-card">
+            <div class="sub">Current Wholesale Margin</div>
+            <div class="val" id="metric-margin" style="color: var(--ptn-cyan);">15%</div>
+            <div class="sub">Applied to all eligible CloudStack VMs & Storage</div>
+          </div>
+
+          <div class="ptn-kpi-card">
+            <div class="sub">Monthly Infrastructure Spend</div>
+            <div class="val" id="metric-spend">৳173,240.00</div>
+            <div class="sub">Eligible spending for tier maintenance</div>
+          </div>
+
+          <div class="ptn-kpi-card">
+            <div class="sub">Active Client Subscriptions</div>
+            <div class="val" id="metric-services">5</div>
+            <div class="sub" id="metric-customers">Across 4 managed client organizations</div>
+          </div>
+
+          <div class="ptn-kpi-card">
+            <div class="sub">Available Commission Balance</div>
+            <div class="val" id="metric-commissions" style="color: #4ade80;">৳12,810.00</div>
+            <div class="sub">Earned via partner referral codes</div>
+          </div>
+        </div>
+
+        <!-- Next Tier Progress Bar -->
+        <div class="ptn-stat-card" style="margin-bottom: 36px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <strong style="font-size: 16px;">Progress Toward Platinum Partner Tier (20% - 25% Margin)</strong>
+            <span id="tier-progress-text" style="color: var(--ptn-cyan); font-weight: 700;">৳173,240 / ৳360,000 (48%)</span>
+          </div>
+          <div class="ptn-progress-bar">
+            <div id="tier-progress-fill" class="ptn-progress-fill" style="width: 48%;"></div>
+          </div>
+          <div style="font-size: 13px; color: var(--ptn-text-muted); margin-top: 8px;">
+            Qualify for Platinum Tier by reaching ৳360,000/mo in infrastructure spending. Unlocks dedicated solutions architect and hands-on DevOps migration assistance.
+          </div>
+        </div>
+
+        <!-- Recent Invoices Table -->
+        <div class="ptn-section-head" style="text-align: left; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 18px;">Recent WHMCS Monthly Invoices</h3>
+        </div>
+        <div class="ptn-table-wrap" style="margin-top: 0; margin-bottom: 40px;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Gross Total</th>
+                <th>Partner Margin Savings</th>
+                <th>Net Paid</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="overview-invoices-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: CUSTOMERS & CLOUDSTACK SERVICES -->
+      <section id="tab-customers" class="ptn-dash-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h3 style="margin: 0; font-size: 20px;">Managed Cloud Instances (Apache CloudStack)</h3>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+              All instances are provisioned within your isolated partner sub-domain.
+            </p>
+          </div>
+          <div style="font-size: 13px; color: var(--ptn-text-muted);">
+            <span class="ptn-badge-running">CloudStack Orchestrator: Online</span>
+          </div>
+        </div>
+
+        <div id="service-action-banner" class="ptn-form-status success" style="margin-bottom: 20px;"></div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Service Name / VM ID</th>
+                <th>Client Organization</th>
+                <th>Specifications</th>
+                <th>Public IP</th>
+                <th>Datacenter</th>
+                <th>Status</th>
+                <th>Monthly Rate</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="services-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Customer Accounts Summary -->
+        <div class="ptn-section-head" style="text-align: left; margin: 40px 0 16px;">
+          <h3 style="margin: 0; font-size: 18px;">Client Organization Accounts</h3>
+        </div>
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Client Name</th>
+                <th>Organization</th>
+                <th>Billing Contact</th>
+                <th>WHMCS Account ID</th>
+                <th>Active Services</th>
+                <th>Account Status</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: PARTNER ANALYTICS -->
+      <section id="tab-analytics" class="ptn-dash-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h3 style="margin: 0; font-size: 20px;">Financial & Consumption Analytics</h3>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+              Real-time telemetry aggregated from WHMCS invoices and CloudStack resource consumption.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm analytics-filter active" data-filter="30d">Last 30 Days</button>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm analytics-filter" data-filter="90d">Last Quarter</button>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm analytics-filter" data-filter="ytd">Year to Date</button>
+          </div>
+        </div>
+
+        <div class="ptn-kpi-grid">
+          <div class="ptn-kpi-card">
+            <div class="sub">Gross Infrastructure Value</div>
+            <div class="val" id="analytics-gross">৳553,392.00</div>
+            <div class="sub">Total retail value of deployed services</div>
+          </div>
+          <div class="ptn-kpi-card">
+            <div class="sub">Cumulative Partner Margin Savings</div>
+            <div class="val" id="analytics-savings" style="color: var(--ptn-cyan);">৳83,008.80</div>
+            <div class="sub">Retained directly by your agency</div>
+          </div>
+          <div class="ptn-kpi-card">
+            <div class="sub">Net Remitted to Unified Cloud</div>
+            <div class="val" id="analytics-net">৳470,383.20</div>
+            <div class="sub">Wholesale infrastructure cost</div>
+          </div>
+          <div class="ptn-kpi-card">
+            <div class="sub">Monthly Recurring Revenue (MRR)</div>
+            <div class="val" id="analytics-mrr" style="color: #4ade80;">৳54,753.60</div>
+            <div class="sub">+25% net expansion this quarter</div>
+          </div>
+        </div>
+
+        <!-- Monthly Trends Visual -->
+        <div class="ptn-stat-card" style="padding: 24px; margin-top: 24px;">
+          <h4 style="margin: 0 0 16px; font-size: 16px;">Monthly Revenue & Partner Savings Trajectory</h4>
+          <div id="analytics-trend-bars" style="display: flex; align-items: flex-end; gap: 24px; height: 180px; padding-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <!-- Populated via script -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: REFERRALS & COMMISSIONS -->
+      <section id="tab-referrals" class="ptn-dash-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h3 style="margin: 0; font-size: 20px;">Referral Commissions Pipeline</h3>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+              Your active referral code: <code style="color: var(--ptn-cyan); font-weight:700;">APEX-CLOUD-REF</code>
+            </p>
+          </div>
+          <button id="payout-trigger-btn" class="ptn-btn ptn-btn-primary ptn-btn-sm">Request Payout (৳12,810.00)</button>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Referred Client Name</th>
+                <th>Contact Email</th>
+                <th>Order Value</th>
+                <th>Commission Earned</th>
+                <th>Conversion Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="referrals-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 5: DOCS & ANNOUNCEMENTS -->
+      <section id="tab-docs" class="ptn-dash-section">
+        <div class="ptn-section-head" style="text-align: left; margin-bottom: 20px;">
+          <h3 style="margin: 0; font-size: 20px;">Partner Announcements & Technical Bulletins</h3>
+        </div>
+        <div id="announcements-container" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div class="ptn-section-head" style="text-align: left; margin-bottom: 20px;">
+          <h3 style="margin: 0; font-size: 20px;">Partner Developer Documentation</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+          <div class="ptn-stat-card">
+            <h4 style="margin: 0 0 8px; color: var(--ptn-cyan);">Apache CloudStack API Specs</h4>
+            <p style="font-size: 13px; color: var(--ptn-text-muted); margin: 0 0 16px;">
+              Learn how to generate HMAC-SHA1 signatures and execute <code>deployVirtualMachine</code> and <code>rebootVirtualMachine</code> commands.
+            </p>
+            <a href="#" class="ptn-btn ptn-btn-secondary ptn-btn-sm">View API Docs</a>
+          </div>
+
+          <div class="ptn-stat-card">
+            <h4 style="margin: 0 0 8px; color: var(--ptn-cyan);">WHMCS Reseller Module</h4>
+            <p style="font-size: 13px; color: var(--ptn-text-muted); margin: 0 0 16px;">
+              Download our ready-made WHMCS provisioning module for automated service provisioning and wholesale billing sync.
+            </p>
+            <a href="#" class="ptn-btn ptn-btn-secondary ptn-btn-sm">Download Module</a>
+          </div>
+
+          <div class="ptn-stat-card">
+            <h4 style="margin: 0 0 8px; color: var(--ptn-cyan);">White-Label Hostname DNS</h4>
+            <p style="font-size: 13px; color: var(--ptn-text-muted); margin: 0 0 16px;">
+              Guidelines to set up vanity nameservers and SSL certificate mapping for client cPanel & CloudStack interfaces.
+            </p>
+            <a href="#" class="ptn-btn ptn-btn-secondary ptn-btn-sm">DNS Setup Guide</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="assets/js/vendor/three.min.js"></script>
+  <script>
+    // 1. Pristine Micro-Stardust Three.js Particle Background (No messy square blocks)
+    let particleMat = null;
+    let particlePoints = null;
+    const THEMES = {
+      cosmic: {
+        name: 'Cosmic Deep Space',
+        icon: '🌌',
+        color: new THREE.Color().setHSL(195 / 360, 0.85, 0.70)
+      },
+      twilight: {
+        name: 'Twilight Horizon',
+        icon: '🌆',
+        color: new THREE.Color().setHSL(280 / 360, 0.85, 0.72)
+      },
+      cyber: {
+        name: 'Cyber Matrix Grid',
+        icon: '⚡',
+        color: new THREE.Color().setHSL(165 / 360, 0.95, 0.65)
+      },
+      obsidian: {
+        name: 'Midnight Obsidian',
+        icon: '🌑',
+        color: new THREE.Color().setHSL(215 / 360, 0.20, 0.80)
+      }
+    };
+
+    try {
+      const cv = document.getElementById('ptn-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 10;
+
+      // 800 delicate microscopic circular star points
+      const N = 800;
+      const pos = new Float32Array(N * 3);
+      const sd = new Float32Array(N);
+      const sz = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 36;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 20;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 16 - 2;
+        sd[i] = Math.random();
+        sz[i] = 0.5 + Math.random() * 1.2;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+
+      particleMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uPx: { value: renderer.getPixelRatio() },
+          uTint: { value: new THREE.Color().setHSL(195 / 360, 0.85, 0.70) }
+        },
+        vertexShader: `
+          attribute float aSeed;
+          attribute float aSize;
+          uniform float uTime, uPx;
+          varying float vTw;
+          void main() {
+            vec3 p = position;
+            float sp = 0.08 + aSeed * 0.22;
+            p.y = mod(p.y - uTime * sp + 10.0, 20.0) - 10.0;
+            p.x += sin(uTime * 0.2 + aSeed * 12.0) * 0.15;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            vTw = pow(0.5 + 0.5 * sin(uTime * (1.0 + aSeed * 2.5)), 3.0);
+            // Strictly clamp point size between 1.0px and 2.5px to guarantee micro-stardust dots!
+            gl_PointSize = clamp(aSize * (1.0 + vTw * 1.2) * (24.0 / -mv.z) * uPx, 1.0, 2.6);
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTint;
+          varying float vTw;
+          void main() {
+            // Force true mathematical circle discard to prevent square sprites
+            vec2 uv = gl_PointCoord - 0.5;
+            float d = length(uv);
+            if (d > 0.5) discard;
+            float gl = smoothstep(0.5, 0.0, d);
+            vec3 col = mix(uTint, vec3(0.95, 0.98, 1.0), vTw * 0.6);
+            float a = gl * gl * 0.38;
+            gl_FragColor = vec4(col * a, a);
+          }
+        `
+      });
+
+      particlePoints = new THREE.Points(geo, particleMat);
+      scene.add(particlePoints);
+
+      function resize() {
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const clock = new THREE.Clock();
+      function loop() {
+        requestAnimationFrame(loop);
+        if (particleMat) {
+          particleMat.uniforms.uTime.value = clock.getElapsedTime();
+          particleMat.uniforms.uPx.value = renderer.getPixelRatio();
+        }
+        renderer.render(scene, camera);
+      }
+      loop();
+    } catch (e) {
+      console.warn('[Partner ThreeJS background]', e);
+    }
+
+    // Background Theme Management for Partner Portal
+    function applyPartnerTheme(themeKey) {
+      if (!THEMES[themeKey]) themeKey = 'cosmic';
+      document.body.setAttribute('data-partner-theme', themeKey);
+
+      const themeBtnIcon = document.getElementById('ptn-theme-btn-icon');
+      const themeBtnLabel = document.getElementById('ptn-theme-btn-label');
+      if (themeBtnIcon) themeBtnIcon.textContent = THEMES[themeKey].icon;
+      if (themeBtnLabel) themeBtnLabel.textContent = THEMES[themeKey].name;
+
+      document.querySelectorAll('.partner-theme-option-btn').forEach(btn => {
+        if (btn.getAttribute('data-theme') === themeKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      if (particleMat && particleMat.uniforms && particleMat.uniforms.uTint) {
+        particleMat.uniforms.uTint.value = THEMES[themeKey].color;
+        if (particlePoints) {
+          particlePoints.visible = (themeKey !== 'obsidian'); // Completely clean stealth mode for obsidian!
+        }
+      }
+
+      localStorage.setItem('unified_partner_theme', themeKey);
+    }
+
+    const ptnThemeBtn = document.getElementById('ptn-theme-btn');
+    const ptnThemeDropdown = document.getElementById('ptn-theme-dropdown');
+    if (ptnThemeBtn && ptnThemeDropdown) {
+      ptnThemeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ptnThemeDropdown.style.display = ptnThemeDropdown.style.display === 'block' ? 'none' : 'block';
+      });
+      document.addEventListener('click', () => {
+        ptnThemeDropdown.style.display = 'none';
+      });
+      document.querySelectorAll('.partner-theme-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const selected = btn.getAttribute('data-theme');
+          applyPartnerTheme(selected);
+          ptnThemeDropdown.style.display = 'none';
+        });
+      });
+    }
+
+    applyPartnerTheme(localStorage.getItem('unified_partner_theme') || 'cosmic');
+
+    // 2. Auth State & Dashboard Loading
+    let currentPartner = null;
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.authenticated && (data.user.role === 'PARTNER' || data.user.role === 'ADMIN')) {
+          showDashboard(data.partner);
+        } else {
+          showLogin();
+        }
+      } catch {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-view').style.display = 'block';
+      document.getElementById('dashboard-view').style.display = 'none';
+      document.getElementById('logout-btn').style.display = 'none';
+    }
+
+    function showDashboard(partner) {
+      currentPartner = partner;
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('dashboard-view').style.display = 'block';
+      document.getElementById('logout-btn').style.display = 'inline-flex';
+
+      loadOverview();
+      loadCustomersAndServices();
+      loadAnalytics('30d');
+      loadReferrals();
+      loadDocs();
+    }
+
+    // Login Form
+    document.getElementById('partner-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById('login-error');
+      errBox.style.display = 'none';
+
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.message || 'Login failed');
+        showDashboard(data.partner);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      }
+    });
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      showLogin();
+    });
+
+    // Tab Navigation
+    document.querySelectorAll('.ptn-dash-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.ptn-dash-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.ptn-dash-section').forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    // Load Overview Data
+    async function loadOverview() {
+      const res = await fetch('/api/partner/overview');
+      const data = await res.json();
+      if (!data.partner) return;
+
+      document.getElementById('partner-company-title').textContent = data.partner.company_name;
+      document.getElementById('partner-status-tag').textContent = `Active ${data.partner.tier_name}`;
+      document.getElementById('partner-id-display').textContent = data.partner.id;
+      document.getElementById('partner-contact-name').textContent = data.partner.contact_name;
+
+      document.getElementById('metric-margin').textContent = `${Math.round(data.partner.tier_discount_rate * 100)}%`;
+      document.getElementById('metric-spend').textContent = `৳${Number(data.partner.monthly_eligible_spend).toLocaleString('en-US')}`;
+      document.getElementById('metric-services').textContent = data.metrics.activeServicesCount;
+      document.getElementById('metric-customers').textContent = `Across ${data.metrics.customerCount} managed client organizations`;
+      document.getElementById('metric-commissions').textContent = `৳${Number(data.metrics.commissionBalance).toLocaleString('en-US')}`;
+
+      if (data.metrics.nextTier) {
+        document.getElementById('tier-progress-text').textContent = `৳${Number(data.metrics.currentSpend).toLocaleString('en-US')} / ৳${Number(data.metrics.nextTier.targetSpend).toLocaleString('en-US')} (${data.metrics.nextTier.percentAchieved}%)`;
+        document.getElementById('tier-progress-fill').style.width = `${data.metrics.nextTier.percentAchieved}%`;
+      }
+
+      // Populate Invoices
+      const tbody = document.getElementById('overview-invoices-body');
+      tbody.innerHTML = (data.recentInvoices || []).map(inv => `
+        <tr>
+          <td><strong style="color:#fff;">${inv.id}</strong></td>
+          <td>${inv.date}</td>
+          <td>${inv.description}</td>
+          <td>${inv.gross}</td>
+          <td><span style="color:var(--ptn-cyan); font-weight:700;">${inv.discount}</span></td>
+          <td><strong style="color:#fff;">${inv.net}</strong></td>
+          <td><span class="ptn-badge-running">${inv.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Load Customers and Services
+    async function loadCustomersAndServices() {
+      const srvRes = await fetch('/api/partner/services');
+      const srvData = await srvRes.json();
+      const srvTbody = document.getElementById('services-table-body');
+
+      srvTbody.innerHTML = (srvData.services || []).map(s => `
+        <tr>
+          <td>
+            <strong style="color:#fff;">${s.service_name}</strong><br>
+            <small style="color:var(--ptn-text-muted);">${s.cloudstack_vm_id}</small>
+          </td>
+          <td>${s.customer_company || s.customer_name}</td>
+          <td>${s.vcpu} vCPU / ${s.ram_gb}GB RAM / ${s.disk_gb}GB SSD</td>
+          <td><code>${s.ip_address || 'Allocating...'}</code></td>
+          <td>${s.region}</td>
+          <td><span class="ptn-badge-running">${s.status}</span></td>
+          <td>৳${Number(s.net_monthly_fee).toLocaleString('en-US', {minimumFractionDigits: 2})}/mo</td>
+          <td>
+            <button class="ptn-table-action-btn reboot-btn" data-id="${s.id}" data-name="${s.service_name}">
+              Reboot VM
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      // Wire Reboot Action
+      document.querySelectorAll('.reboot-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const srvId = btn.getAttribute('data-id');
+          const srvName = btn.getAttribute('data-name');
+          btn.disabled = true;
+          btn.textContent = 'Rebooting...';
+
+          try {
+            const res = await fetch(`/api/partner/services/${srvId}/reboot`, { method: 'POST' });
+            const data = await res.json();
+            const banner = document.getElementById('service-action-banner');
+            banner.textContent = data.message;
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 6000);
+          } catch (e) {
+            alert('Reboot error: ' + e.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Reboot VM';
+          }
+        });
+      });
+
+      // Customers table
+      const custRes = await fetch('/api/partner/customers');
+      const custData = await custRes.json();
+      const custTbody = document.getElementById('customers-table-body');
+      custTbody.innerHTML = (custData.customers || []).map(c => `
+        <tr>
+          <td><strong style="color:#fff;">${c.customer_name}</strong></td>
+          <td>${c.company}</td>
+          <td>${c.customer_email}</td>
+          <td><code>WHMCS-#${c.customer_whmcs_id}</code></td>
+          <td>${c.service_count} Instance(s)</td>
+          <td><span class="ptn-badge-running">${c.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Load Analytics
+    async function loadAnalytics(filter = '30d') {
+      const res = await fetch(`/api/partner/analytics?filter=${filter}`);
+      const data = await res.json();
+
+      document.getElementById('analytics-gross').textContent = data.summary.grossSales;
+      document.getElementById('analytics-savings').textContent = data.summary.partnerDiscountSavings;
+      document.getElementById('analytics-net').textContent = data.summary.netPaidToUnified;
+      document.getElementById('analytics-mrr').textContent = data.summary.recurringMRR;
+
+      // Trend bars
+      const trendContainer = document.getElementById('analytics-trend-bars');
+      const maxGross = Math.max(...(data.monthlyTrends || []).map(x => x.gross), 600000);
+      trendContainer.innerHTML = (data.monthlyTrends || []).map(t => {
+        const heightPct = Math.min(100, Math.max(15, Math.round((t.gross / maxGross) * 100)));
+        return `
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+            <div style="font-size:11px; font-weight:700; color:var(--ptn-cyan); margin-bottom:6px;">৳${Number(t.savings).toLocaleString()} saved</div>
+            <div style="width:100%; max-width:44px; height:${heightPct}%; background:linear-gradient(180deg, #5de0c4, #3f86e8); border-radius:6px 6px 0 0;"></div>
+            <div style="font-size:12px; color:var(--ptn-text-muted); margin-top:8px;">${t.month}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load Referrals
+    async function loadReferrals() {
+      const res = await fetch('/api/partner/referrals');
+      const data = await res.json();
+      const tbody = document.getElementById('referrals-table-body');
+      tbody.innerHTML = (data.referrals || []).map(r => `
+        <tr>
+          <td><strong style="color:#fff;">${r.referred_user_name}</strong></td>
+          <td>${r.referred_user_email}</td>
+          <td>৳${Number(r.order_value).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td><span style="color:#4ade80; font-weight:700;">+৳${Number(r.commission_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</span></td>
+          <td><span class="ptn-badge-running">${r.conversion_status}</span></td>
+          <td>${r.created_at.slice(0, 10)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Load Docs & Announcements
+    async function loadDocs() {
+      const res = await fetch('/api/partner/docs');
+      const data = await res.json();
+      const container = document.getElementById('announcements-container');
+      container.innerHTML = (data.announcements || []).map(a => `
+        <div class="ptn-stat-card" style="padding:18px 22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span class="ptn-nav-badge">${a.category}</span>
+            <span style="font-size:12px; color:var(--ptn-text-muted);">${a.published_at.slice(0,10)}</span>
+          </div>
+          <h4 style="margin:4px 0 6px; font-size:16px; color:#fff;">${a.title}</h4>
+          <p style="margin:0; font-size:13.5px; color:var(--ptn-text-muted); line-height:1.5;">${a.content}</p>
+        </div>
+      `).join('');
+    }
+
+    // Payout Request Handler
+    async function handlePayoutRequest() {
+      const amount = prompt('Enter payout request amount in BDT (Minimum ৳5,000):', '12810');
+      if (!amount) return;
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount < 5000) {
+        alert('Minimum payout request amount is ৳5,000 BDT.');
+        return;
+      }
+      const paymentMethod = prompt('Enter payment method (e.g. Bank Transfer / bKash / Nagad):', 'bKash Merchant / Bank Transfer');
+      if (!paymentMethod) return;
+      const accountDetails = prompt('Enter Account / Wallet Details:', 'BRAC Bank A/C: 1501204892001 or bKash: 01711223344');
+      if (!accountDetails) return;
+
+      try {
+        const res = await fetch('/api/partner/payouts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: numAmount, paymentMethod, accountDetails })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.message || 'Payout request failed');
+        alert(data.message);
+        loadOverview();
+      } catch (err) {
+        alert('Payout Error: ' + err.message);
+      }
+    }
+
+    const quickPayoutBtn = document.getElementById('request-payout-btn');
+    if (quickPayoutBtn) quickPayoutBtn.addEventListener('click', handlePayoutRequest);
+    const triggerPayoutBtn = document.getElementById('payout-trigger-btn');
+    if (triggerPayoutBtn) triggerPayoutBtn.addEventListener('click', handlePayoutRequest);
+
+    checkAuth();
+  </script>
+</body>
+</html>

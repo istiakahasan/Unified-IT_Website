@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Grow your business with the Unified Cloud Partner Program. Designed for hosting resellers, IT agencies, developers, and cloud consultants.">
+  <meta name="theme-color" content="#070a14">
+  <title>Cloud Partner Program - Unified Cloud</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body class="ptn-portal-body">
+  <canvas id="ptn-canvas" class="ptn-ambient-canvas"></canvas>
+
+  <!-- Top Navigation Bar -->
+  <header class="ptn-nav">
+    <div class="ptn-container ptn-nav-inner">
+      <a href="/" class="ptn-nav-logo">
+        <img src="assets/images/logo.png" alt="Unified Cloud">
+        <span>Unified Cloud</span>
+        <span class="ptn-nav-badge">Partners</span>
+      </a>
+      <nav class="ptn-nav-links">
+        <a href="#benefits">Benefits</a>
+        <a href="#tiers">Tiers & Pricing</a>
+        <a href="#calculator">Profit Calculator</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="/partner/dashboard" class="ptn-btn ptn-btn-secondary ptn-btn-sm">Partner Portal</a>
+        <a href="/admin/partners" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="color:#fcd34d;">Admin Panel</a>
+        <a href="#apply" class="ptn-btn ptn-btn-primary ptn-btn-sm">Apply Now</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ptn-container">
+    <!-- Section A: Hero Section -->
+    <section class="ptn-hero">
+      <div class="ptn-pill-tag">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Enterprise Cloud Infrastructure Partner Ecosystem
+      </div>
+      <h1 class="ptn-hero-title">
+        Grow Your Business with Our <span>Cloud Partner Program</span>
+      </h1>
+      <p class="ptn-hero-desc">
+        Empower your hosting business, IT agency, or consultancy with our carrier-grade cloud platform. Resell high-performance Cloud VPS, Bare Metal Dedicated Servers, and Object Storage with automated Apache CloudStack provisioning and centralized WHMCS billing.
+      </p>
+
+      <div class="ptn-hero-actions">
+        <a href="#apply" class="ptn-btn ptn-btn-primary" style="padding: 16px 36px; font-size: 16px;">
+          Become a Partner
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#benefits" class="ptn-btn ptn-btn-secondary" style="padding: 16px 32px; font-size: 16px;">
+          Explore Partner Benefits
+        </a>
+      </div>
+
+      <div class="ptn-hero-stats">
+        <div class="ptn-stat-card">
+          <div class="ptn-stat-val">&lt; 2ms</div>
+          <div class="ptn-stat-lbl">Ultra-Low Latency in Dhaka Soil</div>
+        </div>
+        <div class="ptn-stat-card">
+          <div class="ptn-stat-val">Up to 25%</div>
+          <div class="ptn-stat-lbl">Wholesale Reseller Margin</div>
+        </div>
+        <div class="ptn-stat-card">
+          <div class="ptn-stat-val">100% API</div>
+          <div class="ptn-stat-lbl">CloudStack & WHMCS Automation</div>
+        </div>
+        <div class="ptn-stat-card">
+          <div class="ptn-stat-val">24/7/365</div>
+          <div class="ptn-stat-lbl">Direct Priority Escalation Desk</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Margin / Profit Calculator -->
+    <section class="ptn-calc-wrap" id="calculator">
+      <div class="ptn-calc-header">
+        <div class="ptn-pill-tag">Interactive Estimator</div>
+        <h3>Partner Profit & Margin Calculator</h3>
+        <p style="color: var(--ptn-text-muted); font-size: 14px; margin: 0;">
+          Slide to see how much your agency earns based on monthly cloud infrastructure spend.
+        </p>
+      </div>
+
+      <div class="ptn-calc-grid">
+        <div class="ptn-calc-inputs">
+          <div class="ptn-slider-group">
+            <label>
+              <span>Monthly Client Infrastructure Spending</span>
+              <strong id="calc-spend-label" style="color: var(--ptn-cyan); font-size: 16px;">৳150,000 / month</strong>
+            </label>
+            <input type="range" id="calc-spend-slider" min="10000" max="1000000" step="10000" value="150000">
+          </div>
+
+          <div class="ptn-slider-group">
+            <label>
+              <span>Estimated Number of Managed Client Accounts</span>
+              <strong id="calc-clients-label" style="color: #fff; font-size: 16px;">25 Clients</strong>
+            </label>
+            <input type="range" id="calc-clients-slider" min="1" max="200" step="1" value="25">
+          </div>
+
+          <div style="font-size: 13px; color: var(--ptn-text-muted); line-height: 1.5; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+            <strong style="color: #fff;">Automatic Tier Qualification:</strong>
+            Spending thresholds automatically upgrade your discount rate from Registered (5%) to Silver (10%), Gold (15%), or Platinum (20%+). All pricing and margins calculated in Bangladeshi Taka (BDT).
+          </div>
+        </div>
+
+        <div class="ptn-calc-kpis">
+          <div class="ptn-kpi-box">
+            <div class="ptn-kpi-val" id="calc-tier-qualified">Gold Partner</div>
+            <div class="ptn-kpi-lbl">Qualified Partner Tier</div>
+          </div>
+          <div class="ptn-kpi-box">
+            <div class="ptn-kpi-val" id="calc-discount-pct">15%</div>
+            <div class="ptn-kpi-lbl">Wholesale Discount Margin</div>
+          </div>
+          <div class="ptn-kpi-box">
+            <div class="ptn-kpi-val" id="calc-monthly-savings">৳22,500</div>
+            <div class="ptn-kpi-lbl">Monthly Partner Savings</div>
+          </div>
+          <div class="ptn-kpi-box" style="border-color: rgba(93, 224, 196, 0.4);">
+            <div class="ptn-kpi-val" id="calc-annual-profit" style="color: #4ade80;">৳270,000</div>
+            <div class="ptn-kpi-lbl">Annual Recurring Profit</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section B: Partner Benefits -->
+    <section id="benefits">
+      <div class="ptn-section-head">
+        <div class="ptn-pill-tag">Competitive Advantages</div>
+        <h2>Enterprise Partner Benefits</h2>
+        <p>Built specifically for IT agencies, systems integrators, and web hosts who demand reliability, profit, and developer-first control.</p>
+      </div>
+
+      <div class="ptn-benefits-grid">
+        <!-- Benefit 1 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Competitive Reseller Pricing</h3>
+          <p class="ptn-benefit-desc">Access wholesale pricing on Cloud VPS, Bare Metal Dedicated Servers, and Object Storage. Protect your margins with guaranteed volume discounts.</p>
+        </div>
+
+        <!-- Benefit 2 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Recurring Revenue Streams</h3>
+          <p class="ptn-benefit-desc">Build dependable monthly recurring revenue (MRR). Your wholesale discount applies automatically to ongoing client renewals and upgrades.</p>
+        </div>
+
+        <!-- Benefit 3 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-tier">Gold & Platinum Tier</span>
+          <h3 class="ptn-benefit-title">White-Label Hosting & Portal</h3>
+          <p class="ptn-benefit-desc">Brand your cloud infrastructure with custom nameservers (ns1.yourdomain.com), custom hostname SSL, and branded client portals.</p>
+        </div>
+
+        <!-- Benefit 4 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Apache CloudStack Orchestration</h3>
+          <p class="ptn-benefit-desc">Programmatic REST API control for VM deployment, snapshots, ISO management, and automated scaling without touching root infrastructure.</p>
+        </div>
+
+        <!-- Benefit 5 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Centralized WHMCS Management</h3>
+          <p class="ptn-benefit-desc">Full integration with WHMCS client and billing pipelines. Provision, invoice, and meter client usage in a single unified dashboard.</p>
+        </div>
+
+        <!-- Benefit 6 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Technical Onboarding & Guides</h3>
+          <p class="ptn-benefit-desc">Complete developer documentation, code samples, API Postman collections, and dedicated partner knowledge base materials.</p>
+        </div>
+
+        <!-- Benefit 7 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-tier">Silver & Above</span>
+          <h3 class="ptn-benefit-title">Priority Support Escalation</h3>
+          <p class="ptn-benefit-desc">Direct line to Level 2 and Level 3 cloud infrastructure engineers. Fast SLAs with 24/7/365 emergency coverage for Gold & Platinum tiers.</p>
+        </div>
+
+        <!-- Benefit 8 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-tier">Approval Required</span>
+          <h3 class="ptn-benefit-title">Zero-Downtime Migration Support</h3>
+          <p class="ptn-benefit-desc">Our DevOps engineers will assist you in migrating your existing cPanel accounts and Linux VPS workloads to Dhaka DC with zero downtime.</p>
+        </div>
+
+        <!-- Benefit 9 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-tier">Silver & Above</span>
+          <h3 class="ptn-benefit-title">Partner Marketing Resources</h3>
+          <p class="ptn-benefit-desc">Receive co-branded pitch decks, technical whitepapers, SLA templates, and marketing collateral to accelerate your B2B sales cycles.</p>
+        </div>
+
+        <!-- Benefit 10 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Dual Referral & Reseller Model</h3>
+          <p class="ptn-benefit-desc">Prefer not to manage direct billing? Refer clients directly through your partner link and earn up to 10% cash referral commissions on all spend.</p>
+        </div>
+
+        <!-- Benefit 11 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-immediate">Available Immediately</span>
+          <h3 class="ptn-benefit-title">Live Telemetry & Usage Analytics</h3>
+          <p class="ptn-benefit-desc">Real-time resource utilization, invoice tracking, savings telemetry, and customer growth trends in your protected partner dashboard.</p>
+        </div>
+
+        <!-- Benefit 12 -->
+        <div class="ptn-benefit-card">
+          <span class="ptn-benefit-tag ptn-tag-tier">Eligibility Subject to Review</span>
+          <h3 class="ptn-benefit-title">Development Sandbox & Trial Credits</h3>
+          <p class="ptn-benefit-desc">Receive test infrastructure credits to build, test client deployments, and benchmark performance before launching live production.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section C: Partner Tiers -->
+    <section id="tiers">
+      <div class="ptn-section-head">
+        <div class="ptn-pill-tag">Tier Structure</div>
+        <h2>Configurable Partner Tiers</h2>
+        <p>Four progressive tiers designed to reward your growth. Tiers, thresholds, and commercial agreements are centrally managed by authorized administrators.</p>
+      </div>
+
+      <div class="ptn-tiers-grid">
+        <!-- Tier 1 -->
+        <div class="ptn-tier-card">
+          <h3 class="ptn-tier-name">Registered Partner</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 12px;">Entry-level reseller tier</p>
+          <div class="ptn-tier-discount">5% <small>Margin</small></div>
+          <div class="ptn-tier-spend">No minimum monthly spend requirement</div>
+          <ul class="ptn-tier-features">
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 5% discount across Cloud VPS & Dedicated</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Standard email & portal support</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Partner documentation & onboarding</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> CloudStack API access</li>
+          </ul>
+          <a href="#apply" class="ptn-btn ptn-btn-secondary">Apply for Registered</a>
+        </div>
+
+        <!-- Tier 2 -->
+        <div class="ptn-tier-card">
+          <h3 class="ptn-tier-name">Silver Partner</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 12px;">Growing agencies & web hosts</p>
+          <div class="ptn-tier-discount">10% <small>Margin</small></div>
+          <div class="ptn-tier-spend">৳30,000 / month eligible spend qualification</div>
+          <ul class="ptn-tier-features">
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 10% wholesale reseller discount</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Business-hours priority support queue</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Partner marketing collateral & kits</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 5% referral commission option</li>
+          </ul>
+          <a href="#apply" class="ptn-btn ptn-btn-secondary">Apply for Silver</a>
+        </div>
+
+        <!-- Tier 3: Gold (Featured) -->
+        <div class="ptn-tier-card featured">
+          <div class="ptn-pill-tag" style="position: absolute; top: -14px; right: 20px; margin: 0; background: var(--ptn-cyan); color: #070a14;">Most Popular</div>
+          <h3 class="ptn-tier-name">Gold Partner</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 12px;">Established providers & integrators</p>
+          <div class="ptn-tier-discount">15% <small>Margin</small></div>
+          <div class="ptn-tier-spend">৳120,000 / month eligible spend qualification</div>
+          <ul class="ptn-tier-features">
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 15% wholesale infrastructure margin</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Priority 24/7 technical support desk</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Dedicated Account Manager</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> White-label hosting & custom DNS</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Joint marketing & co-selling</li>
+          </ul>
+          <a href="#apply" class="ptn-btn ptn-btn-primary">Apply for Gold</a>
+        </div>
+
+        <!-- Tier 4: Platinum -->
+        <div class="ptn-tier-card">
+          <h3 class="ptn-tier-name">Platinum Partner</h3>
+          <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 12px;">Enterprise cloud resellers</p>
+          <div class="ptn-tier-discount">20% - 25% <small>Margin</small></div>
+          <div class="ptn-tier-spend">৳360,000 / month eligible spend qualification</div>
+          <ul class="ptn-tier-features">
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 20% standard, up to 25% via strategic agreement</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Dedicated Senior Solutions Architect</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Free hands-on server migration assistance</li>
+            <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Custom commercial credit terms & SLA</li>
+          </ul>
+          <a href="#apply" class="ptn-btn ptn-btn-secondary">Apply for Platinum</a>
+        </div>
+      </div>
+
+      <!-- Tier Comparison Table -->
+      <div class="ptn-table-wrap">
+        <table class="ptn-table">
+          <thead>
+            <tr>
+              <th>Evaluation Parameter</th>
+              <th>Registered</th>
+              <th>Silver</th>
+              <th>Gold</th>
+              <th>Platinum</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Base Reseller Discount</strong></td>
+              <td><span style="color: var(--ptn-cyan); font-weight:700;">5%</span></td>
+              <td><span style="color: var(--ptn-cyan); font-weight:700;">10%</span></td>
+              <td><span style="color: var(--ptn-cyan); font-weight:700;">15%</span></td>
+              <td><span style="color: var(--ptn-cyan); font-weight:700;">20% - 25%</span></td>
+            </tr>
+            <tr>
+              <td><strong>Monthly Spend Requirement</strong></td>
+              <td>৳0 (None)</td>
+              <td>৳30,000 / mo</td>
+              <td>৳120,000 / mo</td>
+              <td>৳360,000 / mo</td>
+            </tr>
+            <tr>
+              <td><strong>Support Level</strong></td>
+              <td>Standard Email/Portal</td>
+              <td>Business-Hours Priority</td>
+              <td>24/7 Priority Desk</td>
+              <td>Dedicated 24/7 Architect</td>
+            </tr>
+            <tr>
+              <td><strong>CloudStack API Access</strong></td>
+              <td>Included</td>
+              <td>Included</td>
+              <td>Included (Extended Quota)</td>
+              <td>Full Sub-Domain Control</td>
+            </tr>
+            <tr>
+              <td><strong>White-Label Facility</strong></td>
+              <td>Not included</td>
+              <td>Optional</td>
+              <td>Full White-Labeling</td>
+              <td>Full White-Labeling + SSL</td>
+            </tr>
+            <tr>
+              <td><strong>Billing Options</strong></td>
+              <td>Credit Card / Pre-fund</td>
+              <td>Card, Bank, Pre-fund</td>
+              <td>Monthly Net-15</td>
+              <td>Negotiated Net-30 Terms</td>
+            </tr>
+            <tr>
+              <td><strong>Account Management</strong></td>
+              <td>Self-service</td>
+              <td>Partner Desk</td>
+              <td>Dedicated Account Manager</td>
+              <td>Senior Executive & Architect</td>
+            </tr>
+            <tr>
+              <td><strong>Approval Requirement</strong></td>
+              <td>Identity Verification</td>
+              <td>Spend + Business Verification</td>
+              <td>Spend + Manual Admin Review</td>
+              <td>Strategic Commercial Contract</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Exclusions Notice -->
+      <div class="ptn-notice-box">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Pricing Rules & Exclusions Notice:</strong>
+          Third-party software licenses (cPanel, Microsoft 365, external backup licenses), SSL certificates (DigiCert, Comodo wholesale matrices), ICANN domain registration fees, and credit card processing charges carry separate contractual margins and are calculated strictly per product eligibility rules.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section D: How It Works -->
+    <section id="how-it-works">
+      <div class="ptn-section-head">
+        <div class="ptn-pill-tag">Streamlined Onboarding</div>
+        <h2>How It Works</h2>
+        <p>Four simple steps to launch your cloud reseller business on enterprise infrastructure.</p>
+      </div>
+
+      <div class="ptn-steps-grid">
+        <div class="ptn-step-card">
+          <div class="ptn-step-num">01</div>
+          <h3 class="ptn-step-title">Submit Application</h3>
+          <p class="ptn-step-desc">Complete our online application form with your company details, business model, and infrastructure requirements.</p>
+        </div>
+
+        <div class="ptn-step-card">
+          <div class="ptn-step-num">02</div>
+          <h3 class="ptn-step-title">Verification & Review</h3>
+          <p class="ptn-step-desc">Our partner desk reviews your business identity, tax credentials, and projected spending within 1-2 business days.</p>
+        </div>
+
+        <div class="ptn-step-card">
+          <div class="ptn-step-num">03</div>
+          <h3 class="ptn-step-title">Tier & Portal Setup</h3>
+          <p class="ptn-step-desc">Upon approval, receive your partner credentials, initial tier discount, CloudStack API keys, and WHMCS reseller configuration.</p>
+        </div>
+
+        <div class="ptn-step-card">
+          <div class="ptn-step-num">04</div>
+          <h3 class="ptn-step-title">Provision & Scale</h3>
+          <p class="ptn-step-desc">Deploy virtual machines, provision services for your customers, track recurring margins, and unlock higher tiers as you grow.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section E: Application Form -->
+    <section class="ptn-form-section" id="apply">
+      <div class="ptn-section-head" style="margin-bottom: 30px;">
+        <div class="ptn-pill-tag">Partner Registration</div>
+        <h2>Apply for the Partner Program</h2>
+        <p>Join hundreds of IT agencies and hosting providers growing on Unified Cloud.</p>
+      </div>
+
+      <div id="form-feedback" class="ptn-form-status"></div>
+
+      <form id="partner-apply-form">
+        <div class="ptn-form-grid">
+          <div class="ptn-field">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" class="ptn-input" placeholder="e.g. Istiak Hasan" required>
+          </div>
+
+          <div class="ptn-field">
+            <label for="businessName">Business or Organization Name *</label>
+            <input type="text" id="businessName" class="ptn-input" placeholder="e.g. Apex Cloud Solutions Ltd." required>
+          </div>
+
+          <div class="ptn-field">
+            <label for="businessEmail">Business Email *</label>
+            <input type="email" id="businessEmail" class="ptn-input" placeholder="partner@yourcompany.com" required>
+          </div>
+
+          <div class="ptn-field">
+            <label for="phoneNumber">Phone Number with Country Code *</label>
+            <input type="tel" id="phoneNumber" class="ptn-input" placeholder="+880 1711-223344" required>
+          </div>
+
+          <div class="ptn-field">
+            <label for="country">Country *</label>
+            <select id="country" class="ptn-select" required>
+              <option value="Bangladesh" selected>Bangladesh</option>
+              <option value="Singapore">Singapore</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="India">India</option>
+              <option value="United Arab Emirates">United Arab Emirates</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="ptn-field">
+            <label for="websiteUrl">Website URL (Optional)</label>
+            <input type="url" id="websiteUrl" class="ptn-input" placeholder="https://yourcompany.com">
+          </div>
+
+          <div class="ptn-field">
+            <label for="businessType">Business Type *</label>
+            <select id="businessType" class="ptn-select" required>
+              <option value="" disabled selected>Select your business type</option>
+              <option value="Hosting Provider">Web Hosting Provider / Reseller</option>
+              <option value="Software Agency">Software & Web Development Agency</option>
+              <option value="IT Consultant">IT Consultant / Managed Service Provider (MSP)</option>
+              <option value="System Integrator">Enterprise System Integrator</option>
+              <option value="Other">Other Technology Business</option>
+            </select>
+          </div>
+
+          <div class="ptn-field">
+            <label for="estimatedMonthlySpend">Estimated Monthly Spending *</label>
+            <select id="estimatedMonthlySpend" class="ptn-select" required>
+              <option value="" disabled selected>Select estimated spending (BDT)</option>
+              <option value="৳0 - ৳30,000">৳0 - ৳30,000 / month (Registered Tier Target)</option>
+              <option value="৳30,000 - ৳120,000">৳30,000 - ৳120,000 / month (Silver Tier Target)</option>
+              <option value="৳120,000 - ৳360,000">৳120,000 - ৳360,000 / month (Gold Tier Target)</option>
+              <option value="৳360,000+">৳360,000+ / month (Platinum Tier Target)</option>
+            </select>
+          </div>
+
+          <div class="ptn-field">
+            <label for="expectedCustomers">Expected Number of Customers *</label>
+            <select id="expectedCustomers" class="ptn-select" required>
+              <option value="" disabled selected>Select customer count</option>
+              <option value="1 - 10 Customers">1 - 10 Customers</option>
+              <option value="10 - 50 Customers">10 - 50 Customers</option>
+              <option value="50 - 200 Customers">50 - 200 Customers</option>
+              <option value="200+ Customers">200+ Customers</option>
+            </select>
+          </div>
+
+          <div class="ptn-field">
+            <label for="partnershipModel">Preferred Partnership Model *</label>
+            <select id="partnershipModel" class="ptn-select" required>
+              <option value="Reseller" selected>Reseller (I invoice clients, Unified Cloud provides wholesale)</option>
+              <option value="Referral">Referral (Unified Cloud invoices clients, I receive commissions)</option>
+              <option value="Both">Both (Hybrid Model)</option>
+            </select>
+          </div>
+
+          <div class="ptn-field ptn-form-full">
+            <label>Services of Interest * (Select all that apply)</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 4px;">
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="Cloud VPS" checked> Cloud VPS (CloudStack)
+              </label>
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="Dedicated Server" checked> Dedicated Bare Metal
+              </label>
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="Reseller cPanel Hosting"> Reseller cPanel Hosting
+              </label>
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="Object Storage"> S3 Object Storage
+              </label>
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="SSL Certificates"> DigiCert & Comodo SSL
+              </label>
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" name="services" value="Microsoft 365"> Microsoft 365
+              </label>
+            </div>
+          </div>
+
+          <div class="ptn-field ptn-form-full">
+            <label for="businessDescription">Brief Description of Your Business & Infrastructure Needs *</label>
+            <textarea id="businessDescription" class="ptn-textarea" rows="4" placeholder="Tell us about your client base, current hosting provider, and specific infrastructure goals..." required></textarea>
+          </div>
+
+          <div class="ptn-field ptn-form-full">
+            <label class="ptn-checkbox-label">
+              <input type="checkbox" id="agreeTerms" required>
+              <span>I confirm that the details provided are accurate and I agree to the <a href="#" style="color: var(--ptn-cyan);">Cloud Partner Program Agreement</a> and <a href="#" style="color: var(--ptn-cyan);">Privacy Policy</a>.</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <button type="submit" id="submit-btn" class="ptn-btn ptn-btn-primary" style="padding: 16px 40px; font-size: 16px; width: 100%; max-width: 320px;">
+            Submit Partner Application
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Ambient Three.js Dust Particles Script -->
+  <script src="assets/js/vendor/three.min.js"></script>
+  <script>
+    // 1. Ambient 3D Three.js Particle Background
+    try {
+      const cv = document.getElementById('ptn-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 10;
+
+      const N = 1800;
+      const pos = new Float32Array(N * 3);
+      const sd = new Float32Array(N);
+      const sz = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 32;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 18;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 18 - 2;
+        sd[i] = Math.random();
+        sz[i] = 0.5 + Math.random() * 1.8;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+
+      const mat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uPx: { value: renderer.getPixelRatio() },
+          uTint: { value: new THREE.Color().setHSL(190 / 360, 0.8, 0.65) }
+        },
+        vertexShader: `
+          attribute float aSeed;
+          attribute float aSize;
+          uniform float uTime, uPx;
+          varying float vTw;
+          void main() {
+            vec3 p = position;
+            float sp = 0.15 + aSeed * 0.45;
+            p.y = mod(p.y - uTime * sp + 9.0, 18.0) - 9.0;
+            p.x += sin(uTime * 0.3 + aSeed * 18.0) * 0.25;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            vTw = pow(0.5 + 0.5 * sin(uTime * (1.2 + aSeed * 3.0)), 4.0);
+            gl_PointSize = aSize * (1.0 + vTw * 1.5) * (30.0 / -mv.z) * uPx;
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTint;
+          varying float vTw;
+          void main() {
+            vec2 uv = gl_PointCoord - 0.5;
+            float d = length(uv);
+            float gl = smoothstep(0.5, 0.0, d);
+            vec3 col = mix(uTint, vec3(0.9, 0.98, 1.0), vTw * 0.7);
+            float a = gl * gl * 0.55;
+            gl_FragColor = vec4(col * a, a);
+          }
+        `
+      });
+      scene.add(new THREE.Points(geo, mat));
+
+      function onResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener('resize', onResize);
+      onResize();
+
+      const clock = new THREE.Clock();
+      function renderLoop() {
+        requestAnimationFrame(renderLoop);
+        mat.uniforms.uTime.value = clock.getElapsedTime();
+        mat.uniforms.uPx.value = renderer.getPixelRatio();
+        renderer.render(scene, camera);
+      }
+      renderLoop();
+    } catch (e) {
+      console.warn('[ThreeJS ambient background]', e);
+    }
+
+    // 2. Interactive Tier Profit / Margin Calculator
+    (function () {
+      const spendSlider = document.getElementById('calc-spend-slider');
+      const clientsSlider = document.getElementById('calc-clients-slider');
+      const spendLabel = document.getElementById('calc-spend-label');
+      const clientsLabel = document.getElementById('calc-clients-label');
+
+      const tierQualifiedEl = document.getElementById('calc-tier-qualified');
+      const discountPctEl = document.getElementById('calc-discount-pct');
+      const monthlySavingsEl = document.getElementById('calc-monthly-savings');
+      const annualProfitEl = document.getElementById('calc-annual-profit');
+
+      function updateCalc() {
+        const spend = Number(spendSlider.value);
+        const clients = Number(clientsSlider.value);
+
+        spendLabel.textContent = `৳${spend.toLocaleString()} / month`;
+        clientsLabel.textContent = `${clients} Clients`;
+
+        let tierName = 'Registered Partner';
+        let discount = 0.05;
+
+        if (spend >= 360000) {
+          tierName = 'Platinum Partner';
+          discount = 0.20;
+        } else if (spend >= 120000) {
+          tierName = 'Gold Partner';
+          discount = 0.15;
+        } else if (spend >= 30000) {
+          tierName = 'Silver Partner';
+          discount = 0.10;
+        }
+
+        const monthlySavings = spend * discount;
+        const annualSavings = monthlySavings * 12;
+
+        tierQualifiedEl.textContent = tierName;
+        discountPctEl.textContent = `${Math.round(discount * 100)}%`;
+        monthlySavingsEl.textContent = `৳${Math.round(monthlySavings).toLocaleString()}`;
+        annualProfitEl.textContent = `৳${Math.round(annualSavings).toLocaleString()}`;
+      }
+
+      spendSlider.addEventListener('input', updateCalc);
+      clientsSlider.addEventListener('input', updateCalc);
+      updateCalc();
+    })();
+
+    // 3. Application Form Submission Handler
+    (function () {
+      const form = document.getElementById('partner-apply-form');
+      const feedback = document.getElementById('form-feedback');
+      const submitBtn = document.getElementById('submit-btn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        feedback.className = 'ptn-form-status';
+        feedback.style.display = 'none';
+
+        const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(el => el.value);
+        if (services.length === 0) {
+          feedback.textContent = 'Please select at least one service of interest.';
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+          return;
+        }
+
+        const payload = {
+          fullName: document.getElementById('fullName').value,
+          businessName: document.getElementById('businessName').value,
+          businessEmail: document.getElementById('businessEmail').value,
+          phoneNumber: document.getElementById('phoneNumber').value,
+          country: document.getElementById('country').value,
+          websiteUrl: document.getElementById('websiteUrl').value,
+          businessType: document.getElementById('businessType').value,
+          estimatedMonthlySpend: document.getElementById('estimatedMonthlySpend').value,
+          expectedCustomers: document.getElementById('expectedCustomers').value,
+          partnershipModel: document.getElementById('partnershipModel').value,
+          servicesOfInterest: services,
+          businessDescription: document.getElementById('businessDescription').value,
+          agreeTerms: document.getElementById('agreeTerms').checked
+        };
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Validating & Submitting...';
+
+        try {
+          const res = await fetch('/api/public/applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            throw new Error(data.message || 'Submission failed');
+          }
+
+          feedback.innerHTML = `
+            <strong>Application Received Successfully!</strong><br>
+            Reference Number: <b style="color:var(--ptn-cyan); font-size:16px;">${data.referenceNo}</b><br>
+            ${data.message}<br>
+            A confirmation record has been securely created in our partner queue.
+          `;
+          feedback.className = 'ptn-form-status success';
+          feedback.style.display = 'block';
+          form.reset();
+        } catch (err) {
+          feedback.textContent = err.message;
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Partner Application';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

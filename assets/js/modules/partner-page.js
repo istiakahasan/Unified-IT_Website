@@ -1,10 +1,13 @@
 /**
  * Partner overlay with its own canvas and open/close handling.
+ * Wires the interactive Profit Calculator and the Application Form.
  */
 /* ---- Partner overlay ---- */
 try {
 (function(){
 var P=document.getElementById('partner'),AB=document.getElementById('about'),hd=document.getElementById('hdr'),mm=document.getElementById('mm'),open=false;
+if(!P)return;
+
 var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';P.insertBefore(cv,P.firstChild);
 var rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});rd.setPixelRatio(Math.min(devicePixelRatio||1,2));
 var sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,100);cam.position.z=10;
@@ -22,17 +25,136 @@ function size(){rd.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/i
 addEventListener('resize',size);size();
 (function loop(){requestAnimationFrame(loop);if(!open)return;m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
 if((window.__sm||0)>=.86)hd.style.setProperty('--ph',String(Math.round(200+Math.sin(t*.6)*14)))})();
+
 function openP(){if(open)return;open=true;window.__aboutOpen=true;document.body.classList.add('pt');document.body.classList.remove('mmo','mgo');P.classList.add('on');P.scrollTop=0}
-function closeP(){if(!open)return;open=false;document.body.classList.remove('pt');P.classList.remove('on');if(!AB.classList.contains('on'))window.__aboutOpen=false}
-function sync(){if(location.hash==='#partner')openP();else closeP()}
-function route(e){var a=e.target.closest&&e.target.closest('a');if(!a)return;if(/\/partner$/.test(a.getAttribute('href')||'')){e.preventDefault();location.hash='partner';sync()}}
-hd.addEventListener('click',route);mm.addEventListener('click',route);
+function sync(){
+  if(location.hash==='#partner'||location.hash==='#pg-partner'||location.hash.indexOf('#partner')===0){
+    window.location.replace('/partners');
+  } else {
+    closeP();
+  }
+}
+function route(e){
+  var a=e.target.closest&&e.target.closest('a');
+  if(!a)return;
+  var href=a.getAttribute('href')||'';
+  if(href==='#partner'||href==='/partners'||href==='/partner'||href.indexOf('/partner')>-1){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.location.href='/partners';
+  }
+}
+hd.addEventListener('click',route,true);mm.addEventListener('click',route,true);
 addEventListener('hashchange',sync);
 addEventListener('keydown',function(e){if(e.key==='Escape'&&open){location.hash='';sync()}});
+
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{root:P,threshold:.12});
 P.querySelectorAll('.rv').forEach(function(n){io.observe(n)});
+
 P.addEventListener('pointermove',function(e){var c=e.target.closest&&e.target.closest('.chip');if(!c)return;var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')});
-P.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-ps]');if(b){var t=document.getElementById(b.getAttribute('data-ps'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}});
+
+// Smooth scroll for internal inpage links
+P.addEventListener('click',function(e){
+  var a=e.target.closest&&e.target.closest('a[href^="#inpage-"]');
+  if(a){
+    e.preventDefault();
+    var targetId=a.getAttribute('href').slice(1);
+    var target=document.getElementById(targetId);
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+});
+
+// Profit Calculator in #partner overlay
+(function(){
+  var spendSlider=document.getElementById('in-spend-slider');
+  var clientsSlider=document.getElementById('in-clients-slider');
+  var spendLabel=document.getElementById('in-spend-label');
+  var clientsLabel=document.getElementById('in-clients-label');
+  var tierQualifiedEl=document.getElementById('in-tier-qualified');
+  var discountPctEl=document.getElementById('in-discount-pct');
+  var monthlySavingsEl=document.getElementById('in-monthly-savings');
+  var annualProfitEl=document.getElementById('in-annual-profit');
+
+  if(!spendSlider)return;
+
+  function update(){
+    var spend=Number(spendSlider.value)||150000;
+    var clients=Number(clientsSlider.value)||25;
+    spendLabel.textContent='৳'+spend.toLocaleString()+' / month';
+    clientsLabel.textContent=clients+' Clients';
+
+    var tier='Registered Partner',disc=0.05;
+    if(spend>=360000){tier='Platinum Partner';disc=0.20}
+    else if(spend>=120000){tier='Gold Partner';disc=0.15}
+    else if(spend>=30000){tier='Silver Partner';disc=0.10}
+
+    var monthly=spend*disc;
+    tierQualifiedEl.textContent=tier;
+    discountPctEl.textContent=Math.round(disc*100)+'%';
+    monthlySavingsEl.textContent='৳'+Math.round(monthly).toLocaleString();
+    annualProfitEl.textContent='৳'+Math.round(monthly*12).toLocaleString();
+  }
+
+  spendSlider.addEventListener('input',update);
+  clientsSlider.addEventListener('input',update);
+  update();
+})();
+
+// Partner Application Form in #partner overlay
+(function(){
+  var form=document.getElementById('inpage-partner-form');
+  var feedback=document.getElementById('inpage-feedback');
+  var submitBtn=document.getElementById('inp-submit-btn');
+
+  if(!form)return;
+
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    feedback.className='ptn-form-status';
+    feedback.style.display='none';
+
+    var payload={
+      fullName:document.getElementById('inp-fullName').value,
+      businessName:document.getElementById('inp-bizName').value,
+      businessEmail:document.getElementById('inp-email').value,
+      phoneNumber:document.getElementById('inp-phone').value,
+      country:document.getElementById('inp-country').value,
+      businessType:document.getElementById('inp-bizType').value,
+      estimatedMonthlySpend:document.getElementById('inp-spend').value,
+      expectedCustomers:'10 - 50 Customers',
+      partnershipModel:document.getElementById('inp-model').value,
+      servicesOfInterest:['Cloud VPS','Dedicated Server','Reseller cPanel'],
+      businessDescription:document.getElementById('inp-desc').value,
+      agreeTerms:document.getElementById('inp-agree').checked
+    };
+
+    submitBtn.disabled=true;
+    submitBtn.textContent='Submitting Application...';
+
+    try {
+      var res=await fetch('/api/public/applications',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      var data=await res.json();
+      if(!res.ok||data.error)throw new Error(data.message||'Submission failed');
+
+      feedback.innerHTML='<strong>Application Received!</strong> Reference: <b style="color:var(--ptn-cyan);font-size:16px;">'+data.referenceNo+'</b><br>'+data.message;
+      feedback.className='ptn-form-status success';
+      feedback.style.display='block';
+      form.reset();
+    } catch(err) {
+      feedback.textContent=err.message;
+      feedback.className='ptn-form-status error';
+      feedback.style.display='block';
+    } finally {
+      submitBtn.disabled=false;
+      submitBtn.textContent='Submit Application';
+    }
+  });
+})();
+
 sync();
 })();
 } catch (err) { console.error("[Partner overlay]", err); }
