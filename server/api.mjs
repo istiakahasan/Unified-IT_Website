@@ -24,7 +24,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
     sendJson(statusCode, { error: true, message, ...extra });
   };
 
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
 
   // Audit log helper
   const logAudit = (actorType, actorId, actorEmail, action, entityType, entityId, details) => {
@@ -148,6 +148,64 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       return sendError(400, 'Please provide a brief business description (minimum 15 characters).');
     }
 
+    // Trade License (Mandatory, PDF format)
+    const rawTradeLicense = body.tradeLicense || body.trade_license || body.tradeLicensePdf || body.trade_license_pdf;
+    let tradeLicenseData = '';
+    let tradeLicenseFilename = body.tradeLicenseFilename || body.trade_license_filename || '';
+    if (typeof rawTradeLicense === 'object' && rawTradeLicense !== null) {
+      tradeLicenseData = rawTradeLicense.data || '';
+      tradeLicenseFilename = rawTradeLicense.name || tradeLicenseFilename || 'Trade_License.pdf';
+    } else if (typeof rawTradeLicense === 'string') {
+      tradeLicenseData = rawTradeLicense.trim();
+      tradeLicenseFilename = tradeLicenseFilename || 'Trade_License.pdf';
+    }
+
+    if (!tradeLicenseData) {
+      return sendError(400, 'Trade License is mandatory. Please upload your company Trade License in PDF format.');
+    }
+
+    // NID Document (Mandatory, PDF format)
+    const rawNidDocument = body.nidDocument || body.nid_document || body.nidDocumentPdf || body.nid_document_pdf || body.nid;
+    let nidDocumentData = '';
+    let nidDocumentFilename = body.nidDocumentFilename || body.nid_document_filename || '';
+    if (typeof rawNidDocument === 'object' && rawNidDocument !== null) {
+      nidDocumentData = rawNidDocument.data || '';
+      nidDocumentFilename = rawNidDocument.name || nidDocumentFilename || 'NID_Document.pdf';
+    } else if (typeof rawNidDocument === 'string') {
+      nidDocumentData = rawNidDocument.trim();
+      nidDocumentFilename = nidDocumentFilename || 'NID_Document.pdf';
+    }
+
+    if (!nidDocumentData) {
+      return sendError(400, 'National ID (NID) is mandatory. Please upload your NID document in PDF format.');
+    }
+
+    // Validate PDF format for both documents
+    const isPdf = (dataUri, filename) => {
+      if (!dataUri || typeof dataUri !== 'string') return false;
+      const lower = dataUri.toLowerCase();
+      const fn = (filename || '').toLowerCase();
+      if (fn && !fn.endsWith('.pdf')) return false;
+      if (lower.startsWith('data:')) {
+        return lower.startsWith('data:application/pdf') || lower.includes('base64,jvber');
+      }
+      return lower.startsWith('jvber') || fn.endsWith('.pdf');
+    };
+
+    if (!isPdf(tradeLicenseData, tradeLicenseFilename)) {
+      return sendError(400, 'Invalid Trade License format. Document must be an uploaded PDF file (.pdf).');
+    }
+
+    if (!isPdf(nidDocumentData, nidDocumentFilename)) {
+      return sendError(400, 'Invalid NID document format. Document must be an uploaded PDF file (.pdf).');
+    }
+
+    // Maximum file size safeguard (15MB encoded)
+    const MAX_DOC_SIZE = 20 * 1024 * 1024;
+    if (tradeLicenseData.length > MAX_DOC_SIZE || nidDocumentData.length > MAX_DOC_SIZE) {
+      return sendError(400, 'Document file size exceeds the 15MB limit. Please compress your PDF before uploading.');
+    }
+
     const cleanEmail = businessEmail.toLowerCase().trim();
 
     // Prevent duplicate pending applications
@@ -177,8 +235,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       INSERT INTO partner_applications (
         id, reference_no, company_name, contact_name, email, phone, country, website,
         business_type, estimated_monthly_spend, expected_customers, services_of_interest,
-        partnership_model, business_description, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
+        partnership_model, business_description, status,
+        trade_license_pdf, trade_license_filename, nid_document_pdf, nid_document_filename
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)
     `).run(
       appId,
       referenceNo,
@@ -193,14 +252,20 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       expectedCustomers,
       servicesStr,
       partnershipModel,
-      businessDescription.trim()
+      businessDescription.trim(),
+      tradeLicenseData,
+      tradeLicenseFilename,
+      nidDocumentData,
+      nidDocumentFilename
     );
 
     logAudit('PUBLIC', appId, cleanEmail, 'APPLICATION_SUBMITTED', 'partner_applications', appId, {
       referenceNo,
       company: businessName,
       contact: fullName,
-      spend: estimatedMonthlySpend
+      spend: estimatedMonthlySpend,
+      tradeLicense: tradeLicenseFilename,
+      nidDocument: nidDocumentFilename
     });
 
     return sendJson(201, {

@@ -100,6 +100,10 @@ export function initDatabase(dbPath = DB_FILE) {
       services_of_interest TEXT NOT NULL,
       partnership_model TEXT NOT NULL,
       business_description TEXT NOT NULL,
+      trade_license_pdf TEXT,
+      trade_license_filename TEXT,
+      nid_document_pdf TEXT,
+      nid_document_filename TEXT,
       status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'APPROVED', 'REJECTED')),
       admin_notes TEXT,
       reviewed_by TEXT,
@@ -329,6 +333,26 @@ export function initDatabase(dbPath = DB_FILE) {
     CREATE INDEX IF NOT EXISTS idx_partner_sales_partner ON partner_sales(partner_id);
     CREATE INDEX IF NOT EXISTS idx_partner_sales_order ON partner_sales(order_number);
   `);
+
+  // Migration: Ensure trade_license and nid_document columns exist in existing databases
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(partner_applications)").all();
+    const cols = new Set(tableInfo.map(c => c.name));
+    if (!cols.has('trade_license_pdf')) {
+      db.exec('ALTER TABLE partner_applications ADD COLUMN trade_license_pdf TEXT;');
+    }
+    if (!cols.has('trade_license_filename')) {
+      db.exec('ALTER TABLE partner_applications ADD COLUMN trade_license_filename TEXT;');
+    }
+    if (!cols.has('nid_document_pdf')) {
+      db.exec('ALTER TABLE partner_applications ADD COLUMN nid_document_pdf TEXT;');
+    }
+    if (!cols.has('nid_document_filename')) {
+      db.exec('ALTER TABLE partner_applications ADD COLUMN nid_document_filename TEXT;');
+    }
+  } catch (migErr) {
+    console.warn('[DB Migration Warning for partner_applications]', migErr.message);
+  }
 
   seedDefaultData(db);
   seedRewardSystemData(db);
@@ -607,12 +631,24 @@ function seedDefaultData(db) {
     }
   ];
 
+  const samplePdf = 'data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDEwMCA3MDAgVGQgKFZlcmlmaWVkIFBERiBEb2N1bWVudCkgVmogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTggMDAwMDAgbiAKMDAwMDAwMDA3NyAwMDAwMCBuIAowMDAwMDAwMTM2IDAwMDAwIG4gCjAwMDAwMDAyMzEgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA1Ci9Sb290IDEgMCBSCj4+CnN0YXJ0eHJlZgoyOTUKJSVFT0Y=';
+
   const insertApp = db.prepare(`
-    INSERT INTO partner_applications (id, reference_no, company_name, contact_name, email, phone, country, website, business_type, estimated_monthly_spend, expected_customers, services_of_interest, partnership_model, business_description, status, admin_notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO partner_applications (
+      id, reference_no, company_name, contact_name, email, phone, country, website,
+      business_type, estimated_monthly_spend, expected_customers, services_of_interest,
+      partnership_model, business_description, status, admin_notes,
+      trade_license_pdf, trade_license_filename, nid_document_pdf, nid_document_filename
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   for (const a of applications) {
-    insertApp.run(a.id, a.reference_no, a.company_name, a.contact_name, a.email, a.phone, a.country, a.website, a.business_type, a.estimated_monthly_spend, a.expected_customers, a.services_of_interest, a.partnership_model, a.business_description, a.status, a.admin_notes);
+    insertApp.run(
+      a.id, a.reference_no, a.company_name, a.contact_name, a.email, a.phone, a.country, a.website,
+      a.business_type, a.estimated_monthly_spend, a.expected_customers, a.services_of_interest,
+      a.partnership_model, a.business_description, a.status, a.admin_notes,
+      samplePdf, `${a.company_name.replace(/\s+/g, '_')}_Trade_License.pdf`,
+      samplePdf, `${a.contact_name.replace(/\s+/g, '_')}_NID.pdf`
+    );
   }
 
   // 10. Seed Support Tickets

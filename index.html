@@ -395,6 +395,20 @@
           <label for="inp-desc">Brief Business Description *</label>
           <textarea id="inp-desc" class="ptn-textarea" rows="3" placeholder="Describe your client workloads, current datacenter setup, and migration plans..." required></textarea>
         </div>
+        <div class="ptn-field">
+          <label for="inp-tradeLicense">
+            Trade License (PDF) *
+            <span style="color:var(--ptn-cyan); font-size:11.5px; font-weight:normal; margin-left:6px;">Mandatory (PDF format)</span>
+          </label>
+          <input type="file" id="inp-tradeLicense" class="ptn-input" accept="application/pdf,.pdf" required style="padding:8px 12px; cursor:pointer;">
+        </div>
+        <div class="ptn-field">
+          <label for="inp-nidDocument">
+            National ID / NID (PDF) *
+            <span style="color:var(--ptn-cyan); font-size:11.5px; font-weight:normal; margin-left:6px;">Mandatory (PDF format)</span>
+          </label>
+          <input type="file" id="inp-nidDocument" class="ptn-input" accept="application/pdf,.pdf" required style="padding:8px 12px; cursor:pointer;">
+        </div>
         <div class="ptn-field ptn-form-full">
           <label class="ptn-checkbox-label">
             <input type="checkbox" id="inp-agree" required>

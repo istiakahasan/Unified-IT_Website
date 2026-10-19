@@ -1929,6 +1929,10 @@
           <td>
             <strong style="color:#fff;">${a.company_name}</strong><br>
             <small style="color:var(--ptn-text-muted);">${a.contact_name}</small>
+            <div style="margin-top:4px; display:flex; gap:4px; font-size:10.5px;">
+              <span style="background:${a.trade_license_pdf ? 'rgba(93,224,196,0.15)' : 'rgba(255,255,255,0.06)'}; color:${a.trade_license_pdf ? 'var(--ptn-cyan)' : 'var(--ptn-text-muted)'}; padding:1px 5px; border-radius:3px; border:1px solid ${a.trade_license_pdf ? 'rgba(93,224,196,0.3)' : 'rgba(255,255,255,0.1)'};">Trade License ${a.trade_license_pdf ? '✓ PDF' : '—'}</span>
+              <span style="background:${a.nid_document_pdf ? 'rgba(93,224,196,0.15)' : 'rgba(255,255,255,0.06)'}; color:${a.nid_document_pdf ? 'var(--ptn-cyan)' : 'var(--ptn-text-muted)'}; padding:1px 5px; border-radius:3px; border:1px solid ${a.nid_document_pdf ? 'rgba(93,224,196,0.3)' : 'rgba(255,255,255,0.1)'};">NID ${a.nid_document_pdf ? '✓ PDF' : '—'}</span>
+            </div>
           </td>
           <td>${a.email}<br><small style="color:var(--ptn-text-muted);">${a.phone}</small></td>
           <td>${a.business_type}</td>
@@ -1992,6 +1996,27 @@
     document.getElementById('app-search-input').addEventListener('input', renderApplications);
     document.getElementById('app-filter-status').addEventListener('change', loadApplications);
 
+    // Global helper for opening PDF in new tab
+    window.viewDocPdf = function(appId, docType) {
+      const app = cachedApps.find(x => x.id === appId);
+      if (!app) return;
+      const dataUri = docType === 'trade_license' ? app.trade_license_pdf : app.nid_document_pdf;
+      if (!dataUri) return alert('No PDF document available.');
+
+      try {
+        const parts = dataUri.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+        const b64 = atob(parts[1] || parts[0]);
+        const u8 = new Uint8Array(b64.length);
+        for (let i = 0; i < b64.length; i++) u8[i] = b64.charCodeAt(i);
+        const blob = new Blob([u8], { type: mime });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } catch (e) {
+        window.open(dataUri, '_blank');
+      }
+    };
+
     function showAppDetailModal(app) {
       const container = document.getElementById('modal-detail-content');
       const services = (app.services_of_interest || '').split(',').map(s => `<span class="ptn-badge-tag">${s.trim()}</span>`).join(' ');
@@ -2013,6 +2038,62 @@
           <div><strong style="color:var(--ptn-text-muted);">Partnership Model:</strong> ${app.partnership_model}</div>
           <div><strong style="color:var(--ptn-text-muted);">Expected Customers:</strong> ${app.expected_customers}</div>
           <div style="grid-column:1/-1;"><strong style="color:var(--ptn-text-muted);">Target Monthly Spend:</strong> <span style="color:#60a5fa; font-weight:700;">${app.estimated_monthly_spend}</span></div>
+        </div>
+
+        <!-- Verification Documents Section -->
+        <div style="margin-bottom:16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px;">
+          <strong style="display:block; margin-bottom:10px; color:#e2e8f0; font-size:13.5px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ptn-cyan)" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Uploaded Verification Documents (Mandatory PDF)
+          </strong>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <!-- Trade License -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:12px;">
+              <div style="font-weight:600; color:#fff; font-size:13px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                <span style="color:#ef4444; font-size:11px; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); font-weight:700;">PDF</span>
+                Trade License
+              </div>
+              <div style="font-size:12px; color:var(--ptn-text-muted); margin-bottom:8px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${app.trade_license_filename || 'Trade_License.pdf'}">
+                ${app.trade_license_filename || 'Trade_License.pdf'}
+              </div>
+              ${app.trade_license_pdf ? `
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="padding:4px 10px; font-size:11.5px;" onclick="window.viewDocPdf('${app.id}', 'trade_license')">
+                    Preview PDF
+                  </button>
+                  <a href="${app.trade_license_pdf}" download="${app.trade_license_filename || 'Trade_License.pdf'}" class="ptn-btn ptn-btn-primary ptn-btn-sm" style="padding:4px 10px; font-size:11.5px; text-decoration:none;">
+                    Download
+                  </a>
+                </div>
+              ` : `
+                <span style="color:var(--ptn-text-muted); font-size:12px;">No document uploaded</span>
+              `}
+            </div>
+
+            <!-- NID Document -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:12px;">
+              <div style="font-weight:600; color:#fff; font-size:13px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                <span style="color:#ef4444; font-size:11px; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); font-weight:700;">PDF</span>
+                National ID (NID)
+              </div>
+              <div style="font-size:12px; color:var(--ptn-text-muted); margin-bottom:8px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${app.nid_document_filename || 'NID_Document.pdf'}">
+                ${app.nid_document_filename || 'NID_Document.pdf'}
+              </div>
+              ${app.nid_document_pdf ? `
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="padding:4px 10px; font-size:11.5px;" onclick="window.viewDocPdf('${app.id}', 'nid')">
+                    Preview PDF
+                  </button>
+                  <a href="${app.nid_document_pdf}" download="${app.nid_document_filename || 'NID_Document.pdf'}" class="ptn-btn ptn-btn-primary ptn-btn-sm" style="padding:4px 10px; font-size:11.5px; text-decoration:none;">
+                    Download
+                  </a>
+                </div>
+              ` : `
+                <span style="color:var(--ptn-text-muted); font-size:12px;">No document uploaded</span>
+              `}
+            </div>
+          </div>
         </div>
 
         <div style="margin-bottom:16px;">

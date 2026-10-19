@@ -541,6 +541,57 @@
             </div>
           </div>
 
+          <!-- Mandatory Verification Documents: Trade License (PDF) & NID (PDF) -->
+          <div class="ptn-field">
+            <label for="tradeLicense">
+              Trade License (PDF) *
+              <span style="color:var(--ptn-cyan); font-size:11.5px; font-weight:normal; margin-left:6px;">Mandatory (PDF format)</span>
+            </label>
+            <div class="ptn-file-dropzone" id="tradeLicense-dropzone" style="background:rgba(0,0,0,0.35); border:1px dashed rgba(255,255,255,0.25); border-radius:10px; padding:14px; text-align:center; cursor:pointer; transition:border-color 0.2s, background 0.2s;">
+              <input type="file" id="tradeLicense" accept="application/pdf,.pdf" required style="display:none;">
+              <div id="tradeLicense-placeholder">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ptn-cyan)" stroke-width="1.8" style="margin-bottom:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <div style="font-size:13px; color:#fff; font-weight:600;">Click to upload Trade License (PDF)</div>
+                <div style="font-size:11.5px; color:var(--ptn-text-muted); margin-top:2px;">Government issued Trade License in PDF format</div>
+              </div>
+              <div id="tradeLicense-selected" style="display:none; align-items:center; justify-content:space-between; gap:10px; text-align:left;">
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                  <span style="background:rgba(239,68,68,0.2); color:#f87171; font-size:11px; font-weight:700; padding:3px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">PDF</span>
+                  <div style="overflow:hidden;">
+                    <div id="tradeLicense-name" style="font-size:13px; color:#fff; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"></div>
+                    <div id="tradeLicense-size" style="font-size:11.5px; color:var(--ptn-text-muted);"></div>
+                  </div>
+                </div>
+                <button type="button" id="tradeLicense-remove" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="padding:4px 8px; font-size:11px;">Change</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ptn-field">
+            <label for="nidDocument">
+              National ID / NID (PDF) *
+              <span style="color:var(--ptn-cyan); font-size:11.5px; font-weight:normal; margin-left:6px;">Mandatory (PDF format)</span>
+            </label>
+            <div class="ptn-file-dropzone" id="nidDocument-dropzone" style="background:rgba(0,0,0,0.35); border:1px dashed rgba(255,255,255,0.25); border-radius:10px; padding:14px; text-align:center; cursor:pointer; transition:border-color 0.2s, background 0.2s;">
+              <input type="file" id="nidDocument" accept="application/pdf,.pdf" required style="display:none;">
+              <div id="nidDocument-placeholder">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ptn-cyan)" stroke-width="1.8" style="margin-bottom:4px;"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><path d="M7 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5"/></svg>
+                <div style="font-size:13px; color:#fff; font-weight:600;">Click to upload National ID / NID (PDF)</div>
+                <div style="font-size:11.5px; color:var(--ptn-text-muted); margin-top:2px;">Applicant NID document (both sides) in PDF format</div>
+              </div>
+              <div id="nidDocument-selected" style="display:none; align-items:center; justify-content:space-between; gap:10px; text-align:left;">
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                  <span style="background:rgba(239,68,68,0.2); color:#f87171; font-size:11px; font-weight:700; padding:3px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">PDF</span>
+                  <div style="overflow:hidden;">
+                    <div id="nidDocument-name" style="font-size:13px; color:#fff; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"></div>
+                    <div id="nidDocument-size" style="font-size:11.5px; color:var(--ptn-text-muted);"></div>
+                  </div>
+                </div>
+                <button type="button" id="nidDocument-remove" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="padding:4px 8px; font-size:11px;">Change</button>
+              </div>
+            </div>
+          </div>
+
           <div class="ptn-field ptn-form-full">
             <label for="businessDescription">Brief Description of Your Business & Infrastructure Needs *</label>
             <textarea id="businessDescription" class="ptn-textarea" rows="4" placeholder="Tell us about your client base, current hosting provider, and specific infrastructure goals..." required></textarea>
@@ -698,11 +749,97 @@
       updateCalc();
     })();
 
-    // 3. Application Form Submission Handler
+    // 3. Application Form Submission Handler & Dropzone Logic
     (function () {
       const form = document.getElementById('partner-apply-form');
       const feedback = document.getElementById('form-feedback');
       const submitBtn = document.getElementById('submit-btn');
+
+      // Dropzone Wiring Helper
+      function setupDropzone(inputId, dropzoneId, placeholderId, selectedId, nameId, sizeId, removeId) {
+        const input = document.getElementById(inputId);
+        const dropzone = document.getElementById(dropzoneId);
+        const placeholder = document.getElementById(placeholderId);
+        const selected = document.getElementById(selectedId);
+        const nameEl = document.getElementById(nameId);
+        const sizeEl = document.getElementById(sizeId);
+        const removeBtn = document.getElementById(removeId);
+
+        dropzone.addEventListener('click', (e) => {
+          if (e.target !== removeBtn) input.click();
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropzone.style.borderColor = 'var(--ptn-cyan)';
+          dropzone.style.background = 'rgba(93, 224, 196, 0.08)';
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+          dropzone.style.borderColor = input.files.length ? 'var(--ptn-cyan)' : 'rgba(255,255,255,0.25)';
+          dropzone.style.background = 'rgba(0,0,0,0.35)';
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropzone.style.background = 'rgba(0,0,0,0.35)';
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            input.files = e.dataTransfer.files;
+            input.dispatchEvent(new Event('change'));
+          }
+        });
+
+        input.addEventListener('change', () => {
+          if (input.files && input.files.length > 0) {
+            const f = input.files[0];
+            if (!f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf') {
+              alert('Invalid document format. Only PDF files (.pdf) are accepted.');
+              input.value = '';
+              placeholder.style.display = 'block';
+              selected.style.display = 'none';
+              dropzone.style.borderColor = 'rgba(255,255,255,0.25)';
+              return;
+            }
+            nameEl.textContent = f.name;
+            sizeEl.textContent = `${(f.size / 1024).toFixed(1)} KB`;
+            placeholder.style.display = 'none';
+            selected.style.display = 'flex';
+            dropzone.style.borderColor = 'var(--ptn-cyan)';
+          } else {
+            placeholder.style.display = 'block';
+            selected.style.display = 'none';
+            dropzone.style.borderColor = 'rgba(255,255,255,0.25)';
+          }
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          input.value = '';
+          placeholder.style.display = 'block';
+          selected.style.display = 'none';
+          dropzone.style.borderColor = 'rgba(255,255,255,0.25)';
+          input.click();
+        });
+
+        return () => {
+          input.value = '';
+          placeholder.style.display = 'block';
+          selected.style.display = 'none';
+          dropzone.style.borderColor = 'rgba(255,255,255,0.25)';
+        };
+      }
+
+      const resetTL = setupDropzone('tradeLicense', 'tradeLicense-dropzone', 'tradeLicense-placeholder', 'tradeLicense-selected', 'tradeLicense-name', 'tradeLicense-size', 'tradeLicense-remove');
+      const resetNID = setupDropzone('nidDocument', 'nidDocument-dropzone', 'nidDocument-placeholder', 'nidDocument-selected', 'nidDocument-name', 'nidDocument-size', 'nidDocument-remove');
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Failed to read ' + file.name));
+          reader.readAsDataURL(file);
+        });
+      }
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -717,26 +854,77 @@
           return;
         }
 
-        const payload = {
-          fullName: document.getElementById('fullName').value,
-          businessName: document.getElementById('businessName').value,
-          businessEmail: document.getElementById('businessEmail').value,
-          phoneNumber: document.getElementById('phoneNumber').value,
-          country: document.getElementById('country').value,
-          websiteUrl: document.getElementById('websiteUrl').value,
-          businessType: document.getElementById('businessType').value,
-          estimatedMonthlySpend: document.getElementById('estimatedMonthlySpend').value,
-          expectedCustomers: document.getElementById('expectedCustomers').value,
-          partnershipModel: document.getElementById('partnershipModel').value,
-          servicesOfInterest: services,
-          businessDescription: document.getElementById('businessDescription').value,
-          agreeTerms: document.getElementById('agreeTerms').checked
-        };
+        const tlInput = document.getElementById('tradeLicense');
+        const nidInput = document.getElementById('nidDocument');
+
+        if (!tlInput.files || tlInput.files.length === 0) {
+          feedback.textContent = 'Trade License (PDF) is mandatory. Please upload your Trade License in PDF format.';
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+          return;
+        }
+
+        if (!nidInput.files || nidInput.files.length === 0) {
+          feedback.textContent = 'National ID / NID (PDF) is mandatory. Please upload your NID document in PDF format.';
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+          return;
+        }
+
+        const tlFile = tlInput.files[0];
+        const nidFile = nidInput.files[0];
+
+        if (!tlFile.name.toLowerCase().endsWith('.pdf') && tlFile.type !== 'application/pdf') {
+          feedback.textContent = 'Trade License must be an uploaded PDF file (.pdf).';
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+          return;
+        }
+
+        if (!nidFile.name.toLowerCase().endsWith('.pdf') && nidFile.type !== 'application/pdf') {
+          feedback.textContent = 'National ID document must be an uploaded PDF file (.pdf).';
+          feedback.className = 'ptn-form-status error';
+          feedback.style.display = 'block';
+          return;
+        }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Validating & Submitting...';
+        submitBtn.textContent = 'Encoding & Uploading Documents...';
 
         try {
+          const [tlData, nidData] = await Promise.all([
+            readFileAsDataUrl(tlFile),
+            readFileAsDataUrl(nidFile)
+          ]);
+
+          const payload = {
+            fullName: document.getElementById('fullName').value,
+            businessName: document.getElementById('businessName').value,
+            businessEmail: document.getElementById('businessEmail').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            country: document.getElementById('country').value,
+            websiteUrl: document.getElementById('websiteUrl').value,
+            businessType: document.getElementById('businessType').value,
+            estimatedMonthlySpend: document.getElementById('estimatedMonthlySpend').value,
+            expectedCustomers: document.getElementById('expectedCustomers').value,
+            partnershipModel: document.getElementById('partnershipModel').value,
+            servicesOfInterest: services,
+            businessDescription: document.getElementById('businessDescription').value,
+            agreeTerms: document.getElementById('agreeTerms').checked,
+            tradeLicense: {
+              name: tlFile.name,
+              data: tlData,
+              size: tlFile.size
+            },
+            nidDocument: {
+              name: nidFile.name,
+              data: nidData,
+              size: nidFile.size
+            }
+          };
+
+          submitBtn.textContent = 'Submitting Application...';
+
           const res = await fetch('/api/public/applications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -752,11 +940,13 @@
             <strong>Application Received Successfully!</strong><br>
             Reference Number: <b style="color:var(--ptn-cyan); font-size:16px;">${data.referenceNo}</b><br>
             ${data.message}<br>
-            A confirmation record has been securely created in our partner queue.
+            Trade License &amp; NID verification documents have been securely attached to your application.
           `;
           feedback.className = 'ptn-form-status success';
           feedback.style.display = 'block';
           form.reset();
+          resetTL();
+          resetNID();
         } catch (err) {
           feedback.textContent = err.message;
           feedback.className = 'ptn-form-status error';

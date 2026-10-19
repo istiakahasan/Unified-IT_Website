@@ -6,6 +6,7 @@ import { WHMCSAdapter } from '../server/whmcs-adapter.mjs';
 import { CloudStackAdapter } from '../server/cloudstack-adapter.mjs';
 import { RewardProcessingService } from '../server/reward-service.mjs';
 import { handleLogin, sessionStore } from '../server/auth.mjs';
+import { handleApiRequest } from '../server/api.mjs';
 
 describe('Unified Cloud Partner Program - Production Test Suite', () => {
   let db;
@@ -112,6 +113,99 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
       const login = handleLogin(db, email, 'PartnerInitial2026!');
       assert.equal(login.user.role, 'PARTNER');
       assert.equal(login.partner.companyName, 'Apex Hosting');
+    });
+
+    function mockSubmit(payload) {
+      return new Promise((resolve) => {
+        let statusCode = 200;
+        const res = {
+          writeHead: (code) => { statusCode = code; },
+          setHeader: () => {},
+          end: (str) => {
+            let data = {};
+            try { data = JSON.parse(str); } catch { data = { raw: str }; }
+            resolve({ statusCode, data });
+          }
+        };
+        const req = { method: 'POST', headers: {}, socket: { remoteAddress: '127.0.0.1' } };
+        handleApiRequest({
+          req,
+          res,
+          pathname: '/api/public/applications',
+          query: {},
+          body: payload,
+          db,
+          pricingEngine: pricing,
+          whmcsAdapter: whmcs,
+          cloudstackAdapter: cloudstack,
+          rewardService
+        });
+      });
+    }
+
+    const baseValidPayload = {
+      fullName: 'Kamal Hossain',
+      businessName: 'Kamal Cloud Ltd',
+      businessEmail: 'kamal@cloudltd.test',
+      phoneNumber: '+8801711223344',
+      country: 'Bangladesh',
+      businessType: 'Hosting Provider',
+      estimatedMonthlySpend: '৳30,000 - ৳120,000',
+      expectedCustomers: '10 - 50 Customers',
+      partnershipModel: 'Reseller',
+      servicesOfInterest: ['Cloud VPS', 'Dedicated Server'],
+      businessDescription: 'We operate hosting infrastructure in Dhaka for medium enterprises.',
+      agreeTerms: true
+    };
+
+    const validSamplePdf = 'data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDEwMCA3MDAgVGQgKFZlcmlmaWVkIFBERiBEb2N1bWVudCkgVmogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTggMDAwMDAgbiAKMDAwMDAwMDA3NyAwMDAwMCBuIAowMDAwMDAwMTM2IDAwMDAwIG4gCjAwMDAwMDAyMzEgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA1Ci9Sb290IDEgMCBSCj4+CnN0YXJ0eHJlZgoyOTUKJSVFT0Y=';
+
+    it('should reject application submission if Trade License is missing', async () => {
+      const payload = { ...baseValidPayload, businessEmail: 'no-tl@test.com', nidDocument: { name: 'nid.pdf', data: validSamplePdf } };
+      const res = await mockSubmit(payload);
+      assert.equal(res.statusCode, 400);
+      assert.ok(res.data.message.includes('Trade License is mandatory'));
+    });
+
+    it('should reject application submission if NID document is missing', async () => {
+      const payload = { ...baseValidPayload, businessEmail: 'no-nid@test.com', tradeLicense: { name: 'trade.pdf', data: validSamplePdf } };
+      const res = await mockSubmit(payload);
+      assert.equal(res.statusCode, 400);
+      assert.ok(res.data.message.includes('National ID (NID) is mandatory'));
+    });
+
+    it('should reject application submission if Trade License or NID is not in PDF format', async () => {
+      const payload = {
+        ...baseValidPayload,
+        businessEmail: 'invalid-doc@test.com',
+        tradeLicense: { name: 'trade.png', data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY44YAAAAASUVORK5CYII=' },
+        nidDocument: { name: 'nid.pdf', data: validSamplePdf }
+      };
+      const res = await mockSubmit(payload);
+      assert.equal(res.statusCode, 400);
+      assert.ok(res.data.message.includes('Invalid Trade License format'));
+    });
+
+    it('should successfully submit application with mandatory Trade License PDF and NID PDF', async () => {
+      const email = 'verified.partner@cloudltd.test';
+      const payload = {
+        ...baseValidPayload,
+        businessEmail: email,
+        tradeLicense: { name: 'Dhaka_Trade_License_2026.pdf', data: validSamplePdf, size: 1024 },
+        nidDocument: { name: 'Kamal_Hossain_NID.pdf', data: validSamplePdf, size: 2048 }
+      };
+      const res = await mockSubmit(payload);
+      assert.equal(res.statusCode, 201);
+      assert.equal(res.data.success, true);
+      assert.ok(res.data.referenceNo.startsWith('APP-'));
+
+      // Verify row persisted in SQLite database with documents
+      const saved = db.prepare('SELECT * FROM partner_applications WHERE email = ?').get(email);
+      assert.ok(saved);
+      assert.equal(saved.trade_license_filename, 'Dhaka_Trade_License_2026.pdf');
+      assert.equal(saved.trade_license_pdf, validSamplePdf);
+      assert.equal(saved.nid_document_filename, 'Kamal_Hossain_NID.pdf');
+      assert.equal(saved.nid_document_pdf, validSamplePdf);
     });
   });
 

@@ -108,30 +108,76 @@ P.addEventListener('click',function(e){
 
   if(!form)return;
 
+  function readDataUrl(file){
+    return new Promise(function(resolve,reject){
+      var reader=new FileReader();
+      reader.onload=function(){resolve(reader.result)};
+      reader.onerror=function(){reject(new Error('Failed reading '+file.name))};
+      reader.readAsDataURL(file);
+    });
+  }
+
   form.addEventListener('submit',async function(e){
     e.preventDefault();
     feedback.className='ptn-form-status';
     feedback.style.display='none';
 
-    var payload={
-      fullName:document.getElementById('inp-fullName').value,
-      businessName:document.getElementById('inp-bizName').value,
-      businessEmail:document.getElementById('inp-email').value,
-      phoneNumber:document.getElementById('inp-phone').value,
-      country:document.getElementById('inp-country').value,
-      businessType:document.getElementById('inp-bizType').value,
-      estimatedMonthlySpend:document.getElementById('inp-spend').value,
-      expectedCustomers:'10 - 50 Customers',
-      partnershipModel:document.getElementById('inp-model').value,
-      servicesOfInterest:['Cloud VPS','Dedicated Server','Reseller cPanel'],
-      businessDescription:document.getElementById('inp-desc').value,
-      agreeTerms:document.getElementById('inp-agree').checked
-    };
+    var tlInput=document.getElementById('inp-tradeLicense');
+    var nidInput=document.getElementById('inp-nidDocument');
+
+    if(!tlInput.files||!tlInput.files.length){
+      feedback.textContent='Trade License (PDF) is mandatory. Please upload your company Trade License.';
+      feedback.className='ptn-form-status error';
+      feedback.style.display='block';
+      return;
+    }
+
+    if(!nidInput.files||!nidInput.files.length){
+      feedback.textContent='National ID (NID) is mandatory. Please upload your NID document in PDF format.';
+      feedback.className='ptn-form-status error';
+      feedback.style.display='block';
+      return;
+    }
+
+    var tlFile=tlInput.files[0];
+    var nidFile=nidInput.files[0];
+
+    if(!tlFile.name.toLowerCase().endsWith('.pdf')&&tlFile.type!=='application/pdf'){
+      feedback.textContent='Trade License must be a PDF file (.pdf).';
+      feedback.className='ptn-form-status error';
+      feedback.style.display='block';
+      return;
+    }
+
+    if(!nidFile.name.toLowerCase().endsWith('.pdf')&&nidFile.type!=='application/pdf'){
+      feedback.textContent='National ID document must be a PDF file (.pdf).';
+      feedback.className='ptn-form-status error';
+      feedback.style.display='block';
+      return;
+    }
 
     submitBtn.disabled=true;
-    submitBtn.textContent='Submitting Application...';
+    submitBtn.textContent='Uploading Documents & Submitting...';
 
     try {
+      var docs=await Promise.all([readDataUrl(tlFile),readDataUrl(nidFile)]);
+      var payload={
+        fullName:document.getElementById('inp-fullName').value,
+        businessName:document.getElementById('inp-bizName').value,
+        businessEmail:document.getElementById('inp-email').value,
+        phoneNumber:document.getElementById('inp-phone').value,
+        country:document.getElementById('inp-country').value,
+        businessType:document.getElementById('inp-bizType').value,
+        estimatedMonthlySpend:document.getElementById('inp-spend').value,
+        expectedCustomers:'10 - 50 Customers',
+        partnershipModel:document.getElementById('inp-model').value,
+        servicesOfInterest:['Cloud VPS','Dedicated Server','Reseller cPanel'],
+        businessDescription:document.getElementById('inp-desc').value,
+        agreeTerms:document.getElementById('inp-agree').checked,
+        tradeLicense:{name:tlFile.name,data:docs[0],size:tlFile.size},
+        nidDocument:{name:nidFile.name,data:docs[1],size:nidFile.size}
+      };
+
       var res=await fetch('/api/public/applications',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -140,7 +186,7 @@ P.addEventListener('click',function(e){
       var data=await res.json();
       if(!res.ok||data.error)throw new Error(data.message||'Submission failed');
 
-      feedback.innerHTML='<strong>Application Received!</strong> Reference: <b style="color:var(--ptn-cyan);font-size:16px;">'+data.referenceNo+'</b><br>'+data.message;
+      feedback.innerHTML='<strong>Application Received!</strong> Reference: <b style="color:var(--ptn-cyan);font-size:16px;">'+data.referenceNo+'</b><br>'+data.message+'<br>Trade License and NID documents securely attached.';
       feedback.className='ptn-form-status success';
       feedback.style.display='block';
       form.reset();

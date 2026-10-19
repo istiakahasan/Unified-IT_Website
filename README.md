@@ -108,6 +108,11 @@ A complete wholesale reseller and partner ecosystem backed by SQLite and a REST 
   - **Gold Partner**: 15% wholesale margin (৳120,000 monthly spend)
   - **Platinum Partner**: 20% – 25% wholesale margin (৳360,000 monthly spend)
   - Spend upgrades trigger automatically as verified sales are logged.
+- **Mandatory PDF Verification Documents (Trade License & NID)**:
+  - Both **Trade License** and **National ID (NID)** are mandatory uploads for all partner registrations in [partners.html](file:///e:/Projects/unified-it/partners.html) and [index.html](file:///e:/Projects/unified-it/index.html).
+  - Documents must be uploaded strictly in **PDF format** (`.pdf`), enforced with client-side drag-and-drop validation and server-side MIME/signature checks in `POST /api/public/applications`.
+  - Stored securely in the SQLite `partner_applications` table (`trade_license_pdf`, `trade_license_filename`, `nid_document_pdf`, `nid_document_filename`) with automatic schema migration.
+  - In [admin-partners.html](file:///e:/Projects/unified-it/admin-partners.html), administrators can inspect applicant credentials with **PDF Preview** (opens in a new tab) and **Download PDF** buttons in the Application Details modal, accompanied by verification badges in the Applications directory table.
 - **Admin Governance & Custom Discounts**:
   - In [admin-partners.html](file:///e:/Projects/unified-it/admin-partners.html), the **Assigned Tier** and **Monthly Spend** are strictly read-only and governed automatically by verified infrastructure sales.
   - Administrators can grant bespoke **Custom Commercial Discounts** (e.g. 20%, 25%) via the `[Give Discount]` management action.
@@ -152,9 +157,9 @@ Starts the Node.js server and SQLite backend on `http://localhost:3000`.
 ```bash
 npm test
 ```
-Executes the production test suite (`tests/partner-system.test.mjs`) verifying:
+Executes the production test suite (`tests/partner-system.test.mjs`) verifying 33 automated tests:
 1. Multi-tenant database initialization & tier configurations
-2. Partner application workflow & account generation
+2. Partner application workflow & mandatory PDF document validation (Trade License & NID)
 3. Pricing engine & anti-stacking protections
 4. Partner-to-customer data isolation
 5. WHMCS & CloudStack adapter idempotency and provisioning quotas
