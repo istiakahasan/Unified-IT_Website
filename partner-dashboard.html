@@ -358,7 +358,7 @@
           <div class="ptn-kpi-card">
             <div class="sub">Current Wholesale Margin</div>
             <div class="val" id="metric-margin" style="color: var(--ptn-cyan);">15%</div>
-            <div class="sub">Applied to all eligible CloudStack VMs & Storage</div>
+            <div class="sub" id="metric-margin-sub">Applied to all eligible CloudStack VMs & Storage</div>
           </div>
 
           <div class="ptn-kpi-card">
@@ -1012,11 +1012,24 @@
       const currentMargin = data.metrics.currentTier ? Math.round(data.metrics.currentTier.discountRate * 100) : Math.round(data.partner.tier_discount_rate * 100);
       const currentSpend = Number(data.metrics.currentSpend || 0);
 
-      document.getElementById('partner-status-tag').textContent = `Active ${currentTierName} (${currentMargin}% Margin)`;
+      const hasCustomDiscount = Boolean(data.metrics.hasCustomDiscount || (data.partner && data.partner.has_custom_discount));
+      const effectiveRate = data.metrics.effectiveDiscountRate || (data.partner && data.partner.effective_discount_rate) || (currentMargin / 100);
+      const effectiveMarginPct = Math.round(effectiveRate * 100);
+
+      if (hasCustomDiscount) {
+        document.getElementById('partner-status-tag').innerHTML = `Active ${currentTierName} &bull; <span style="color:#facc15; font-weight:700;">${effectiveMarginPct}% Special Discount</span>`;
+        document.getElementById('metric-margin').textContent = `${effectiveMarginPct}%`;
+        const marginSub = document.getElementById('metric-margin-sub');
+        if (marginSub) marginSub.innerHTML = `<span style="color:#facc15; font-weight:600;">⭐ Special Approved Discount</span> (Base Tier: ${currentMargin}%)`;
+      } else {
+        document.getElementById('partner-status-tag').textContent = `Active ${currentTierName} (${currentMargin}% Margin)`;
+        document.getElementById('metric-margin').textContent = `${currentMargin}%`;
+        const marginSub = document.getElementById('metric-margin-sub');
+        if (marginSub) marginSub.textContent = 'Applied to all eligible CloudStack VMs & Storage';
+      }
+
       document.getElementById('partner-id-display').textContent = data.partner.id;
       document.getElementById('partner-contact-name').textContent = data.partner.contact_name;
-
-      document.getElementById('metric-margin').textContent = `${currentMargin}%`;
       document.getElementById('metric-spend').textContent = `৳${currentSpend.toLocaleString('en-US')}`;
       document.getElementById('metric-services').textContent = data.metrics.activeServicesCount;
       document.getElementById('metric-customers').textContent = `Across ${data.metrics.customerCount} managed client organizations`;

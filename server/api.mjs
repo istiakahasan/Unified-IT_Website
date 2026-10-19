@@ -310,6 +310,29 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         WHERE p.id = ?
       `).get(partnerId);
 
+      // Check for active custom discount (either agreement or direct custom_discount_rate)
+      const activeAgreement = db.prepare(`
+        SELECT * FROM partner_agreements
+        WHERE partner_id = ? AND status = 'ACTIVE'
+          AND date(effective_from) <= date('now')
+          AND date(effective_until) >= date('now')
+        ORDER BY custom_discount_rate DESC
+        LIMIT 1
+      `).get(partnerId);
+
+      let customDiscountRate = null;
+      let discountSource = `Tier: ${partner.tier_name}`;
+      if (activeAgreement && activeAgreement.custom_discount_rate > 0) {
+        customDiscountRate = activeAgreement.custom_discount_rate;
+        discountSource = `Strategic Agreement (${activeAgreement.agreement_code})`;
+      } else if (partner.custom_discount_rate !== null && partner.custom_discount_rate !== undefined && partner.custom_discount_rate > 0) {
+        customDiscountRate = partner.custom_discount_rate;
+        discountSource = 'Custom Partner Discount';
+      }
+
+      const effectiveDiscountRate = customDiscountRate !== null ? customDiscountRate : partner.tier_discount_rate;
+      const discountPct = Math.round(effectiveDiscountRate * 100);
+
       const customerCount = db.prepare(`
         SELECT COUNT(*) as count FROM partner_customer_relationships WHERE partner_id = ? AND status = 'ACTIVE'
       `).get(partnerId).count;
@@ -325,10 +348,39 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         FROM partner_commissions WHERE partner_id = ?
       `).get(partnerId);
 
+      const gross1 = 46116.00;
+      const gross2 = 34404.00;
+      const savings1 = gross1 * effectiveDiscountRate;
+      const savings2 = gross2 * effectiveDiscountRate;
+
       const recentInvoices = [
-        { id: 'INV-2026-901', date: '2026-10-01', description: 'Monthly Infrastructure Services - 5 instances', gross: '৳46,116.00', discount: '-৳6,917.40 (15%)', net: '৳39,198.60', status: 'PAID' },
-        { id: 'INV-2026-842', date: '2026-09-01', description: 'Monthly Infrastructure Services - 5 instances', gross: '৳46,116.00', discount: '-৳6,917.40 (15%)', net: '৳39,198.60', status: 'PAID' },
-        { id: 'INV-2026-781', date: '2026-08-01', description: 'Monthly Infrastructure Services - 4 instances', gross: '৳34,404.00', discount: '-৳5,160.60 (15%)', net: '৳29,243.40', status: 'PAID' }
+        {
+          id: 'INV-2026-901',
+          date: '2026-10-01',
+          description: 'Monthly Infrastructure Services - 5 instances',
+          gross: `৳${gross1.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          discount: `-৳${savings1.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${discountPct}%)`,
+          net: `৳${(gross1 - savings1).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          status: 'PAID'
+        },
+        {
+          id: 'INV-2026-842',
+          date: '2026-09-01',
+          description: 'Monthly Infrastructure Services - 5 instances',
+          gross: `৳${gross1.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          discount: `-৳${savings1.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${discountPct}%)`,
+          net: `৳${(gross1 - savings1).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          status: 'PAID'
+        },
+        {
+          id: 'INV-2026-781',
+          date: '2026-08-01',
+          description: 'Monthly Infrastructure Services - 4 instances',
+          gross: `৳${gross2.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          discount: `-৳${savings2.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${discountPct}%)`,
+          net: `৳${(gross2 - savings2).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          status: 'PAID'
+        }
       ];
 
       // Next tier progression schedule
@@ -346,7 +398,13 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       const isMaxTier = !nextTier;
 
       return sendJson(200, {
-        partner,
+        partner: {
+          ...partner,
+          custom_discount_rate: customDiscountRate,
+          effective_discount_rate: effectiveDiscountRate,
+          discount_source: discountSource,
+          has_custom_discount: customDiscountRate !== null
+        },
         metrics: {
           customerCount,
           activeServicesCount: services.count || 0,
@@ -354,6 +412,10 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
           commissionBalance: Number(commission.balancePendingPayout || 0).toFixed(2),
           totalCommissionEarned: Number(commission.totalEarned || 0).toFixed(2),
           currentSpend,
+          effectiveDiscountRate,
+          hasCustomDiscount: customDiscountRate !== null,
+          customDiscountRate,
+          discountSource,
           currentTier: {
             id: currentTier.id,
             name: currentTier.name,
@@ -802,31 +864,46 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
 
     // GET /api/admin/partners
     if (req.method === 'GET' && pathname === '/api/admin/partners') {
+      const allPartners = db.prepare(`SELECT id FROM partners`).all();
+      for (const p of allPartners) {
+        evaluateAndUpgradePartnerTier(db, p.id);
+      }
+
       const partners = db.prepare(`
-        SELECT p.*, pt.name as tier_name, pt.discount_rate as tier_discount_rate
+        SELECT p.*, pt.name as tier_name, pt.discount_rate as tier_discount_rate,
+               (
+                 SELECT pa.custom_discount_rate FROM partner_agreements pa
+                 WHERE pa.partner_id = p.id AND pa.status = 'ACTIVE'
+                   AND date(pa.effective_from) <= date('now')
+                   AND date(pa.effective_until) >= date('now')
+                 ORDER BY pa.created_at DESC, pa.custom_discount_rate DESC
+                 LIMIT 1
+               ) as agreement_discount_rate,
+               (
+                 SELECT pa.agreement_code FROM partner_agreements pa
+                 WHERE pa.partner_id = p.id AND pa.status = 'ACTIVE'
+                   AND date(pa.effective_from) <= date('now')
+                   AND date(pa.effective_until) >= date('now')
+                 ORDER BY pa.created_at DESC, pa.custom_discount_rate DESC
+                 LIMIT 1
+               ) as active_agreement_code
         FROM partners p
         JOIN partner_tiers pt ON p.tier_id = pt.id
         ORDER BY p.created_at DESC
       `).all();
+
+      partners.forEach(p => {
+        p.effective_discount_rate = (p.custom_discount_rate !== null && p.custom_discount_rate !== undefined && p.custom_discount_rate > 0)
+          ? p.custom_discount_rate
+          : (p.agreement_discount_rate || p.tier_discount_rate);
+      });
+
       return sendJson(200, { partners });
     }
 
-    // POST /api/admin/partners/:id/tier (Assign or change tier)
+    // POST /api/admin/partners/:id/tier (Assigned tier is automatic by spend)
     if (req.method === 'POST' && pathname.endsWith('/tier')) {
-      const partnerId = pathname.split('/')[4];
-      const { tierId } = body;
-      const tier = db.prepare(`SELECT * FROM partner_tiers WHERE id = ?`).get(tierId);
-      if (!tier) return sendError(400, 'Invalid tier ID');
-
-      db.prepare(`
-        UPDATE partners SET tier_id = ?, updated_at = datetime('now') WHERE id = ?
-      `).run(tierId, partnerId);
-
-      logAudit('ADMIN', req.session.userId, req.session.email, 'PARTNER_TIER_CHANGED', 'partners', partnerId, {
-        newTier: tier.name
-      });
-
-      return sendJson(200, { success: true, message: `Partner tier updated to ${tier.name}.` });
+      return sendError(400, 'Assigned partner tier is automatically determined by monthly eligible spend in BDT and cannot be manually overridden. You can grant a custom discount to the partner instead.');
     }
 
     // POST /api/admin/partners/:id/spend (Update monthly eligible spend & evaluate tier)
@@ -881,15 +958,34 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       return sendJson(200, { success: true, message: `Partner status changed to ${status}.` });
     }
 
-    // POST /api/admin/partners/:id/agreement (Custom Commercial Agreement)
-    if (req.method === 'POST' && pathname.endsWith('/agreement')) {
+    // POST /api/admin/partners/:id/discount or /agreement (Custom Commercial Discount)
+    if (req.method === 'POST' && (pathname.endsWith('/discount') || pathname.endsWith('/agreement'))) {
       const partnerId = pathname.split('/')[4];
-      const { customDiscountRate, effectiveFrom, effectiveUntil, creditLimit, notes } = body;
+      const { customDiscountRate, discountPercent, effectiveFrom, effectiveUntil, creditLimit, notes } = body;
 
-      const rate = Number(customDiscountRate);
-      if (isNaN(rate) || rate < 0 || rate > 0.25) {
-        return sendError(400, 'Custom discount rate must be between 0% and 25%.');
+      let rawRate = customDiscountRate !== undefined ? customDiscountRate : discountPercent;
+      let rate = Number(rawRate);
+      if (!isNaN(rate) && rate > 1) {
+        rate = rate / 100; // e.g. 20 -> 0.20
       }
+
+      if (isNaN(rate) || rate < 0 || rate > 0.50) {
+        return sendError(400, 'Custom discount rate must be between 0% and 50%.');
+      }
+
+      // Update partner table
+      db.prepare(`
+        UPDATE partners
+        SET custom_discount_rate = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(rate, partnerId);
+
+      // Supersede previous active agreements
+      db.prepare(`
+        UPDATE partner_agreements
+        SET status = 'SUPERSEDED'
+        WHERE partner_id = ? AND status = 'ACTIVE'
+      `).run(partnerId);
 
       const agreementId = 'agr-' + crypto.randomBytes(6).toString('hex');
       const agreementCode = 'AGR-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
@@ -905,20 +1001,22 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         effectiveFrom || new Date().toISOString().slice(0, 10),
         effectiveUntil || '2027-12-31',
         Number(creditLimit) || 5000,
-        req.session.email,
-        notes || 'Bespoke strategic partner agreement.'
+        req.session?.email || 'admin@unified.cloud',
+        notes || 'Custom commercial partner discount.'
       );
 
-      logAudit('ADMIN', req.session.userId, req.session.email, 'STRATEGIC_AGREEMENT_APPROVED', 'partner_agreements', agreementId, {
+      logAudit('ADMIN', req.session?.userId || 'admin', req.session?.email || 'admin@unified.cloud', 'CUSTOM_DISCOUNT_APPLIED', 'partners', partnerId, {
         partnerId,
         agreementCode,
-        rate
+        customDiscountRate: rate,
+        discountPercent: `${(rate * 100).toFixed(1)}%`
       });
 
-      return sendJson(201, {
+      return sendJson(200, {
         success: true,
         agreementCode,
-        message: `Strategic agreement ${agreementCode} established with ${(rate * 100).toFixed(1)}% margin.`
+        customDiscountRate: rate,
+        message: `Custom discount of ${(rate * 100).toFixed(1)}% successfully applied to partner and updated in partner portal.`
       });
     }
 
