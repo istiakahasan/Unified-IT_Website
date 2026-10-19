@@ -26,6 +26,17 @@ export function normalizeServiceCategory(cat) {
 }
 
 /**
+ * Returns canonical category name for sales and transactions.
+ * Enforces 'VPS' instead of 'Cloud VPS' and 'VDS' instead of 'Dedicated Server'.
+ */
+export function canonicalCategory(cat) {
+  const norm = normalizeServiceCategory(cat);
+  if (norm === 'vps') return 'VPS';
+  if (norm === 'vds') return 'VDS';
+  return cat;
+}
+
+/**
  * RewardProcessingService
  * Handles financial-grade partner reward points calculation, ledgering, idempotency,
  * refund reversals, and administrator policy enforcement.
@@ -51,7 +62,7 @@ export class RewardProcessingService {
           expiration_days, eligible_categories, updated_at, updated_by
         ) VALUES (
           'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
-          '["Cloud VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+          '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
           datetime('now'), 'system'
         )
       `).run();
@@ -61,7 +72,7 @@ export class RewardProcessingService {
     try {
       policy.eligible_categories = JSON.parse(policy.eligible_categories);
     } catch {
-      policy.eligible_categories = ["Cloud VPS","VPS","Dedicated Server","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"];
+      policy.eligible_categories = ["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"];
     }
 
     return policy;
@@ -78,7 +89,7 @@ export class RewardProcessingService {
 
     const categoriesJson = Array.isArray(eligibleCategories)
       ? JSON.stringify(eligibleCategories)
-      : (typeof eligibleCategories === 'string' ? eligibleCategories : '["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]');
+      : (typeof eligibleCategories === 'string' ? eligibleCategories : '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]');
 
     this.db.prepare(`
       UPDATE partner_reward_policies
@@ -137,7 +148,7 @@ export class RewardProcessingService {
     customerName,
     customerEmail,
     serviceName,
-    category = 'Cloud VPS',
+    category = 'VPS',
     productCode = 'GEN-CLOUD',
     grossAmount,
     discountAmount = 0,
@@ -156,6 +167,7 @@ export class RewardProcessingService {
 
     const policy = this.getPolicy();
     const effectiveIdempotency = idempotencyKey || `sale-${orderNumber}-${paymentId || 'def'}`;
+    const savedCategory = canonicalCategory(category || 'VPS');
 
     // 1. Idempotency Check: prevent duplicate rewards for same payment event
     const existingTx = this.db.prepare(`
@@ -185,7 +197,7 @@ export class RewardProcessingService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'BDT', 'PAID', ?, ?, ?, 1)
       `).run(
         saleId, orderNumber, partnerId, customerId, customerName, customerEmail,
-        serviceName, category, productCode, grossAmount, discountAmount, taxAmount,
+        serviceName, savedCategory, productCode, grossAmount, discountAmount, taxAmount,
         0, paymentId || null, isRecurring ? 1 : 0, billingCycle
       );
 
@@ -236,7 +248,7 @@ export class RewardProcessingService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'BDT', 'PAID', ?, ?, ?, 0)
       `).run(
         saleId, orderNumber, partnerId, customerId, customerName, customerEmail,
-        serviceName, category, productCode, gross, discount, tax,
+        serviceName, savedCategory, productCode, gross, discount, tax,
         eligibleNetAmount, paymentId || null, isRecurring ? 1 : 0, billingCycle
       );
 

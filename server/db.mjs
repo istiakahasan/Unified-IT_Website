@@ -255,7 +255,7 @@ export function initDatabase(dbPath = DB_FILE) {
       apply_to_renewals INTEGER NOT NULL DEFAULT 1,
       disallow_self_referral INTEGER NOT NULL DEFAULT 1,
       expiration_days INTEGER NOT NULL DEFAULT 0,
-      eligible_categories TEXT NOT NULL DEFAULT '["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+      eligible_categories TEXT NOT NULL DEFAULT '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_by TEXT
     );
@@ -409,7 +409,7 @@ function seedDefaultData(db) {
 
   // 2. Benefits
   const benefits = [
-    { id: 'b1', tier_id: 'tier-registered', benefit_name: '5% Base Reseller Discount on Cloud VPS & Dedicated Servers', is_immediate: 1 },
+    { id: 'b1', tier_id: 'tier-registered', benefit_name: '5% Base Reseller Discount on VPS & VDS', is_immediate: 1 },
     { id: 'b2', tier_id: 'tier-registered', benefit_name: 'Centralized WHMCS Billing & Client Portal Access', is_immediate: 1 },
     { id: 'b3', tier_id: 'tier-registered', benefit_name: 'Automated Apache CloudStack Provisioning API', is_immediate: 1 },
     { id: 'b4', tier_id: 'tier-registered', benefit_name: 'Partner Knowledge Base & Technical Onboarding Guides', is_immediate: 1 },
@@ -437,13 +437,13 @@ function seedDefaultData(db) {
 
   // 3. Product Pricing Rules (in BDT)
   const pricingRules = [
-    { id: 'pr-vps-start', product_code: 'VPS-STARTER', product_name: 'Starter Cloud VPS (1 vCPU, 2GB RAM)', category: 'Cloud VPS', base_price_monthly: 1464.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
-    { id: 'pr-vps-biz', product_code: 'VPS-BUSINESS', product_name: 'Business Cloud VPS (2 vCPU, 4GB RAM)', category: 'Cloud VPS', base_price_monthly: 2928.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
-    { id: 'pr-vps-pro', product_code: 'VPS-PRO', product_name: 'Professional Cloud VPS (4 vCPU, 8GB RAM)', category: 'Cloud VPS', base_price_monthly: 5856.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
-    { id: 'pr-vps-ent', product_code: 'VPS-ENTERPRISE', product_name: 'Enterprise Cloud VPS (8 vCPU, 16GB RAM)', category: 'Cloud VPS', base_price_monthly: 11712.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
-    { id: 'pr-vds-ess', product_code: 'VDS-ESSENTIAL', product_name: 'Essential Dedicated Server (Xeon, 32GB ECC)', category: 'Dedicated Server', base_price_monthly: 14640.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
-    { id: 'pr-vds-biz', product_code: 'VDS-BUSINESS', product_name: 'Business Dedicated Server (EPYC, 64GB ECC)', category: 'Dedicated Server', base_price_monthly: 25620.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
-    { id: 'pr-vds-ent', product_code: 'VDS-ENTERPRISE', product_name: 'Enterprise Dedicated Server (Dual EPYC, 256GB)', category: 'Dedicated Server', base_price_monthly: 54900.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
+    { id: 'pr-vps-start', product_code: 'VPS-STARTER', product_name: 'Starter Cloud VPS (1 vCPU, 2GB RAM)', category: 'VPS', base_price_monthly: 1464.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
+    { id: 'pr-vps-biz', product_code: 'VPS-BUSINESS', product_name: 'Business Cloud VPS (2 vCPU, 4GB RAM)', category: 'VPS', base_price_monthly: 2928.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
+    { id: 'pr-vps-pro', product_code: 'VPS-PRO', product_name: 'Professional Cloud VPS (4 vCPU, 8GB RAM)', category: 'VPS', base_price_monthly: 5856.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
+    { id: 'pr-vps-ent', product_code: 'VPS-ENTERPRISE', product_name: 'Enterprise Cloud VPS (8 vCPU, 16GB RAM)', category: 'VPS', base_price_monthly: 11712.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.10, exclusion_reason: null },
+    { id: 'pr-vds-ess', product_code: 'VDS-ESSENTIAL', product_name: 'Essential Dedicated Server (Xeon, 32GB ECC)', category: 'VDS', base_price_monthly: 14640.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
+    { id: 'pr-vds-biz', product_code: 'VDS-BUSINESS', product_name: 'Business Dedicated Server (EPYC, 64GB ECC)', category: 'VDS', base_price_monthly: 25620.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
+    { id: 'pr-vds-ent', product_code: 'VDS-ENTERPRISE', product_name: 'Enterprise Dedicated Server (Dual EPYC, 256GB)', category: 'VDS', base_price_monthly: 54900.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.08, exclusion_reason: null },
     { id: 'pr-res-cpanel', product_code: 'HOST-CPANEL-RES', product_name: 'Reseller cPanel Hosting 50 Accounts', category: 'Reseller Hosting', base_price_monthly: 5490.00, is_discountable: 1, max_discount_rate: 0.25, fixed_commission_rate: 0.12, exclusion_reason: null },
     { id: 'pr-storage', product_code: 'STORAGE-OBJ', product_name: 'Enterprise S3 Object Storage (Per TB)', category: 'Cloud Storage', base_price_monthly: 1830.00, is_discountable: 1, max_discount_rate: 0.20, fixed_commission_rate: 0.05, exclusion_reason: null },
     { id: 'pr-m365', product_code: 'M365-PASS', product_name: 'Microsoft 365 Business Standard', category: 'SaaS License', base_price_monthly: 1525.00, is_discountable: 0, max_discount_rate: 0.03, fixed_commission_rate: 0.03, exclusion_reason: 'Third-party vendor pass-through license. Maximum 3% distributor incentive.' },
@@ -680,7 +680,7 @@ function seedRewardSystemData(db) {
         expiration_days, eligible_categories, updated_at, updated_by
       ) VALUES (
         'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
-        '["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+        '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
         datetime('now'), 'system-init'
       )
     `).run();
@@ -710,7 +710,7 @@ function seedRewardSystemData(db) {
         customerName: 'Rahim Garments Ltd.',
         customerEmail: 'it@rahimgarments.com',
         serviceName: 'Enterprise Cloud VPS (8 vCPU, 16GB RAM)',
-        category: 'Cloud VPS',
+        category: 'VPS',
         productCode: 'VPS-ENTERPRISE',
         gross: 11712.00,
         discount: 1756.80,
@@ -727,7 +727,7 @@ function seedRewardSystemData(db) {
         customerName: 'Bengal Fintech Labs',
         customerEmail: 'ops@bengalfintech.io',
         serviceName: 'Bare Metal DB Host (Dual EPYC, 64GB)',
-        category: 'Dedicated Server',
+        category: 'VDS',
         productCode: 'VDS-BUSINESS',
         gross: 25620.00,
         discount: 3843.00,
@@ -778,7 +778,7 @@ function seedRewardSystemData(db) {
         customerName: 'Apex Digital Labs',
         customerEmail: 'client@apexdigital.com',
         serviceName: 'High-Performance Cloud Cluster (VPS-PRO + Storage)',
-        category: 'Cloud VPS',
+        category: 'VPS',
         productCode: 'VPS-PRO',
         gross: 50000.00,
         discount: 0,
@@ -795,7 +795,7 @@ function seedRewardSystemData(db) {
         customerName: 'Sylhet Web Agency',
         customerEmail: 'info@sylhetweb.com',
         serviceName: 'Starter Cloud VPS (1 vCPU, 2GB RAM)',
-        category: 'Cloud VPS',
+        category: 'VPS',
         productCode: 'VPS-STARTER',
         gross: 2928.00,
         discount: 0,

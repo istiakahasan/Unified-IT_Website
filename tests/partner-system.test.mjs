@@ -556,6 +556,38 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
       });
       assert.equal(resVds.success, true);
       assert.equal(resVds.pointsAwarded, 2000);
+
+      // 3. Sale submitted with 'Cloud VPS' is stored as 'VPS' in partner_sales
+      const resLegacyVps = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-CANON-01',
+        customerName: 'Legacy Client 1',
+        customerEmail: 'legacy1@client.test',
+        serviceName: 'Legacy Cloud VPS',
+        category: 'Cloud VPS',
+        grossAmount: 10000,
+        discountAmount: 0,
+        taxAmount: 0,
+        actorEmail: 'system@unified.test'
+      });
+      const saleVps = db.prepare('SELECT category FROM partner_sales WHERE order_number = ?').get('ORD-CANON-01');
+      assert.equal(saleVps.category, 'VPS');
+
+      // 4. Sale submitted with 'Dedicated Server' is stored as 'VDS' in partner_sales
+      const resLegacyDs = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-CANON-02',
+        customerName: 'Legacy Client 2',
+        customerEmail: 'legacy2@client.test',
+        serviceName: 'Legacy Dedicated Server',
+        category: 'Dedicated Server',
+        grossAmount: 10000,
+        discountAmount: 0,
+        taxAmount: 0,
+        actorEmail: 'system@unified.test'
+      });
+      const saleDs = db.prepare('SELECT category FROM partner_sales WHERE order_number = ?').get('ORD-CANON-02');
+      assert.equal(saleDs.category, 'VDS');
     });
   });
 
