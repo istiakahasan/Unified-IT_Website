@@ -27,7 +27,7 @@ export class RewardProcessingService {
           expiration_days, eligible_categories, updated_at, updated_by
         ) VALUES (
           'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
-          '["Cloud VPS","Dedicated Server","VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+          '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
           datetime('now'), 'system'
         )
       `).run();
