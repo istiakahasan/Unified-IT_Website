@@ -1,40 +1,33 @@
 import crypto from 'node:crypto';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 
-/**
- * Normalizes service categories to canonical keys so synonyms match reliably.
- * Examples: 'VPS' <=> 'Cloud VPS', 'VDS' <=> 'Dedicated Server'
- */
-export function normalizeServiceCategory(cat) {
-  const c = String(cat || '').toLowerCase().trim().replace(/[-_]/g, ' ');
-  if (c === 'vps' || c === 'cloud vps' || c === 'virtual private server' || c === 'cloud virtual private server') {
-    return 'vps';
-  }
-  if (c === 'vds' || c === 'dedicated server' || c === 'dedicated' || c === 'virtual dedicated server' || c === 'bare metal') {
-    return 'vds';
-  }
-  if (c === 'reseller hosting' || c === 'reseller cpanel hosting' || c === 'reseller') {
-    return 'reseller';
-  }
-  if (c === 'cloud storage' || c === 'object storage' || c === 'storage') {
-    return 'storage';
-  }
-  if (c === 'web hosting' || c === 'cpanel hosting' || c === 'shared hosting' || c === 'hosting') {
-    return 'hosting';
-  }
-  return c;
-}
+// Constant canonical category registry & default policies
+export const DEFAULT_ELIGIBLE_CATEGORIES = Object.freeze([
+  'VPS', 'VDS', 'Reseller Hosting', 'Cloud Storage', 'Web Hosting', 'SSL', 'Domain'
+]);
+export const DEFAULT_CATEGORIES_JSON = JSON.stringify(DEFAULT_ELIGIBLE_CATEGORIES);
+
+const CATEGORY_MAP = new Map([
+  ['vps', 'VPS'],
+  ['cloud vps', 'VPS'],
+  ['virtual private server', 'VPS'],
+  ['cloud virtual private server', 'VPS'],
+  ['vds', 'VDS'],
+  ['dedicated server', 'VDS'],
+  ['dedicated', 'VDS'],
+  ['virtual dedicated server', 'VDS'],
+  ['bare metal', 'VDS']
+]);
 
 /**
- * Returns canonical category name for sales and transactions.
- * Enforces 'VPS' instead of 'Cloud VPS' and 'VDS' instead of 'Dedicated Server'.
+ * Resolves any service category or alias to its canonical name (e.g. 'Cloud VPS' -> 'VPS', 'Dedicated Server' -> 'VDS')
  */
 export function canonicalCategory(cat) {
-  const norm = normalizeServiceCategory(cat);
-  if (norm === 'vps') return 'VPS';
-  if (norm === 'vds') return 'VDS';
-  return cat;
+  const key = String(cat || '').toLowerCase().trim().replace(/[-_]/g, ' ');
+  return CATEGORY_MAP.get(key) || cat;
 }
+
+export const normalizeServiceCategory = canonicalCategory;
 
 /**
  * RewardProcessingService
@@ -62,17 +55,16 @@ export class RewardProcessingService {
           expiration_days, eligible_categories, updated_at, updated_by
         ) VALUES (
           'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
-          '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
-          datetime('now'), 'system'
+          ?, datetime('now'), 'system'
         )
-      `).run();
+      `).run(DEFAULT_CATEGORIES_JSON);
       policy = this.db.prepare('SELECT * FROM partner_reward_policies WHERE id = ?').get('default');
     }
 
     try {
       policy.eligible_categories = JSON.parse(policy.eligible_categories);
     } catch {
-      policy.eligible_categories = ["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"];
+      policy.eligible_categories = [...DEFAULT_ELIGIBLE_CATEGORIES];
     }
 
     return policy;
@@ -88,8 +80,8 @@ export class RewardProcessingService {
     }
 
     const categoriesJson = Array.isArray(eligibleCategories)
-      ? JSON.stringify(eligibleCategories)
-      : (typeof eligibleCategories === 'string' ? eligibleCategories : '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]');
+      ? JSON.stringify(eligibleCategories.map(canonicalCategory))
+      : (typeof eligibleCategories === 'string' ? eligibleCategories : DEFAULT_CATEGORIES_JSON);
 
     this.db.prepare(`
       UPDATE partner_reward_policies
@@ -209,13 +201,9 @@ export class RewardProcessingService {
       };
     }
 
-    // 3. Category Eligibility Check (supports exact matches & synonyms like Cloud VPS/VPS, Dedicated Server/VDS)
-    const normInput = normalizeServiceCategory(category);
-    const isCategoryEligible = Array.isArray(policy.eligible_categories) && policy.eligible_categories.some(c => {
-      const cleanConfig = String(c || '').toLowerCase().trim();
-      const cleanInput = String(category || '').toLowerCase().trim();
-      return cleanConfig === cleanInput || normalizeServiceCategory(c) === normInput;
-    });
+    // 3. Category Eligibility Check (supports canonical categories & legacy aliases)
+    const isCategoryEligible = Array.isArray(policy.eligible_categories) &&
+      policy.eligible_categories.some(c => canonicalCategory(c).toLowerCase() === savedCategory.toLowerCase());
 
     // Calculate eligible net sale amount (Gross - Discounts - Taxes)
     const gross = Number(grossAmount) || 0;
