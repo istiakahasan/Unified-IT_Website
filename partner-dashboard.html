@@ -502,11 +502,7 @@
             <div class="val" id="analytics-savings" style="color: var(--ptn-cyan);">৳83,008.80</div>
             <div class="sub">Retained directly by your agency</div>
           </div>
-          <div class="ptn-kpi-card">
-            <div class="sub">Net Remitted to Unified Cloud</div>
-            <div class="val" id="analytics-net">৳470,383.20</div>
-            <div class="sub">Wholesale infrastructure cost</div>
-          </div>
+
           <div class="ptn-kpi-card">
             <div class="sub">Monthly Recurring Revenue (MRR)</div>
             <div class="val" id="analytics-mrr" style="color: #4ade80;">৳54,753.60</div>
@@ -951,7 +947,6 @@
 
       document.getElementById('analytics-gross').textContent = data.summary.grossSales;
       document.getElementById('analytics-savings').textContent = data.summary.partnerDiscountSavings;
-      document.getElementById('analytics-net').textContent = data.summary.netPaidToUnified;
       document.getElementById('analytics-mrr').textContent = data.summary.recurringMRR;
 
       // Trend bars
