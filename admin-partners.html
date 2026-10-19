@@ -135,6 +135,7 @@
     .ptn-container {
       position: relative;
       z-index: 2;
+      max-width: 1440px;
     }
 
     .ptn-admin-section { display: none; }
@@ -158,29 +159,74 @@
       margin-right: 5px;
     }
 
-    /* Executive KPI Strip */
+    /* Executive KPI Strip - Perfectly Balanced Responsive Grid */
     .admin-kpi-strip {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
       margin-bottom: 28px;
+      align-items: stretch;
     }
+    @media (max-width: 1280px) {
+      .admin-kpi-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+    }
+    @media (max-width: 768px) {
+      .admin-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+    }
+    @media (max-width: 480px) {
+      .admin-kpi-strip {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+
+    /* 5-item Strip for Tab 3 */
+    .admin-kpi-strip-5 {
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+    @media (max-width: 1100px) {
+      .admin-kpi-strip-5 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+    }
+    @media (max-width: 768px) {
+      .admin-kpi-strip-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+    }
+    @media (max-width: 480px) {
+      .admin-kpi-strip-5 {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
     .admin-kpi-box {
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--ptn-radius);
-      padding: 18px 20px;
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 12px;
+      padding: 16px 16px 14px;
       -webkit-backdrop-filter: blur(14px);
       backdrop-filter: blur(14px);
-      transition: all 0.25s ease;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
     }
     .admin-kpi-box:hover {
-      border-color: rgba(93, 224, 196, 0.45);
+      border-color: rgba(93, 224, 196, 0.4);
       transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.02) 100%);
     }
     .admin-kpi-box::after {
       content: '';
@@ -189,30 +235,65 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(93, 224, 196, 0.5), transparent);
+      background: linear-gradient(90deg, transparent, rgba(93, 224, 196, 0.6), transparent);
+    }
+    .admin-kpi-box:hover .admin-kpi-arrow {
+      transform: translateX(3px);
+      color: var(--ptn-cyan);
     }
     .admin-kpi-lbl {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       color: var(--ptn-text-muted);
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 6px;
+    }
+    .admin-kpi-lbl span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-kpi-lbl svg {
+      flex-shrink: 0;
     }
     .admin-kpi-val {
-      font-size: 24px;
+      font-size: 21px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #fff;
       line-height: 1.2;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .admin-kpi-desc {
-      font-size: 11.5px;
+      font-size: 11px;
       color: var(--ptn-text-subtle);
-      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      line-height: 1.3;
+    }
+    .admin-kpi-desc span:first-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-kpi-arrow {
+      transition: transform 0.2s ease, color 0.2s ease;
+      flex-shrink: 0;
+      opacity: 0.75;
+      font-size: 12px;
     }
 
     /* Theme Option Dropdown Styling */
@@ -610,7 +691,10 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#facc15" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <div class="admin-kpi-val" id="kpi-pending-apps" style="color: #facc15;">--</div>
-          <div class="admin-kpi-desc">Applications awaiting verification &rarr;</div>
+          <div class="admin-kpi-desc">
+            <span>Awaiting verification</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
 
         <div class="admin-kpi-box" data-goto-tab="tab-partners" title="Click to view Active Reseller Organizations">
@@ -619,7 +703,10 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ptn-cyan)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           <div class="admin-kpi-val" id="kpi-active-partners" style="color: var(--ptn-cyan);">--</div>
-          <div class="admin-kpi-desc">Active reseller organizations &rarr;</div>
+          <div class="admin-kpi-desc">
+            <span>Active resellers</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
 
         <div class="admin-kpi-box" data-goto-tab="tab-partners" title="Click to inspect Network Spend breakdown">
@@ -628,7 +715,10 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <div class="admin-kpi-val" id="kpi-network-spend" style="color: #60a5fa;">--</div>
-          <div class="admin-kpi-desc">Monthly eligible cloud spend &rarr;</div>
+          <div class="admin-kpi-desc">
+            <span>Monthly cloud spend</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
 
         <div class="admin-kpi-box" data-goto-tab="tab-payouts" title="Click to review Commission Settlements Queue">
@@ -637,7 +727,10 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#4ade80" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </div>
           <div class="admin-kpi-val" id="kpi-pending-payouts" style="color: #4ade80;">--</div>
-          <div class="admin-kpi-desc">Commission settlements queue &rarr;</div>
+          <div class="admin-kpi-desc">
+            <span>Settlement queue</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
 
         <div class="admin-kpi-box" data-goto-tab="tab-rewards-mgmt" title="Click to inspect Reseller Reward Points">
@@ -646,7 +739,10 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
           </div>
           <div class="admin-kpi-val" id="kpi-total-points" style="color: #c4b5fd;">10,124 pts</div>
-          <div class="admin-kpi-desc">Reseller reward point accounts &rarr;</div>
+          <div class="admin-kpi-desc">
+            <span>Reseller reward pool</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
 
         <div class="admin-kpi-box" data-goto-tab="tab-audit" title="Click to inspect Platform Infrastructure & Security Trail">
@@ -654,8 +750,11 @@
             <span>Infrastructure Core</span>
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c084fc" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
           </div>
-          <div class="admin-kpi-val" style="font-size: 20px; color: #4ade80;">2/2 Online</div>
-          <div class="admin-kpi-desc">CloudStack &bull; WHMCS Live &rarr;</div>
+          <div class="admin-kpi-val" style="color: #4ade80;">2/2 Online</div>
+          <div class="admin-kpi-desc">
+            <span>CloudStack &bull; WHMCS Live</span>
+            <span class="admin-kpi-arrow">&rarr;</span>
+          </div>
         </div>
       </div>
 
@@ -891,31 +990,31 @@
         </div>
 
         <!-- 5 KPI Summary Strip -->
-        <div class="admin-kpi-strip" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+        <div class="admin-kpi-strip admin-kpi-strip-5" style="margin-bottom: 24px;">
           <div class="admin-kpi-box" style="cursor: default;">
-            <div class="admin-kpi-lbl">Total Points Awarded</div>
+            <div class="admin-kpi-lbl"><span>Total Points Awarded</span></div>
             <div class="admin-kpi-val" id="adm-kpi-earned" style="color: var(--ptn-cyan);">--</div>
-            <div class="admin-kpi-desc">Cumulative points generated</div>
+            <div class="admin-kpi-desc"><span>Cumulative points generated</span></div>
           </div>
           <div class="admin-kpi-box" style="cursor: default;">
-            <div class="admin-kpi-lbl">In Partner Wallets</div>
+            <div class="admin-kpi-lbl"><span>In Partner Wallets</span></div>
             <div class="admin-kpi-val" id="adm-kpi-available" style="color: #4ade80;">--</div>
-            <div class="admin-kpi-desc">Currently redeemable points</div>
+            <div class="admin-kpi-desc"><span>Currently redeemable points</span></div>
           </div>
           <div class="admin-kpi-box" style="cursor: default;">
-            <div class="admin-kpi-lbl">Pending Approvals</div>
+            <div class="admin-kpi-lbl"><span>Pending Approvals</span></div>
             <div class="admin-kpi-val" id="adm-kpi-pending" style="color: #facc15;">--</div>
-            <div class="admin-kpi-desc">Awaiting settlement review</div>
+            <div class="admin-kpi-desc"><span>Awaiting settlement review</span></div>
           </div>
           <div class="admin-kpi-box" style="cursor: default;">
-            <div class="admin-kpi-lbl">Reversed on Refunds</div>
+            <div class="admin-kpi-lbl"><span>Reversed on Refunds</span></div>
             <div class="admin-kpi-val" id="adm-kpi-reversed" style="color: #f87171;">--</div>
-            <div class="admin-kpi-desc">Points recovered on refunds</div>
+            <div class="admin-kpi-desc"><span>Points recovered on refunds</span></div>
           </div>
           <div class="admin-kpi-box" style="cursor: default;">
-            <div class="admin-kpi-lbl">Total Eligible Sales</div>
+            <div class="admin-kpi-lbl"><span>Total Eligible Sales</span></div>
             <div class="admin-kpi-val" id="adm-kpi-sales" style="color: #fff;">--</div>
-            <div class="admin-kpi-desc">Qualifying cloud infrastructure spend</div>
+            <div class="admin-kpi-desc"><span>Qualifying cloud spend</span></div>
           </div>
         </div>
 
