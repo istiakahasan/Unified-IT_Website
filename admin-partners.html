@@ -1483,6 +1483,41 @@
     </div>
   </div>
 
+  <!-- MODAL: Update Partner Spend in BDT -->
+  <div id="modal-admin-spend" class="ptn-modal-overlay">
+    <div class="ptn-modal" style="max-width: 480px;">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">💰 Update Partner Monthly Spend (BDT)</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="modal-admin-spend">&times;</button>
+      </div>
+      <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 18px;">
+        Adjust the eligible monthly infrastructure spend for <strong id="spend-modal-company" style="color:#fff;">Partner</strong>.
+        The partner's tier and wholesale margin will automatically update based on the threshold schedule.
+      </p>
+
+      <form id="admin-spend-form">
+        <input type="hidden" id="spend-modal-partner-id">
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="spend-modal-amount">Monthly Eligible Infrastructure Spend (৳ BDT)</label>
+          <input type="number" step="500" min="0" id="spend-modal-amount" class="ptn-input" required>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 12px; line-height: 1.5; color: var(--ptn-text-muted);">
+          <strong>Automatic Qualification Schedule:</strong><br>
+          &bull; ৳0 &ndash; ৳29,999: <strong>Registered Partner</strong> (5% Margin)<br>
+          &bull; ৳30,000 &ndash; ৳119,999: <strong>Silver Partner</strong> (10% Margin)<br>
+          &bull; ৳120,000 &ndash; ৳359,999: <strong>Gold Partner</strong> (15% Margin)<br>
+          &bull; ৳360,000+: <strong>Platinum Partner</strong> (20% - 25% Margin)
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="modal-admin-spend">Cancel</button>
+          <button type="submit" class="ptn-btn ptn-btn-primary ptn-btn-sm">Save &amp; Update Tier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Three.js Library -->
   <script src="assets/js/vendor/three.min.js"></script>
   <script>
@@ -2048,7 +2083,14 @@
               <option value="tier-platinum" ${p.tier_id === 'tier-platinum' ? 'selected' : ''}>Platinum (20-25%)</option>
             </select>
           </td>
-          <td><strong style="color:#60a5fa;">৳${Number(p.monthly_eligible_spend || 0).toLocaleString()}</strong></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <strong style="color:#60a5fa;">৳${Number(p.monthly_eligible_spend || 0).toLocaleString()}</strong>
+              <button class="ptn-table-action-btn edit-spend-btn" data-id="${p.id}" data-spend="${p.monthly_eligible_spend || 0}" data-company="${p.company_name}" style="padding:2px 7px; font-size:11px;" title="Update eligible spending in BDT">
+                Edit Spend
+              </button>
+            </div>
+          </td>
           <td>
             <span class="${p.status === 'ACTIVE' ? 'ptn-badge-running' : 'ptn-badge-pending'}">${p.status}</span>
           </td>
@@ -2075,6 +2117,16 @@
           });
           const data = await res.json();
           showBanner(data.message);
+        });
+      });
+
+      // Wire Edit Spend Modal
+      document.querySelectorAll('.edit-spend-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('spend-modal-partner-id').value = btn.getAttribute('data-id');
+          document.getElementById('spend-modal-company').textContent = btn.getAttribute('data-company');
+          document.getElementById('spend-modal-amount').value = btn.getAttribute('data-spend') || '0';
+          document.getElementById('modal-admin-spend').style.display = 'flex';
         });
       });
 
@@ -2825,6 +2877,34 @@
           btn.disabled = false;
           btn.textContent = 'Process Sale & Award Points';
           alert('Network error simulating order');
+        }
+      });
+    }
+
+    // Form: Update Partner Spend (BDT)
+    const formSpend = document.getElementById('admin-spend-form');
+    if (formSpend) {
+      formSpend.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const partnerId = document.getElementById('spend-modal-partner-id').value;
+        const monthlyEligibleSpend = document.getElementById('spend-modal-amount').value;
+
+        try {
+          const res = await fetch(`/api/admin/partners/${partnerId}/spend`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ monthlyEligibleSpend })
+          });
+          const d = await res.json();
+          if (res.ok) {
+            document.getElementById('modal-admin-spend').style.display = 'none';
+            showBanner(d.message || 'Partner spending and tier updated successfully.');
+            refreshAllData();
+          } else {
+            alert(d.message || 'Failed to update spending');
+          }
+        } catch (err) {
+          alert('Network error updating partner spending');
         }
       });
     }

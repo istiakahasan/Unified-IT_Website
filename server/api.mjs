@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { handleLogin, sessionStore, extractToken } from './auth.mjs';
 import { hashPassword } from './db.mjs';
 import { RewardProcessingService } from './reward-service.mjs';
+import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 
 /**
  * REST API Router for Cloud Partner Program
@@ -298,6 +299,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
 
     // GET /api/partner/overview
     if (req.method === 'GET' && pathname === '/api/partner/overview') {
+      // 1. Automatically evaluate and upgrade tier based on spending in BDT
+      evaluateAndUpgradePartnerTier(db, partnerId);
+
       const partner = db.prepare(`
         SELECT p.*, pt.name as tier_name, pt.slug as tier_slug, pt.discount_rate as tier_discount_rate,
                pt.min_monthly_spend as tier_min_spend
@@ -327,9 +331,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         { id: 'INV-2026-781', date: '2026-08-01', description: 'Monthly Infrastructure Services - 4 instances', gross: '৳34,404.00', discount: '-৳5,160.60 (15%)', net: '৳29,243.40', status: 'PAID' }
       ];
 
-      // Next tier progress
+      // Next tier progression schedule
       const allTiers = db.prepare(`SELECT * FROM partner_tiers ORDER BY min_monthly_spend ASC`).all();
-      const currentSpend = partner.monthly_eligible_spend || 0;
+      const currentSpend = Number(partner.monthly_eligible_spend || 0);
       let nextTier = null;
       for (const t of allTiers) {
         if (t.min_monthly_spend > currentSpend) {
@@ -337,6 +341,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
           break;
         }
       }
+
+      const currentTier = allTiers.find(t => t.id === partner.tier_id) || allTiers[0];
+      const isMaxTier = !nextTier;
 
       return sendJson(200, {
         partner,
@@ -347,11 +354,33 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
           commissionBalance: Number(commission.balancePendingPayout || 0).toFixed(2),
           totalCommissionEarned: Number(commission.totalEarned || 0).toFixed(2),
           currentSpend,
+          currentTier: {
+            id: currentTier.id,
+            name: currentTier.name,
+            slug: currentTier.slug,
+            discountRate: currentTier.discount_rate,
+            minSpend: currentTier.min_monthly_spend
+          },
           nextTier: nextTier ? {
+            id: nextTier.id,
             name: nextTier.name,
+            slug: nextTier.slug,
+            discountRate: nextTier.discount_rate,
             targetSpend: nextTier.min_monthly_spend,
-            percentAchieved: Math.min(100, Math.round((currentSpend / nextTier.min_monthly_spend) * 100))
-          } : { name: 'Platinum (Max Tier)', targetSpend: currentSpend, percentAchieved: 100 }
+            amountRemaining: Math.max(0, Number((nextTier.min_monthly_spend - currentSpend).toFixed(2))),
+            percentAchieved: Math.min(100, Math.max(0, Math.round((currentSpend / nextTier.min_monthly_spend) * 100))),
+            description: nextTier.description
+          } : null,
+          isMaxTier,
+          allTiers: allTiers.map(t => ({
+            id: t.id,
+            name: t.name,
+            slug: t.slug,
+            discountRate: t.discount_rate,
+            minSpend: t.min_monthly_spend,
+            isCurrent: t.id === partner.tier_id,
+            isUnlocked: currentSpend >= t.min_monthly_spend
+          }))
         },
         recentInvoices
       });
@@ -798,6 +827,39 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       });
 
       return sendJson(200, { success: true, message: `Partner tier updated to ${tier.name}.` });
+    }
+
+    // POST /api/admin/partners/:id/spend (Update monthly eligible spend & evaluate tier)
+    if (req.method === 'POST' && pathname.endsWith('/spend')) {
+      const partnerId = pathname.split('/')[4];
+      const { monthlyEligibleSpend } = body;
+      const spendVal = Math.max(0, Number(monthlyEligibleSpend) || 0);
+
+      db.prepare(`
+        UPDATE partners SET monthly_eligible_spend = ?, updated_at = datetime('now') WHERE id = ?
+      `).run(spendVal, partnerId);
+
+      const evalResult = evaluateAndUpgradePartnerTier(db, partnerId);
+
+      const updatedPartner = db.prepare(`
+        SELECT p.*, pt.name as tier_name, pt.discount_rate as tier_discount_rate
+        FROM partners p
+        JOIN partner_tiers pt ON p.tier_id = pt.id
+        WHERE p.id = ?
+      `).get(partnerId);
+
+      logAudit('ADMIN', req.session.userId, req.session.email, 'PARTNER_SPEND_UPDATED', 'partners', partnerId, {
+        newSpend: spendVal,
+        tierUpgraded: evalResult ? evalResult.upgraded : false,
+        currentTier: updatedPartner.tier_name
+      });
+
+      return sendJson(200, {
+        success: true,
+        message: `Partner spending updated to ৳${spendVal.toLocaleString('en-US')}. Current Tier: ${updatedPartner.tier_name} (${Math.round(updatedPartner.tier_discount_rate * 100)}% Margin).`,
+        partner: updatedPartner,
+        tierUpgraded: evalResult ? evalResult.upgraded : false
+      });
     }
 
     // POST /api/admin/partners/:id/status (Suspend / Reactivate)

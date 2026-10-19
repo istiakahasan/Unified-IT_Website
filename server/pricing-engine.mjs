@@ -226,3 +226,75 @@ export class PricingEngine {
     };
   }
 }
+
+/**
+ * Automatically evaluates a partner's eligible spending in BDT and
+ * upgrades/updates their tier according to the configured threshold schedule:
+ * - Registered Partner: ৳0 - <৳30,000 (5% margin)
+ * - Silver Partner: ৳30,000 - <৳120,000 (10% margin)
+ * - Gold Partner: ৳120,000 - <৳360,000 (15% margin)
+ * - Platinum Partner: ৳360,000+ (20% - 25% margin)
+ *
+ * @param {Object} db - SQLite database instance
+ * @param {string} partnerId - Partner ID
+ * @returns {Object} Result of evaluation { upgraded: boolean, oldTier, newTier, currentSpend }
+ */
+export function evaluateAndUpgradePartnerTier(db, partnerId) {
+  if (!partnerId) return null;
+
+  const partner = db.prepare('SELECT * FROM partners WHERE id = ?').get(partnerId);
+  if (!partner) return null;
+
+  const currentSpend = Number(partner.monthly_eligible_spend || 0);
+
+  // Find highest qualifying tier based on spending in BDT
+  const qualifyingTier = db.prepare(`
+    SELECT * FROM partner_tiers
+    WHERE min_monthly_spend <= ?
+    ORDER BY min_monthly_spend DESC, discount_rate DESC
+    LIMIT 1
+  `).get(currentSpend);
+
+  if (!qualifyingTier) return { upgraded: false, tierId: partner.tier_id, currentSpend };
+
+  if (qualifyingTier.id !== partner.tier_id) {
+    const oldTier = db.prepare('SELECT * FROM partner_tiers WHERE id = ?').get(partner.tier_id);
+
+    db.prepare(`
+      UPDATE partners
+      SET tier_id = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(qualifyingTier.id, partnerId);
+
+    try {
+      db.prepare(`
+        INSERT INTO partner_audit_logs (id, actor_type, actor_id, actor_email, action, entity_type, entity_id, details_json, ip_address)
+        VALUES (?, 'SYSTEM', ?, ?, 'TIER_AUTOMATICALLY_UPDATED', 'partners', ?, ?, '127.0.0.1')
+      `).run(
+        crypto.randomUUID(),
+        partnerId,
+        partner.email,
+        partnerId,
+        JSON.stringify({
+          previousTier: oldTier ? oldTier.name : 'None',
+          newTier: qualifyingTier.name,
+          currentSpendBDT: currentSpend,
+          reason: `Spend of ৳${currentSpend.toLocaleString('en-US')} qualifies for ${qualifyingTier.name} (Threshold: ৳${qualifyingTier.min_monthly_spend.toLocaleString('en-US')})`
+        })
+      );
+    } catch {}
+
+    return {
+      upgraded: true,
+      oldTier,
+      newTier: qualifyingTier,
+      currentSpend
+    };
+  }
+
+  return {
+    upgraded: false,
+    currentTierId: partner.tier_id,
+    currentSpend
+  };
+}

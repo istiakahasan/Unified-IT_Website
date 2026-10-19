@@ -386,17 +386,22 @@
           </div>
         </div>
 
-        <!-- Next Tier Progress Bar -->
+        <!-- Next Tier Progress Bar & Spending Roadmap -->
         <div class="ptn-stat-card" style="margin-bottom: 36px; padding: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <strong style="font-size: 16px;">Progress Toward Platinum Partner Tier (20% - 25% Margin)</strong>
-            <span id="tier-progress-text" style="color: var(--ptn-cyan); font-weight: 700;">৳173,240 / ৳360,000 (48%)</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;">
+            <strong id="tier-progress-title" style="font-size: 16px;">Progress Toward Next Partner Tier</strong>
+            <span id="tier-progress-text" style="color: var(--ptn-cyan); font-weight: 700;">--</span>
           </div>
-          <div class="ptn-progress-bar">
-            <div id="tier-progress-fill" class="ptn-progress-fill" style="width: 48%;"></div>
+          <div class="ptn-progress-bar" style="margin-top: 12px; margin-bottom: 12px;">
+            <div id="tier-progress-fill" class="ptn-progress-fill" style="width: 0%;"></div>
           </div>
-          <div style="font-size: 13px; color: var(--ptn-text-muted); margin-top: 8px;">
-            Qualify for Platinum Tier by reaching ৳360,000/mo in infrastructure spending. Unlocks dedicated solutions architect and hands-on DevOps migration assistance.
+          <div id="tier-progress-desc" style="font-size: 13px; color: var(--ptn-text-muted);">
+            Your partner tier and wholesale discount rate automatically upgrade as your monthly infrastructure spending in BDT increases.
+          </div>
+
+          <!-- 4-Tier Spend-Based Progression Roadmap -->
+          <div id="tier-milestones-track" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <!-- Populated dynamically -->
           </div>
         </div>
 
@@ -1003,19 +1008,77 @@
       if (!data.partner) return;
 
       document.getElementById('partner-company-title').textContent = data.partner.company_name;
-      document.getElementById('partner-status-tag').textContent = `Active ${data.partner.tier_name}`;
+      const currentTierName = data.metrics.currentTier ? data.metrics.currentTier.name : data.partner.tier_name;
+      const currentMargin = data.metrics.currentTier ? Math.round(data.metrics.currentTier.discountRate * 100) : Math.round(data.partner.tier_discount_rate * 100);
+      const currentSpend = Number(data.metrics.currentSpend || 0);
+
+      document.getElementById('partner-status-tag').textContent = `Active ${currentTierName} (${currentMargin}% Margin)`;
       document.getElementById('partner-id-display').textContent = data.partner.id;
       document.getElementById('partner-contact-name').textContent = data.partner.contact_name;
 
-      document.getElementById('metric-margin').textContent = `${Math.round(data.partner.tier_discount_rate * 100)}%`;
-      document.getElementById('metric-spend').textContent = `৳${Number(data.partner.monthly_eligible_spend).toLocaleString('en-US')}`;
+      document.getElementById('metric-margin').textContent = `${currentMargin}%`;
+      document.getElementById('metric-spend').textContent = `৳${currentSpend.toLocaleString('en-US')}`;
       document.getElementById('metric-services').textContent = data.metrics.activeServicesCount;
       document.getElementById('metric-customers').textContent = `Across ${data.metrics.customerCount} managed client organizations`;
       document.getElementById('metric-commissions').textContent = `৳${Number(data.metrics.commissionBalance).toLocaleString('en-US')}`;
 
-      if (data.metrics.nextTier) {
-        document.getElementById('tier-progress-text').textContent = `৳${Number(data.metrics.currentSpend).toLocaleString('en-US')} / ৳${Number(data.metrics.nextTier.targetSpend).toLocaleString('en-US')} (${data.metrics.nextTier.percentAchieved}%)`;
-        document.getElementById('tier-progress-fill').style.width = `${data.metrics.nextTier.percentAchieved}%`;
+      // Next tier progression & roadmap rendering
+      const titleEl = document.getElementById('tier-progress-title');
+      const textEl = document.getElementById('tier-progress-text');
+      const fillEl = document.getElementById('tier-progress-fill');
+      const descEl = document.getElementById('tier-progress-desc');
+
+      if (data.metrics.isMaxTier || !data.metrics.nextTier) {
+        if (titleEl) titleEl.textContent = `👑 Top Tier Achieved: ${currentTierName} (${currentMargin}% Margin)`;
+        if (textEl) textEl.textContent = `৳${currentSpend.toLocaleString('en-US')} (Top Tier Unlocked)`;
+        if (fillEl) {
+          fillEl.style.width = '100%';
+          fillEl.style.background = 'linear-gradient(90deg, var(--ptn-cyan), #facc15)';
+        }
+        if (descEl) descEl.textContent = `Congratulations! Your organization qualifies for our premier enterprise tier with maximum wholesale margins and dedicated engineering support.`;
+      } else {
+        const next = data.metrics.nextTier;
+        const nextMargin = Math.round(next.discountRate * 100);
+        if (titleEl) titleEl.textContent = `Progress Toward ${next.name} (${nextMargin}% Margin)`;
+        if (textEl) textEl.textContent = `৳${currentSpend.toLocaleString('en-US')} / ৳${Number(next.targetSpend).toLocaleString('en-US')} (${next.percentAchieved}%)`;
+        if (fillEl) fillEl.style.width = `${next.percentAchieved}%`;
+        if (descEl) descEl.textContent = `Spend ৳${Number(next.amountRemaining).toLocaleString('en-US')} more in eligible monthly infrastructure to automatically unlock ${next.name} (${nextMargin}% Margin).`;
+      }
+
+      // Populate 4-tier spend roadmap
+      const trackEl = document.getElementById('tier-milestones-track');
+      if (trackEl && data.metrics.allTiers) {
+        trackEl.innerHTML = data.metrics.allTiers.map(t => {
+          const isCurrent = t.isCurrent;
+          const isUnlocked = t.isUnlocked;
+          const marginPct = Math.round(t.discountRate * 100);
+          const spendReq = Number(t.minSpend).toLocaleString('en-US');
+
+          let borderColor = 'rgba(255,255,255,0.08)';
+          let bgColor = 'rgba(255,255,255,0.02)';
+          let statusLabel = `<span style="color:var(--ptn-text-muted); font-size:11px;">Target: ৳${spendReq}/mo</span>`;
+
+          if (isCurrent) {
+            borderColor = 'var(--ptn-cyan)';
+            bgColor = 'rgba(93, 224, 196, 0.08)';
+            statusLabel = `<span class="ptn-badge-running" style="font-size:10.5px; padding:2px 8px;">CURRENT TIER</span>`;
+          } else if (isUnlocked) {
+            borderColor = 'rgba(74, 222, 128, 0.4)';
+            bgColor = 'rgba(74, 222, 128, 0.04)';
+            statusLabel = `<span style="color:#4ade80; font-size:11px; font-weight:600;">✓ Unlocked</span>`;
+          }
+
+          return `
+            <div style="padding: 12px 14px; border-radius: 10px; border: 1.5px solid ${borderColor}; background: ${bgColor}; transition: all 0.2s ease;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: ${isCurrent ? 'var(--ptn-cyan)' : 'var(--ptn-text-muted)'};">${t.name}</span>
+                ${statusLabel}
+              </div>
+              <div style="font-size: 16px; font-weight: 800; color: #fff;">${marginPct}% Margin</div>
+              <div style="font-size: 11.5px; color: var(--ptn-text-muted); margin-top: 2px;">Min. Spend: ৳${spendReq}/mo</div>
+            </div>
+          `;
+        }).join('');
       }
 
       // Populate Invoices

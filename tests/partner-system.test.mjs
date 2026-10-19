@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { initDatabase, hashPassword, verifyPassword } from '../server/db.mjs';
-import { PricingEngine } from '../server/pricing-engine.mjs';
+import { PricingEngine, evaluateAndUpgradePartnerTier } from '../server/pricing-engine.mjs';
 import { WHMCSAdapter } from '../server/whmcs-adapter.mjs';
 import { CloudStackAdapter } from '../server/cloudstack-adapter.mjs';
 import { RewardProcessingService } from '../server/reward-service.mjs';
@@ -522,6 +522,96 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
 
       assert.ok(txPartner1.transactions.length > 0);
       assert.equal(txPartner2.transactions.length, 0);
+    });
+  });
+
+  describe('Automatic Spend-Based Tier Progression System', () => {
+    it('should automatically assign Registered Partner (5%) for spend < ৳30,000', () => {
+      const pId = 'ptn-test-registered';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status, monthly_eligible_spend)
+        VALUES (?, 'Starter Reseller', 'Anis', 'anis@starter.test', '+8801700998877', 'BD', 'Agency', 'tier-registered', 'ACTIVE', 15000)
+      `).run(pId);
+
+      const res = evaluateAndUpgradePartnerTier(db, pId);
+      const partner = db.prepare('SELECT p.*, pt.name as tier_name, pt.discount_rate FROM partners p JOIN partner_tiers pt ON p.tier_id = pt.id WHERE p.id = ?').get(pId);
+      assert.equal(partner.tier_id, 'tier-registered');
+      assert.equal(partner.discount_rate, 0.05);
+      assert.equal(res.upgraded, false);
+    });
+
+    it('should automatically upgrade to Silver Partner (10%) when spend reaches ৳30,000+', () => {
+      const pId = 'ptn-test-silver-up';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status, monthly_eligible_spend)
+        VALUES (?, 'Growing Host', 'Kamal', 'kamal@host.test', '+8801711223300', 'BD', 'Agency', 'tier-registered', 'ACTIVE', 35000)
+      `).run(pId);
+
+      const res = evaluateAndUpgradePartnerTier(db, pId);
+      assert.equal(res.upgraded, true);
+      assert.equal(res.newTier.slug, 'silver');
+      assert.equal(res.newTier.discount_rate, 0.10);
+
+      const partner = db.prepare('SELECT p.*, pt.name as tier_name FROM partners p JOIN partner_tiers pt ON p.tier_id = pt.id WHERE p.id = ?').get(pId);
+      assert.equal(partner.tier_id, 'tier-silver');
+    });
+
+    it('should automatically upgrade to Gold Partner (15%) when spend reaches ৳120,000+', () => {
+      const pId = 'ptn-test-gold-up';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status, monthly_eligible_spend)
+        VALUES (?, 'Gold Reseller', 'Farhan', 'farhan@gold.test', '+8801722334455', 'BD', 'Agency', 'tier-silver', 'ACTIVE', 125000)
+      `).run(pId);
+
+      const res = evaluateAndUpgradePartnerTier(db, pId);
+      assert.equal(res.upgraded, true);
+      assert.equal(res.newTier.slug, 'gold');
+      assert.equal(res.newTier.discount_rate, 0.15);
+
+      const partner = db.prepare('SELECT p.*, pt.name as tier_name FROM partners p JOIN partner_tiers pt ON p.tier_id = pt.id WHERE p.id = ?').get(pId);
+      assert.equal(partner.tier_id, 'tier-gold');
+    });
+
+    it('should automatically upgrade to Platinum Partner (20%) when spend reaches ৳360,000+', () => {
+      const pId = 'ptn-test-plat-up';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status, monthly_eligible_spend)
+        VALUES (?, 'Enterprise Cloud Org', 'Zahid', 'zahid@enterprise.test', '+8801733445566', 'BD', 'Agency', 'tier-gold', 'ACTIVE', 380000)
+      `).run(pId);
+
+      const res = evaluateAndUpgradePartnerTier(db, pId);
+      assert.equal(res.upgraded, true);
+      assert.equal(res.newTier.slug, 'platinum');
+      assert.equal(res.newTier.discount_rate, 0.20);
+
+      const partner = db.prepare('SELECT p.*, pt.name as tier_name FROM partners p JOIN partner_tiers pt ON p.tier_id = pt.id WHERE p.id = ?').get(pId);
+      assert.equal(partner.tier_id, 'tier-platinum');
+    });
+
+    it('should automatically upgrade tier when a new eligible sale increases spend across the threshold', () => {
+      const pId = 'ptn-sale-upgrade';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status, monthly_eligible_spend)
+        VALUES (?, 'Tier Climber Agency', 'Saif', 'saif@climber.test', '+8801744556677', 'BD', 'Agency', 'tier-registered', 'ACTIVE', 20000)
+      `).run(pId);
+
+      // Record an eligible sale of ৳15,000 (total spend becomes ৳35,000, qualifying for Silver)
+      rewardService.processSaleReward({
+        partnerId: pId,
+        orderNumber: 'ORD-TIER-UP-01',
+        customerName: 'Dhaka Enterprise',
+        customerEmail: 'billing@dhaka.test',
+        serviceName: 'Enterprise Cloud VPS',
+        category: 'Cloud VPS',
+        grossAmount: 15000,
+        discountAmount: 0,
+        taxAmount: 0,
+        actorEmail: 'system@unified.test'
+      });
+
+      const partner = db.prepare('SELECT * FROM partners WHERE id = ?').get(pId);
+      assert.equal(partner.monthly_eligible_spend, 35000);
+      assert.equal(partner.tier_id, 'tier-silver');
     });
   });
 });

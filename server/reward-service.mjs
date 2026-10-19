@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 
 /**
  * RewardProcessingService
@@ -247,6 +248,18 @@ export class RewardProcessingService {
         `).run(pointsAwarded, partnerId);
       }
 
+      // Increment partner's monthly eligible spend in BDT and automatically evaluate tier progression
+      if (eligibleNetAmount > 0) {
+        this.db.prepare(`
+          UPDATE partners
+          SET monthly_eligible_spend = ROUND(monthly_eligible_spend + ?, 2),
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).run(eligibleNetAmount, partnerId);
+
+        evaluateAndUpgradePartnerTier(this.db, partnerId);
+      }
+
       this.db.exec('COMMIT;');
 
       return {
@@ -339,6 +352,18 @@ export class RewardProcessingService {
               updated_at = datetime('now')
           WHERE partner_id = ?
         `).run(pointsToReverse, pointsToReverse, partnerId);
+      }
+
+      // Deduct from partner's monthly eligible spend in BDT and re-evaluate tier
+      if (sale.eligible_net_amount > 0) {
+        this.db.prepare(`
+          UPDATE partners
+          SET monthly_eligible_spend = MAX(0, ROUND(monthly_eligible_spend - ?, 2)),
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).run(sale.eligible_net_amount, partnerId);
+
+        evaluateAndUpgradePartnerTier(this.db, partnerId);
       }
 
       this.db.exec('COMMIT;');
