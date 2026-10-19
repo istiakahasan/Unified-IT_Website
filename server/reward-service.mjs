@@ -2,6 +2,30 @@ import crypto from 'node:crypto';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 
 /**
+ * Normalizes service categories to canonical keys so synonyms match reliably.
+ * Examples: 'VPS' <=> 'Cloud VPS', 'VDS' <=> 'Dedicated Server'
+ */
+export function normalizeServiceCategory(cat) {
+  const c = String(cat || '').toLowerCase().trim().replace(/[-_]/g, ' ');
+  if (c === 'vps' || c === 'cloud vps' || c === 'virtual private server' || c === 'cloud virtual private server') {
+    return 'vps';
+  }
+  if (c === 'vds' || c === 'dedicated server' || c === 'dedicated' || c === 'virtual dedicated server' || c === 'bare metal') {
+    return 'vds';
+  }
+  if (c === 'reseller hosting' || c === 'reseller cpanel hosting' || c === 'reseller') {
+    return 'reseller';
+  }
+  if (c === 'cloud storage' || c === 'object storage' || c === 'storage') {
+    return 'storage';
+  }
+  if (c === 'web hosting' || c === 'cpanel hosting' || c === 'shared hosting' || c === 'hosting') {
+    return 'hosting';
+  }
+  return c;
+}
+
+/**
  * RewardProcessingService
  * Handles financial-grade partner reward points calculation, ledgering, idempotency,
  * refund reversals, and administrator policy enforcement.
@@ -27,7 +51,7 @@ export class RewardProcessingService {
           expiration_days, eligible_categories, updated_at, updated_by
         ) VALUES (
           'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
-          '["VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+          '["Cloud VPS","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
           datetime('now'), 'system'
         )
       `).run();
@@ -37,7 +61,7 @@ export class RewardProcessingService {
     try {
       policy.eligible_categories = JSON.parse(policy.eligible_categories);
     } catch {
-      policy.eligible_categories = ["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"];
+      policy.eligible_categories = ["Cloud VPS","VPS","Dedicated Server","VDS","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"];
     }
 
     return policy;
@@ -173,10 +197,13 @@ export class RewardProcessingService {
       };
     }
 
-    // 3. Category Eligibility Check
-    const isCategoryEligible = policy.eligible_categories.some(c =>
-      c.toLowerCase() === category.toLowerCase()
-    );
+    // 3. Category Eligibility Check (supports exact matches & synonyms like Cloud VPS/VPS, Dedicated Server/VDS)
+    const normInput = normalizeServiceCategory(category);
+    const isCategoryEligible = Array.isArray(policy.eligible_categories) && policy.eligible_categories.some(c => {
+      const cleanConfig = String(c || '').toLowerCase().trim();
+      const cleanInput = String(category || '').toLowerCase().trim();
+      return cleanConfig === cleanInput || normalizeServiceCategory(c) === normInput;
+    });
 
     // Calculate eligible net sale amount (Gross - Discounts - Taxes)
     const gross = Number(grossAmount) || 0;

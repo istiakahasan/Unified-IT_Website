@@ -523,6 +523,40 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
       assert.ok(txPartner1.transactions.length > 0);
       assert.equal(txPartner2.transactions.length, 0);
     });
+
+    it('should seamlessly match VPS/Cloud VPS and VDS/Dedicated Server aliases without missing reward points', () => {
+      // 1. Sale with category 'VPS' matches when policy includes Cloud VPS / VPS
+      const resVps = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-ALIAS-VPS-01',
+        customerName: 'Alias Client 1',
+        customerEmail: 'alias1@client.test',
+        serviceName: 'High Perf VPS',
+        category: 'VPS',
+        grossAmount: 10000,
+        discountAmount: 0,
+        taxAmount: 0,
+        actorEmail: 'system@unified.test'
+      });
+      assert.equal(resVps.success, true);
+      assert.equal(resVps.pointsAwarded, 1000);
+
+      // 2. Sale with category 'VDS' matches when policy includes Dedicated Server / VDS
+      const resVds = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-ALIAS-VDS-01',
+        customerName: 'Alias Client 2',
+        customerEmail: 'alias2@client.test',
+        serviceName: 'Bare Metal Node',
+        category: 'VDS',
+        grossAmount: 20000,
+        discountAmount: 0,
+        taxAmount: 0,
+        actorEmail: 'system@unified.test'
+      });
+      assert.equal(resVds.success, true);
+      assert.equal(resVds.pointsAwarded, 2000);
+    });
   });
 
   describe('Automatic Spend-Based Tier Progression System', () => {
