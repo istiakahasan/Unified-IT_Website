@@ -1,11 +1,14 @@
 import crypto from 'node:crypto';
 import { handleLogin, sessionStore, extractToken } from './auth.mjs';
 import { hashPassword } from './db.mjs';
+import { RewardProcessingService } from './reward-service.mjs';
 
 /**
  * REST API Router for Cloud Partner Program
  */
-export async function handleApiRequest({ req, res, pathname, query, body, db, pricingEngine, whmcsAdapter, cloudstackAdapter }) {
+export async function handleApiRequest({ req, res, pathname, query, body, db, pricingEngine, whmcsAdapter, cloudstackAdapter, rewardService }) {
+  const rewards = rewardService || new RewardProcessingService(db);
+
   // Helper functions
   const sendJson = (statusCode, data) => {
     res.writeHead(statusCode, {
@@ -527,6 +530,136 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         message: 'Priority support ticket created. Our cloud support engineers have received your escalation.'
       });
     }
+
+    // GET /api/partner/rewards/summary
+    if (req.method === 'GET' && pathname === '/api/partner/rewards/summary') {
+      const summary = rewards.getSummary(partnerId);
+      return sendJson(200, summary);
+    }
+
+    // GET /api/partner/rewards/transactions
+    if (req.method === 'GET' && pathname === '/api/partner/rewards/transactions') {
+      const { status, search, limit, offset, sort } = query;
+      const result = rewards.getTransactions(partnerId, { status, search, limit, offset, sort });
+      return sendJson(200, result);
+    }
+
+    // GET /api/partner/rewards/transactions/:id
+    if (req.method === 'GET' && pathname.startsWith('/api/partner/rewards/transactions/')) {
+      const txId = pathname.replace('/api/partner/rewards/transactions/', '');
+      const tx = db.prepare(`
+        SELECT t.*, s.order_number, s.customer_name, s.customer_email, s.service_name, s.category,
+               s.gross_amount, s.discount_amount, s.tax_amount
+        FROM partner_reward_transactions t
+        LEFT JOIN partner_sales s ON t.order_id = s.id
+        WHERE t.id = ? AND t.partner_id = ?
+      `).get(txId, partnerId);
+      if (!tx) return sendError(404, 'Reward transaction not found.');
+      return sendJson(200, { transaction: tx });
+    }
+
+    // GET /api/partner/rewards/policy
+    if (req.method === 'GET' && pathname === '/api/partner/rewards/policy') {
+      const policy = rewards.getPolicy();
+      return sendJson(200, {
+        rewardRate: policy.reward_rate,
+        rewardRatePercent: (policy.reward_rate * 100).toFixed(1) + '%',
+        pointsPerBdt: policy.points_per_bdt,
+        minRedemptionPoints: policy.min_redemption_points,
+        redemptionEnabled: Boolean(policy.redemption_enabled),
+        eligibleCategories: policy.eligible_categories,
+        applyToRenewals: Boolean(policy.apply_to_renewals),
+        autoApprove: Boolean(policy.auto_approve)
+      });
+    }
+
+    // GET /api/partner/sales
+    if (req.method === 'GET' && pathname === '/api/partner/sales') {
+      const { search, limit, offset, sort } = query;
+      const result = rewards.getSales(partnerId, { search, limit, offset, sort });
+      return sendJson(200, result);
+    }
+
+    // POST /api/partner/rewards/simulate-sale
+    if (req.method === 'POST' && pathname === '/api/partner/rewards/simulate-sale') {
+      try {
+        const {
+          customerName, customerEmail, serviceName, category, productCode,
+          grossAmount, discountAmount, taxAmount
+        } = body;
+
+        if (!customerName || !serviceName || grossAmount === undefined) {
+          return sendError(400, 'Customer name, service name, and gross amount are required.');
+        }
+
+        const orderNumber = 'ORD-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+        const result = rewards.processSaleReward({
+          partnerId,
+          orderNumber,
+          customerName,
+          customerEmail: customerEmail || 'client@example.com',
+          serviceName,
+          category: category || 'Cloud VPS',
+          productCode: productCode || 'VPS-CUSTOM',
+          grossAmount: Number(grossAmount),
+          discountAmount: Number(discountAmount) || 0,
+          taxAmount: Number(taxAmount) || 0,
+          actorEmail: req.session.email
+        });
+
+        if (result.success && result.saleId) {
+          logAudit('PARTNER', req.session.userId, req.session.email, 'SALE_REWARD_GENERATED', 'partner_sales', result.saleId, {
+            orderNumber,
+            pointsAwarded: result.pointsAwarded
+          });
+        }
+
+        return sendJson(201, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // POST /api/partner/rewards/redeem
+    if (req.method === 'POST' && pathname === '/api/partner/rewards/redeem') {
+      const policy = rewards.getPolicy();
+      if (!policy.redemption_enabled) {
+        return sendError(400, 'Reward points redemption is currently disabled by administrator policy.');
+      }
+      const account = rewards.getOrCreateAccount(partnerId);
+      const pointsToRedeem = Number(body.points);
+      if (isNaN(pointsToRedeem) || pointsToRedeem < policy.min_redemption_points) {
+        return sendError(400, `Minimum redemption threshold is ${policy.min_redemption_points} points.`);
+      }
+      if (pointsToRedeem > account.available_points) {
+        return sendError(400, 'Insufficient available reward points.');
+      }
+
+      const txId = 'red-' + crypto.randomBytes(6).toString('hex');
+      db.exec('BEGIN TRANSACTION;');
+      try {
+        db.prepare(`
+          INSERT INTO partner_reward_transactions (
+            id, partner_id, transaction_type, eligible_sale_amount, reward_rate,
+            points, status, description, processed_by
+          ) VALUES (?, ?, 'REDEMPTION', 0, 0, ?, 'APPROVED', ?, ?)
+        `).run(txId, partnerId, -pointsToRedeem, `Partner redeemed ${pointsToRedeem} points`, req.session.email);
+
+        db.prepare(`
+          UPDATE partner_reward_accounts
+          SET available_points = ROUND(available_points - ?, 2),
+              redeemed_points = ROUND(redeemed_points + ?, 2),
+              updated_at = datetime('now')
+          WHERE partner_id = ?
+        `).run(pointsToRedeem, pointsToRedeem, partnerId);
+
+        db.exec('COMMIT;');
+        return sendJson(200, { success: true, message: `Redeemed ${pointsToRedeem} points successfully.`, transactionId: txId });
+      } catch (err) {
+        db.exec('ROLLBACK;');
+        return sendError(500, err.message);
+      }
+    }
   }
 
   // --- 4. ADMINISTRATIVE ENDPOINTS (/api/admin/*) ---
@@ -854,6 +987,162 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
           res.write(`"${l.created_at}","${l.actor_type}","${l.actor_email || 'anonymous'}","${l.action}","${l.entity_type}","${l.ip_address}"\n`);
         }
         return res.end();
+      }
+    }
+
+    // --- ADMIN REWARD MANAGEMENT ENDPOINTS ---
+
+    // GET /api/admin/rewards/policy
+    if (req.method === 'GET' && pathname === '/api/admin/rewards/policy') {
+      const policy = rewards.getPolicy();
+      return sendJson(200, { policy });
+    }
+
+    // PUT /api/admin/rewards/policy
+    if (req.method === 'PUT' && pathname === '/api/admin/rewards/policy') {
+      try {
+        const updated = rewards.updatePolicy({
+          ...body,
+          actorEmail: req.session.email
+        });
+        logAudit('ADMIN', req.session.userId, req.session.email, 'REWARD_POLICY_UPDATED', 'partner_reward_policies', 'default', body);
+        return sendJson(200, { success: true, policy: updated });
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // GET /api/admin/rewards/overview
+    if (req.method === 'GET' && pathname === '/api/admin/rewards/overview') {
+      const stats = db.prepare(`
+        SELECT 
+          COALESCE(SUM(total_eligible_sales), 0) as totalEligibleSales,
+          COALESCE(SUM(total_points_earned), 0) as totalPointsEarned,
+          COALESCE(SUM(available_points), 0) as totalAvailablePoints,
+          COALESCE(SUM(pending_points), 0) as totalPendingPoints,
+          COALESCE(SUM(redeemed_points), 0) as totalRedeemedPoints,
+          COALESCE(SUM(reversed_points), 0) as totalReversedPoints
+        FROM partner_reward_accounts
+      `).get();
+
+      const txCounts = db.prepare(`
+        SELECT 
+          COUNT(*) as totalTx,
+          SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pendingTx,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) as approvedTx,
+          SUM(CASE WHEN status = 'REVERSED' THEN 1 ELSE 0 END) as reversedTx
+        FROM partner_reward_transactions
+      `).get();
+
+      return sendJson(200, {
+        stats,
+        counts: txCounts,
+        policy: rewards.getPolicy()
+      });
+    }
+
+    // GET /api/admin/rewards/transactions
+    if (req.method === 'GET' && pathname === '/api/admin/rewards/transactions') {
+      const { partnerId, status, search, limit, offset, sort } = query;
+      const result = rewards.getTransactions(partnerId || null, { status, search, limit, offset, sort });
+      return sendJson(200, result);
+    }
+
+    // POST /api/admin/rewards/transactions/:id/approve
+    if (req.method === 'POST' && pathname.includes('/rewards/transactions/') && pathname.endsWith('/approve')) {
+      const txId = pathname.split('/')[5];
+      try {
+        const result = rewards.approvePendingReward(txId, req.session.email);
+        logAudit('ADMIN', req.session.userId, req.session.email, 'REWARD_TRANSACTION_APPROVED', 'partner_reward_transactions', txId, {});
+        return sendJson(200, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // POST /api/admin/rewards/transactions/:id/reject
+    if (req.method === 'POST' && pathname.includes('/rewards/transactions/') && pathname.endsWith('/reject')) {
+      const txId = pathname.split('/')[5];
+      try {
+        const result = rewards.rejectPendingReward(txId, body.reason || 'Rejected by admin', req.session.email);
+        logAudit('ADMIN', req.session.userId, req.session.email, 'REWARD_TRANSACTION_REJECTED', 'partner_reward_transactions', txId, { reason: body.reason });
+        return sendJson(200, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // POST /api/admin/rewards/adjust
+    if (req.method === 'POST' && pathname === '/api/admin/rewards/adjust') {
+      try {
+        const { partnerId, points, type, reason } = body;
+        const result = rewards.processAdminAdjustment({
+          partnerId,
+          points,
+          type,
+          reason,
+          actorEmail: req.session.email
+        });
+        logAudit('ADMIN', req.session.userId, req.session.email, 'REWARD_POINTS_ADJUSTED', 'partner_reward_accounts', partnerId, {
+          points,
+          type,
+          reason
+        });
+        return sendJson(200, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // POST /api/admin/rewards/process-refund
+    if (req.method === 'POST' && pathname === '/api/admin/rewards/process-refund') {
+      try {
+        const { orderId, reason } = body;
+        const result = rewards.processRefund({
+          orderId,
+          reason,
+          actorEmail: req.session.email
+        });
+        logAudit('ADMIN', req.session.userId, req.session.email, 'ORDER_REFUND_REWARD_REVERSED', 'partner_sales', orderId, {
+          reason
+        });
+        return sendJson(200, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // POST /api/admin/rewards/simulate-order
+    if (req.method === 'POST' && pathname === '/api/admin/rewards/simulate-order') {
+      try {
+        const {
+          partnerId, customerName, customerEmail, serviceName, category, productCode,
+          grossAmount, discountAmount, taxAmount
+        } = body;
+
+        const orderNumber = 'ORD-ADM-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+        const result = rewards.processSaleReward({
+          partnerId: partnerId || 'ptn-apex-101',
+          orderNumber,
+          customerName: customerName || 'Enterprise Client',
+          customerEmail: customerEmail || 'enterprise@client.com',
+          serviceName: serviceName || 'Cloud VPS Cluster',
+          category: category || 'Cloud VPS',
+          productCode: productCode || 'VPS-ENTERPRISE',
+          grossAmount: Number(grossAmount) || 10000,
+          discountAmount: Number(discountAmount) || 0,
+          taxAmount: Number(taxAmount) || 0,
+          actorEmail: req.session.email
+        });
+
+        logAudit('ADMIN', req.session.userId, req.session.email, 'ADMIN_SIMULATE_ORDER_REWARD', 'partner_sales', result.saleId, {
+          orderNumber,
+          partnerId
+        });
+
+        return sendJson(201, result);
+      } catch (err) {
+        return sendError(400, err.message);
       }
     }
   }

@@ -7,6 +7,7 @@ import { initDatabase } from './db.mjs';
 import { PricingEngine } from './pricing-engine.mjs';
 import { WHMCSAdapter } from './whmcs-adapter.mjs';
 import { CloudStackAdapter } from './cloudstack-adapter.mjs';
+import { RewardProcessingService } from './reward-service.mjs';
 import { authenticateRequest } from './auth.mjs';
 import { handleApiRequest } from './api.mjs';
 
@@ -21,6 +22,7 @@ export const db = initDatabase();
 export const pricingEngine = new PricingEngine(db);
 export const whmcsAdapter = new WHMCSAdapter();
 export const cloudstackAdapter = new CloudStackAdapter();
+export const rewardService = new RewardProcessingService(db);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -90,7 +92,8 @@ export function createServer() {
         db,
         pricingEngine,
         whmcsAdapter,
-        cloudstackAdapter
+        cloudstackAdapter,
+        rewardService
       });
     }
 

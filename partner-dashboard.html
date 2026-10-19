@@ -343,6 +343,8 @@
       <!-- Navigation Tabs -->
       <div class="ptn-dash-tabs">
         <button class="ptn-dash-tab active" data-tab="tab-overview">Overview</button>
+        <button class="ptn-dash-tab" data-tab="tab-rewards">⭐ Reward Points</button>
+        <button class="ptn-dash-tab" data-tab="tab-sales">Sales Ledger</button>
         <button class="ptn-dash-tab" data-tab="tab-customers">Managed Customers & Services</button>
         <button class="ptn-dash-tab" data-tab="tab-analytics">Partner Analytics</button>
         <button class="ptn-dash-tab" data-tab="tab-referrals">Referrals & Commissions</button>
@@ -369,6 +371,12 @@
             <div class="sub">Active Client Subscriptions</div>
             <div class="val" id="metric-services">5</div>
             <div class="sub" id="metric-customers">Across 4 managed client organizations</div>
+          </div>
+
+          <div class="ptn-kpi-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=tab-rewards]').click()">
+            <div class="sub">Available Reward Points</div>
+            <div class="val" id="metric-reward-pts" style="color: #a78bfa;">10,124.82</div>
+            <div class="sub">Reward points balance &rarr;</div>
           </div>
 
           <div class="ptn-kpi-card">
@@ -410,6 +418,134 @@
               </tr>
             </thead>
             <tbody id="overview-invoices-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: REWARD POINTS -->
+      <section id="tab-rewards" class="ptn-dash-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <h3 style="margin: 0; font-size: 22px;">Reseller Reward Points</h3>
+              <span class="ptn-badge-running" id="rew-policy-tag" style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.3);">
+                Verified Partner Rewards
+              </span>
+            </div>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 0;">
+              Track your accumulated reward points, active redeemable balance, and settlement history from qualifying client cloud services.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="btn-refresh-rewards" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Reward Summary Cards (5 Well-Proportioned Boxes) -->
+        <div class="ptn-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="ptn-kpi-card" style="padding: 20px 22px; min-width: 0; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div class="sub" style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptn-text-muted); margin-bottom: 6px;">Total Eligible Sales</div>
+            <div class="val" id="rew-summary-sales" style="font-size: 22px; font-weight: 700; color: #fff; margin: 4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">৳101,248.20</div>
+            <div class="sub" style="font-size: 12px; color: var(--ptn-text-muted);">Qualifying retail client sales</div>
+          </div>
+
+          <div class="ptn-kpi-card" style="padding: 20px 22px; min-width: 0; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div class="sub" style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptn-text-muted); margin-bottom: 6px;">Total Points Earned</div>
+            <div class="val" id="rew-summary-earned" style="font-size: 22px; font-weight: 700; color: var(--ptn-cyan); margin: 4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">10,124.82 pts</div>
+            <div class="sub" style="font-size: 12px; color: var(--ptn-text-muted);">Cumulative rewards generated</div>
+          </div>
+
+          <div class="ptn-kpi-card" style="padding: 20px 22px; min-width: 0; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div class="sub" style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptn-text-muted); margin-bottom: 6px;">Available Reward Points</div>
+            <div class="val" id="rew-summary-available" style="font-size: 22px; font-weight: 700; color: #4ade80; margin: 4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">10,124.82 pts</div>
+            <div class="sub" style="font-size: 12px; color: var(--ptn-text-muted);">Active redeemable balance</div>
+          </div>
+
+          <div class="ptn-kpi-card" style="padding: 20px 22px; min-width: 0; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div class="sub" style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptn-text-muted); margin-bottom: 6px;">Pending Reward Points</div>
+            <div class="val" id="rew-summary-pending" style="font-size: 22px; font-weight: 700; color: #f59e0b; margin: 4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">292.80 pts</div>
+            <div class="sub" style="font-size: 12px; color: var(--ptn-text-muted);">Under verification / settlement</div>
+          </div>
+
+          <div class="ptn-kpi-card" style="padding: 20px 22px; min-width: 0; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div class="sub" style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptn-text-muted); margin-bottom: 6px;">Redeemed Points</div>
+            <div class="val" id="rew-summary-redeemed" style="font-size: 22px; font-weight: 700; color: #94a3b8; margin: 4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0.00 pts</div>
+            <div class="sub" style="font-size: 12px; color: var(--ptn-text-muted);">Claimed credits or incentives</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); padding: 12px 18px; border-radius: 12px;">
+          <div style="display: flex; gap: 8px; align-items: center; flex: 1; max-width: 360px;">
+            <input type="text" id="rew-search-input" class="ptn-input" placeholder="Search by Order #, Customer, or Service..." style="padding: 7px 14px; font-size: 13px;">
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span style="font-size: 12px; color: var(--ptn-text-muted); margin-right: 4px;">Status:</span>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm rew-filter-btn active" data-status="ALL">All</button>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm rew-filter-btn" data-status="APPROVED">Approved</button>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm rew-filter-btn" data-status="PENDING">Pending</button>
+            <button class="ptn-btn ptn-btn-secondary ptn-btn-sm rew-filter-btn" data-status="REVERSED">Reversed</button>
+          </div>
+        </div>
+
+        <!-- Reward Transactions Ledger Table -->
+        <div class="ptn-table-wrap" style="margin-top: 0; margin-bottom: 36px;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Order / Sale ID</th>
+                <th>Customer Name</th>
+                <th>Service Purchased</th>
+                <th>Eligible Sale</th>
+                <th>Points Earned</th>
+                <th>Date</th>
+                <th>Reward Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="rew-transactions-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: SALES LEDGER -->
+      <section id="tab-sales" class="ptn-dash-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 20px;">Partner Sales & Order Registry</h3>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 4px 0 0;">
+              Audited breakdown of qualifying cloud services, net eligible amounts, and attributed rewards.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="sales-search-input" class="ptn-input" placeholder="Filter orders..." style="padding: 6px 12px; font-size: 13px; max-width: 220px;">
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer Contact</th>
+                <th>Service & Category</th>
+                <th>Gross Total</th>
+                <th>Deductions</th>
+                <th>Eligible Net Sale</th>
+                <th>Payment Status</th>
+                <th>Points Earned</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="sales-table-tbody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
@@ -588,6 +724,27 @@
           </div>
         </div>
       </section>
+    </div>
+
+    <!-- Modal: Transaction Detail -->
+    <div id="modal-tx-detail" class="ptn-modal-overlay">
+      <div class="ptn-modal" style="max-width: 560px;">
+        <div class="ptn-modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">📋</span>
+            <h3 style="margin: 0; font-size: 18px;">Reward Transaction Record</h3>
+          </div>
+          <button type="button" class="ptn-modal-close-btn" id="btn-close-tx-modal">&times;</button>
+        </div>
+
+        <div id="tx-detail-content" style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" id="btn-dismiss-tx-modal">Close</button>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -791,6 +948,8 @@
       document.getElementById('logout-btn').style.display = 'inline-flex';
 
       loadOverview();
+      loadRewards();
+      loadSales();
       loadCustomersAndServices();
       loadAnalytics('30d');
       loadReferrals();
@@ -1027,10 +1186,267 @@
       }
     }
 
-    const quickPayoutBtn = document.getElementById('request-payout-btn');
-    if (quickPayoutBtn) quickPayoutBtn.addEventListener('click', handlePayoutRequest);
-    const triggerPayoutBtn = document.getElementById('payout-trigger-btn');
-    if (triggerPayoutBtn) triggerPayoutBtn.addEventListener('click', handlePayoutRequest);
+    // --- REWARD POINTS & SALES LEDGER SYSTEM ---
+    let currentRewardFilter = 'ALL';
+    let currentRewardSearch = '';
+
+    async function loadRewards(status = currentRewardFilter, search = currentRewardSearch) {
+      currentRewardFilter = status;
+      currentRewardSearch = search;
+
+      try {
+        // 1. Fetch summary
+        const summaryRes = await fetch('/api/partner/rewards/summary');
+        const summary = await summaryRes.json();
+
+        if (summary && !summary.error) {
+          const formatBdt = (val) => '৳' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const formatPts = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          const elSales = document.getElementById('rew-summary-sales');
+          if (elSales) elSales.textContent = formatBdt(summary.totalEligibleSales);
+          const elEarned = document.getElementById('rew-summary-earned');
+          if (elEarned) elEarned.textContent = formatPts(summary.totalPointsEarned) + ' pts';
+          const elAvail = document.getElementById('rew-summary-available');
+          if (elAvail) elAvail.textContent = formatPts(summary.availablePoints) + ' pts';
+          const elPending = document.getElementById('rew-summary-pending');
+          if (elPending) elPending.textContent = formatPts(summary.pendingPoints) + ' pts';
+          const elRedeemed = document.getElementById('rew-summary-redeemed');
+          if (elRedeemed) elRedeemed.textContent = formatPts(summary.redeemedPoints) + ' pts';
+
+          const overviewMetric = document.getElementById('metric-reward-pts');
+          if (overviewMetric) overviewMetric.textContent = formatPts(summary.availablePoints) + ' pts';
+        }
+
+        // 2. Fetch transactions
+        let txUrl = `/api/partner/rewards/transactions?status=${status}`;
+        if (search) txUrl += `&search=${encodeURIComponent(search)}`;
+        const txRes = await fetch(txUrl);
+        const txData = await txRes.json();
+
+        const tbody = document.getElementById('rew-transactions-tbody');
+        if (!tbody) return;
+
+        if (!txData.transactions || txData.transactions.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" style="text-align:center; padding: 36px 20px; color: var(--ptn-text-muted);">
+                <div style="font-size:26px; margin-bottom:8px;">🎁</div>
+                <div style="font-size:15px; color:#fff; font-weight:600; margin-bottom:4px;">No Reward Transactions Found</div>
+                <div style="font-size:13px;">Reward points will accumulate automatically as qualifying client services are billed.</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = txData.transactions.map(t => {
+          const isPos = t.points >= 0;
+          const statusBadge = t.status === 'APPROVED'
+            ? '<span class="ptn-badge-running">APPROVED</span>'
+            : (t.status === 'PENDING'
+              ? '<span class="ptn-badge-tag" style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">PENDING</span>'
+              : '<span class="ptn-badge-tag" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.35);">REVERSED</span>');
+
+          const pointColor = isPos ? '#4ade80' : '#f87171';
+          const pointPrefix = isPos ? '+' : '';
+
+          return `
+            <tr>
+              <td><code style="color:var(--ptn-cyan); font-weight:600;">${t.id}</code></td>
+              <td><strong>${t.order_number || 'N/A'}</strong></td>
+              <td>${t.customer_name || 'Standard Client'}</td>
+              <td>
+                <span style="color:#fff;">${t.service_name || 'Cloud Service'}</span><br>
+                <small style="color:var(--ptn-text-muted);">${t.category || 'Infrastructure'}</small>
+              </td>
+              <td>৳${Number(Math.abs(t.eligible_sale_amount)).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+              <td>
+                <strong style="color:${pointColor}; font-size:14px;">${pointPrefix}${Number(t.points).toLocaleString('en-US', {minimumFractionDigits: 2})} pts</strong>
+              </td>
+              <td style="font-size:12.5px; color:var(--ptn-text-muted);">${t.created_at ? t.created_at.slice(0, 16) : 'Just now'}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <button class="ptn-table-action-btn btn-view-tx-detail" data-id="${t.id}" style="font-size:11.5px; padding:4px 8px;">
+                  View
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Wire View Detail buttons
+        document.querySelectorAll('.btn-view-tx-detail').forEach(b => {
+          b.addEventListener('click', () => openTransactionDetail(b.getAttribute('data-id')));
+        });
+      } catch (err) {
+        console.error('Error loading rewards:', err);
+      }
+    }
+
+    // Load Sales Ledger
+    async function loadSales(search = '') {
+      try {
+        let url = '/api/partner/sales';
+        if (search) url += `?search=${encodeURIComponent(search)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const tbody = document.getElementById('sales-table-tbody');
+        if (!tbody) return;
+
+        if (!data.sales || data.sales.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" style="text-align:center; padding: 36px 20px; color: var(--ptn-text-muted);">
+                <div style="font-size:14px; color:#fff;">No sales recorded in ledger yet.</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = data.sales.map(s => {
+          const isPaid = s.payment_status === 'PAID';
+          const payBadge = isPaid
+            ? '<span class="ptn-badge-running">PAID</span>'
+            : '<span class="ptn-badge-tag" style="background:rgba(239,68,68,0.2); color:#f87171;">' + s.payment_status + '</span>';
+
+          const deductions = Number(s.discount_amount || 0) + Number(s.tax_amount || 0);
+
+          return `
+            <tr>
+              <td><strong style="color:var(--ptn-cyan);">${s.order_number}</strong></td>
+              <td>
+                <span style="color:#fff;">${s.customer_name}</span><br>
+                <small style="color:var(--ptn-text-muted);">${s.customer_email}</small>
+              </td>
+              <td>
+                <span style="color:#fff;">${s.service_name}</span><br>
+                <span class="ptn-badge-tag" style="font-size:10px;">${s.category}</span>
+              </td>
+              <td>৳${Number(s.gross_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+              <td style="color:var(--ptn-text-muted);">-৳${deductions.toFixed(2)}</td>
+              <td><strong style="color:#fff;">৳${Number(s.eligible_net_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></td>
+              <td>${payBadge}</td>
+              <td>
+                <span style="color:#4ade80; font-weight:700;">+${Number(s.points_earned || (s.eligible_net_amount * 0.10)).toFixed(2)} pts</span>
+              </td>
+              <td style="font-size:12px; color:var(--ptn-text-muted);">${s.created_at ? s.created_at.slice(0, 10) : ''}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error loading sales ledger:', err);
+      }
+    }
+
+    // Open Transaction Detail Modal
+    async function openTransactionDetail(txId) {
+      const modal = document.getElementById('modal-tx-detail');
+      const content = document.getElementById('tx-detail-content');
+      content.innerHTML = '<div style="text-align:center; padding:20px;">Loading transaction details...</div>';
+      modal.style.display = 'flex';
+
+      try {
+        const res = await fetch(`/api/partner/rewards/transactions/${txId}`);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.message || 'Failed to load transaction');
+        const t = data.transaction;
+
+        const isPos = t.points >= 0;
+        const ptsColor = isPos ? '#4ade80' : '#f87171';
+        const netAmt = Math.abs(t.eligible_sale_amount || 0);
+        const ratePct = (Number(t.reward_rate) * 100).toFixed(0);
+
+        content.innerHTML = `
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <span style="font-size:11px; text-transform:uppercase; color:var(--ptn-text-muted); font-weight:700;">Transaction ID</span>
+                <div style="font-family:monospace; font-size:14px; color:var(--ptn-cyan); font-weight:700;">${t.id}</div>
+              </div>
+              <span class="ptn-badge-running">${t.status}</span>
+            </div>
+            <div style="font-size:13px; color:var(--ptn-text-muted); margin-bottom:8px;">
+              <strong>Type:</strong> <code>${t.transaction_type}</code> &bull; <strong>Processed:</strong> ${t.created_at}
+            </div>
+            <div style="font-size:13.5px; color:#fff; line-height:1.4;">${t.description || 'Eligible Sale Reward'}</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="ptn-stat-card" style="padding:14px;">
+              <div style="font-size:11px; color:var(--ptn-text-muted); text-transform:uppercase; font-weight:600;">Associated Sale / Order</div>
+              <div style="font-size:15px; font-weight:700; color:#fff; margin-top:4px;">${t.order_number || 'N/A'}</div>
+              <div style="font-size:12px; color:var(--ptn-text-muted); margin-top:2px;">${t.customer_name || 'Direct Customer'} (${t.customer_email || ''})</div>
+            </div>
+
+            <div class="ptn-stat-card" style="padding:14px;">
+              <div style="font-size:11px; color:var(--ptn-text-muted); text-transform:uppercase; font-weight:600;">Cloud Service</div>
+              <div style="font-size:15px; font-weight:700; color:#fff; margin-top:4px;">${t.service_name || 'Infrastructure Service'}</div>
+              <div style="font-size:12px; color:var(--ptn-text-muted); margin-top:2px;">Category: ${t.category || 'Cloud VPS'}</div>
+            </div>
+          </div>
+
+          <div style="background:rgba(93,224,196,0.06); border:1px solid rgba(93,224,196,0.25); border-radius:10px; padding:16px;">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--ptn-cyan); font-weight:700; letter-spacing:0.05em; margin-bottom:8px;">
+              Reward Transaction Summary
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="color:var(--ptn-text-muted);">Net Eligible Sale Amount:</span>
+              <strong style="color:#fff;">৳${netAmt.toLocaleString('en-US', {minimumFractionDigits: 2})} BDT</strong>
+            </div>
+            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:#fff; font-weight:600;">Reward Points Awarded:</span>
+              <strong style="font-size:17px; color:${ptsColor};">${Number(t.points).toLocaleString('en-US', {minimumFractionDigits: 2})} Points</strong>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<div style="color:#f87171; padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // Transaction Detail Modal Close
+    const txModal = document.getElementById('modal-tx-detail');
+    const closeTxBtn = document.getElementById('btn-close-tx-modal');
+    if (closeTxBtn) closeTxBtn.addEventListener('click', () => { txModal.style.display = 'none'; });
+    const dismissTxBtn = document.getElementById('btn-dismiss-tx-modal');
+    if (dismissTxBtn) dismissTxBtn.addEventListener('click', () => { txModal.style.display = 'none'; });
+
+    // Reward Filters & Search
+    document.querySelectorAll('.rew-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.rew-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const status = btn.getAttribute('data-status');
+        loadRewards(status, currentRewardSearch);
+      });
+    });
+
+    const rewSearchInput = document.getElementById('rew-search-input');
+    if (rewSearchInput) {
+      let timeout;
+      rewSearchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          loadRewards(currentRewardFilter, rewSearchInput.value);
+        }, 300);
+      });
+    }
+
+    const salesSearchInput = document.getElementById('sales-search-input');
+    if (salesSearchInput) {
+      let timeout;
+      salesSearchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          loadSales(salesSearchInput.value);
+        }, 300);
+      });
+    }
+
+    const refreshRewBtn = document.getElementById('btn-refresh-rewards');
+    if (refreshRewBtn) refreshRewBtn.addEventListener('click', () => loadRewards());
 
     checkAuth();
   </script>

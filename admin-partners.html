@@ -640,6 +640,15 @@
           <div class="admin-kpi-desc">Commission settlements queue &rarr;</div>
         </div>
 
+        <div class="admin-kpi-box" data-goto-tab="tab-rewards-mgmt" title="Click to inspect Reseller Reward Points">
+          <div class="admin-kpi-lbl">
+            <span>Reward Points in Pool</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          </div>
+          <div class="admin-kpi-val" id="kpi-total-points" style="color: #c4b5fd;">10,124 pts</div>
+          <div class="admin-kpi-desc">Reseller reward point accounts &rarr;</div>
+        </div>
+
         <div class="admin-kpi-box" data-goto-tab="tab-audit" title="Click to inspect Platform Infrastructure & Security Trail">
           <div class="admin-kpi-lbl">
             <span>Infrastructure Core</span>
@@ -662,6 +671,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Partner Directory
           <span class="admin-tab-badge" id="badge-partners-count">0</span>
+        </button>
+
+        <button class="admin-tab-btn" data-tab="tab-rewards-mgmt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Reward Points System
+          <span class="admin-tab-badge" id="badge-rewards-count" style="background: rgba(167, 139, 250, 0.25); color: #c4b5fd;">10% Active</span>
         </button>
 
         <button class="admin-tab-btn" data-tab="tab-tier-config">
@@ -845,6 +860,184 @@
         </div>
       </section>
 
+      <!-- TAB: REWARD POINTS SYSTEM MANAGEMENT -->
+      <section id="tab-rewards-mgmt" class="ptn-admin-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <h3 style="margin: 0; font-size: 22px;">Reseller Reward Points Management</h3>
+              <span class="ptn-badge-running" style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.35);">
+                Configurable 10% Policy
+              </span>
+            </div>
+            <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 0;">
+              Manage the 10% sales-based reward engine, review pending settlements, adjust partner ledgers, and enforce anti-abuse rules.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="btn-admin-open-adjust" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Manual Adjustment
+            </button>
+            <button id="btn-admin-open-refund" class="ptn-btn ptn-btn-secondary ptn-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l6 6M3 10l6-6"/></svg>
+              Reverse Refunded Order
+            </button>
+            <button id="btn-admin-open-sim" class="ptn-btn ptn-btn-primary ptn-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Simulate Partner Sale
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 KPI Summary Strip -->
+        <div class="admin-kpi-strip" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+          <div class="admin-kpi-box" style="cursor: default;">
+            <div class="admin-kpi-lbl">Total Points Awarded</div>
+            <div class="admin-kpi-val" id="adm-kpi-earned" style="color: var(--ptn-cyan);">--</div>
+            <div class="admin-kpi-desc">Cumulative points generated</div>
+          </div>
+          <div class="admin-kpi-box" style="cursor: default;">
+            <div class="admin-kpi-lbl">In Partner Wallets</div>
+            <div class="admin-kpi-val" id="adm-kpi-available" style="color: #4ade80;">--</div>
+            <div class="admin-kpi-desc">Currently redeemable points</div>
+          </div>
+          <div class="admin-kpi-box" style="cursor: default;">
+            <div class="admin-kpi-lbl">Pending Approvals</div>
+            <div class="admin-kpi-val" id="adm-kpi-pending" style="color: #facc15;">--</div>
+            <div class="admin-kpi-desc">Awaiting settlement review</div>
+          </div>
+          <div class="admin-kpi-box" style="cursor: default;">
+            <div class="admin-kpi-lbl">Reversed on Refunds</div>
+            <div class="admin-kpi-val" id="adm-kpi-reversed" style="color: #f87171;">--</div>
+            <div class="admin-kpi-desc">Points recovered on refunds</div>
+          </div>
+          <div class="admin-kpi-box" style="cursor: default;">
+            <div class="admin-kpi-lbl">Total Eligible Sales</div>
+            <div class="admin-kpi-val" id="adm-kpi-sales" style="color: #fff;">--</div>
+            <div class="admin-kpi-desc">Qualifying cloud infrastructure spend</div>
+          </div>
+        </div>
+
+        <!-- Reward Policy Configuration Card -->
+        <div class="ptn-stat-card" style="padding: 24px; margin-bottom: 28px; border-color: rgba(167, 139, 250, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div>
+              <h4 style="margin: 0; font-size: 17px; color: #fff;">⚙️ Reward Points Policy &amp; Settlement Configuration</h4>
+              <p style="margin: 4px 0 0; font-size: 13px; color: var(--ptn-text-muted);">
+                Changes apply to subsequent sales. Past transactions retain the exact rate snapshot recorded at transaction time.
+              </p>
+            </div>
+          </div>
+
+          <form id="admin-reward-policy-form">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 18px;">
+              <div>
+                <label style="display: block; font-size: 12.5px; color: #cbd5e1; margin-bottom: 6px; font-weight: 600;">Reward Rate (Decimal, e.g. 0.10 for 10%) *</label>
+                <input type="number" id="adm-policy-rate" class="ptn-input" step="0.01" min="0" max="0.50" value="0.10" required>
+                <small style="color: var(--ptn-text-muted); font-size: 11.5px;">10% gives 1,000 points on ৳10,000 sale.</small>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 12.5px; color: #cbd5e1; margin-bottom: 6px; font-weight: 600;">Points Per ৳1 BDT Eligible Value</label>
+                <input type="number" id="adm-policy-points-val" class="ptn-input" step="0.1" min="0.1" value="1.0" required>
+                <small style="color: var(--ptn-text-muted); font-size: 11.5px;">Default 1 point represents ৳1 eligible value.</small>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 12.5px; color: #cbd5e1; margin-bottom: 6px; font-weight: 600;">Minimum Redemption Points Threshold</label>
+                <input type="number" id="adm-policy-min-redeem" class="ptn-input" min="100" step="100" value="1000" required>
+                <small style="color: var(--ptn-text-muted); font-size: 11.5px;">Minimum points required to submit payout claim.</small>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 18px; padding: 14px; background: rgba(0,0,0,0.25); border-radius: 8px;">
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" id="adm-policy-auto-approve" checked>
+                <span><strong>Instant Approval:</strong> Automatically approve rewards on verified order payment (uncheck for manual review queue)</span>
+              </label>
+
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" id="adm-policy-renewals" checked>
+                <span><strong>Subscription Renewals:</strong> Award reward points on monthly recurring renewals as well as first payments</span>
+              </label>
+
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" id="adm-policy-anti-abuse" checked>
+                <span><strong>Anti-Abuse Safeguard:</strong> Strictly disallow partners from receiving rewards for their own direct purchases</span>
+              </label>
+
+              <label class="ptn-checkbox-label">
+                <input type="checkbox" id="adm-policy-redeem-enabled">
+                <span><strong>Enable Redemptions:</strong> Allow partners to submit points redemption claims (disabled by default)</span>
+              </label>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-size: 12.5px; color: #cbd5e1; margin-bottom: 8px; font-weight: 600;">Eligible Service Categories for 10% Rewards:</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px;" id="adm-policy-categories-wrap">
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Cloud VPS" checked> Cloud VPS</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Dedicated Server" checked> Dedicated Server</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Reseller Hosting" checked> Reseller Hosting</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Cloud Storage" checked> Cloud Storage</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="SSL" checked> SSL Certificates</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Domain" checked> Domain Registrations</label>
+                <label style="display: flex; align-items: center; gap: 6px; color: #fff;"><input type="checkbox" value="Web Hosting" checked> Web Hosting</label>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" id="btn-save-policy" class="ptn-btn ptn-btn-primary ptn-btn-sm" style="padding: 8px 18px;">
+                Save Reward Policy Settings
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Global Transactions Ledger & Approvals Table -->
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="adm-rew-search" placeholder="Search transactions by Order #, TX ID, customer, partner...">
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <select id="adm-rew-partner-filter" class="ptn-select" style="padding: 6px 12px; font-size: 12.5px; max-width: 200px;">
+              <option value="">All Partners</option>
+              <!-- Populated via script -->
+            </select>
+            <select id="adm-rew-status-filter" class="ptn-select" style="padding: 6px 12px; font-size: 12.5px;">
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending Approval</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REVERSED">Reversed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ptn-table-wrap" style="margin-top: 0;">
+          <table class="ptn-table">
+            <thead>
+              <tr>
+                <th>TX ID</th>
+                <th>Partner</th>
+                <th>Order / Sale #</th>
+                <th>Customer Name</th>
+                <th>Service & Category</th>
+                <th>Eligible Sale</th>
+                <th>Rate</th>
+                <th>Points Awarded</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adm-rew-transactions-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- TAB 6: SECURITY AUDIT TRAIL -->
       <section id="tab-audit" class="ptn-admin-section">
         <div class="admin-toolbar">
@@ -1021,6 +1214,171 @@
         <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
           <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="rule-edit-modal">Cancel</button>
           <button type="submit" class="ptn-btn ptn-btn-primary ptn-btn-sm">Save Rule Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Admin Manual Reward Points Adjustment -->
+  <div id="modal-admin-adjust" class="ptn-modal-overlay">
+    <div class="ptn-modal" style="max-width: 520px;">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">⚙️ Manual Reward Ledger Adjustment</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="modal-admin-adjust">&times;</button>
+      </div>
+      <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 20px;">
+        Apply an auditable manual credit or debit to a partner's reward balance. A documented reason is mandatory.
+      </p>
+
+      <form id="admin-adjust-form">
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-adj-partner-id">Target Reseller Partner *</label>
+          <select id="modal-adj-partner-id" class="ptn-select" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div class="ptn-field">
+            <label for="modal-adj-type">Adjustment Direction *</label>
+            <select id="modal-adj-type" class="ptn-select" required>
+              <option value="CREDIT">CREDIT (+ Add Points)</option>
+              <option value="DEBIT">DEBIT (- Deduct Points)</option>
+            </select>
+          </div>
+          <div class="ptn-field">
+            <label for="modal-adj-points">Points Quantity *</label>
+            <input type="number" id="modal-adj-points" class="ptn-input" min="1" step="1" placeholder="e.g. 500" required>
+          </div>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-adj-reason">Mandatory Audit Justification / Reason *</label>
+          <textarea id="modal-adj-reason" class="ptn-textarea" rows="3" placeholder="Specify clear justification for this adjustment (e.g. Goodwill incentive, manual promotional bonus, SLA breach penalty correction)..." required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="modal-admin-adjust">Cancel</button>
+          <button type="submit" id="btn-submit-adjust" class="ptn-btn ptn-btn-primary ptn-btn-sm">Execute Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Admin Order Refund Reversal -->
+  <div id="modal-admin-refund" class="ptn-modal-overlay">
+    <div class="ptn-modal" style="max-width: 520px;">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">🔄 Reverse Rewards for Refunded Order</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="modal-admin-refund">&times;</button>
+      </div>
+      <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 20px;">
+        Claw back reward points previously awarded on a cancelled, refunded, or charged-back client order.
+      </p>
+
+      <form id="admin-refund-form">
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-refund-order-id">Order ID or Sale Reference # *</label>
+          <input type="text" id="modal-refund-order-id" class="ptn-input mono" placeholder="e.g. ORD-2026-90812 or sale-..." required>
+          <small style="color: var(--ptn-text-muted); font-size: 11.5px;">Enter the exact Order Number or Sale ID from the transaction ledger.</small>
+        </div>
+
+        <div class="ptn-field" style="margin-bottom: 16px;">
+          <label for="modal-refund-reason">Refund / Reversal Reason *</label>
+          <textarea id="modal-refund-reason" class="ptn-textarea" rows="3" placeholder="e.g. Customer cancelled VPS subscription within 7-day money back guarantee..." required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="modal-admin-refund">Cancel</button>
+          <button type="submit" id="btn-submit-refund" class="ptn-btn ptn-btn-danger ptn-btn-sm" style="background: #ef4444; color: #fff;">Confirm Reversal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Admin Simulate Partner Sale -->
+  <div id="modal-admin-simulate" class="ptn-modal-overlay">
+    <div class="ptn-modal" style="max-width: 620px;">
+      <div class="ptn-modal-header">
+        <h3 style="margin: 0; font-size: 20px;">➕ Simulate Partner Sale &amp; Reward</h3>
+        <button type="button" class="ptn-modal-close-btn" data-close="modal-admin-simulate">&times;</button>
+      </div>
+      <p style="color: var(--ptn-text-muted); font-size: 13px; margin: 0 0 18px;">
+        Simulate an eligible cloud infrastructure order to verify the 10% reward engine, ledger generation, and account balance update.
+      </p>
+
+      <form id="admin-simulate-form">
+        <div class="ptn-field" style="margin-bottom: 14px;">
+          <label for="modal-sim-partner-id">Attributed Reseller Partner *</label>
+          <select id="modal-sim-partner-id" class="ptn-select" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="ptn-field">
+            <label for="modal-sim-customer-name">Customer / Enterprise Name *</label>
+            <input type="text" id="modal-sim-customer-name" class="ptn-input" placeholder="e.g. Orion Digital Ltd" value="Orion Digital Ltd" required>
+          </div>
+          <div class="ptn-field">
+            <label for="modal-sim-customer-email">Customer Email *</label>
+            <input type="email" id="modal-sim-customer-email" class="ptn-input" placeholder="e.g. ops@oriondigital.io" value="ops@oriondigital.io" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="ptn-field">
+            <label for="modal-sim-service-name">Service Purchased *</label>
+            <input type="text" id="modal-sim-service-name" class="ptn-input" placeholder="e.g. Enterprise Cloud VPS Cluster" value="Enterprise Cloud VPS Cluster" required>
+          </div>
+          <div class="ptn-field">
+            <label for="modal-sim-category">Service Category *</label>
+            <select id="modal-sim-category" class="ptn-select" required>
+              <option value="Cloud VPS">Cloud VPS</option>
+              <option value="Dedicated Server">Dedicated Server</option>
+              <option value="Reseller Hosting">Reseller Hosting</option>
+              <option value="Cloud Storage">Cloud Storage</option>
+              <option value="SSL">SSL Certificates</option>
+              <option value="Domain">Domain Registrations</option>
+              <option value="Web Hosting">Web Hosting</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="ptn-field">
+            <label for="modal-sim-gross">Gross Sale Amount (৳) *</label>
+            <input type="number" id="modal-sim-gross" class="ptn-input" step="100" min="100" value="10000" required>
+          </div>
+          <div class="ptn-field">
+            <label for="modal-sim-discount">Discount (৳)</label>
+            <input type="number" id="modal-sim-discount" class="ptn-input" step="10" min="0" value="0">
+          </div>
+          <div class="ptn-field">
+            <label for="modal-sim-tax">Excluded Tax (৳)</label>
+            <input type="number" id="modal-sim-tax" class="ptn-input" step="10" min="0" value="0">
+          </div>
+        </div>
+
+        <!-- Dynamic 10% Calculation Preview -->
+        <div style="background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 8px; padding: 14px; margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+            <span style="color: var(--ptn-text-muted);">Eligible Net Amount:</span>
+            <strong id="modal-sim-net-display" style="color: #fff;">৳10,000.00 BDT</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+            <span style="color: var(--ptn-text-muted);">Reward Calculation Rate:</span>
+            <strong id="modal-sim-rate-display" style="color: var(--ptn-cyan);">10.0%</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+            <span style="font-weight: 600; color: #fff;">Estimated Reward Points Earned:</span>
+            <strong id="modal-sim-points-display" style="color: #4ade80; font-size: 16px;">+1,000.00 pts</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="ptn-btn ptn-btn-secondary ptn-btn-sm" data-close="modal-admin-simulate">Cancel</button>
+          <button type="submit" id="btn-submit-sim" class="ptn-btn ptn-btn-primary ptn-btn-sm">Process Sale &amp; Award Points</button>
         </div>
       </form>
     </div>
@@ -1212,6 +1570,8 @@
     let cachedRules = [];
     let cachedAudit = [];
     let cachedPayouts = [];
+    let cachedAdminPolicy = null;
+    let cachedAdminRewardTx = [];
 
     async function checkAdminAuth() {
       try {
@@ -1256,7 +1616,8 @@
         loadTiers(),
         loadPricingRules(),
         loadPayouts(),
-        loadAuditLogs()
+        loadAuditLogs(),
+        loadRewardsAdmin()
       ]);
       updateKpis();
     }
@@ -1908,6 +2269,476 @@
     }
 
     document.getElementById('audit-search-input').addEventListener('input', renderAuditLogs);
+
+    // =========================================================================
+    // 9. Tab: Reward Points System Management
+    // =========================================================================
+    function populatePartnerSelects() {
+      const partnerSelects = ['adm-rew-partner-filter', 'modal-adj-partner-id', 'modal-sim-partner-id'];
+      partnerSelects.forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const currVal = sel.value;
+        if (selId === 'adm-rew-partner-filter') {
+          sel.innerHTML = '<option value="">All Reseller Partners</option>' + cachedPartners.map(p => `<option value="${p.id}">${p.company_name} (${p.id})</option>`).join('');
+        } else {
+          sel.innerHTML = '<option value="">-- Choose Reseller Partner --</option>' + cachedPartners.map(p => `<option value="${p.id}">${p.company_name} (${p.id})</option>`).join('');
+        }
+        if (currVal) sel.value = currVal;
+      });
+    }
+
+    async function loadRewardsAdmin() {
+      try {
+        const res = await fetch('/api/admin/rewards/overview');
+        const data = await res.json();
+        cachedAdminPolicy = data.policy || {};
+        const stats = data.stats || {};
+
+        // Update KPIs
+        const elEarned = document.getElementById('adm-kpi-earned');
+        if (elEarned) elEarned.textContent = Number(stats.totalPointsEarned || 0).toLocaleString('en-US', { minimumFractionDigits: 0 }) + ' pts';
+
+        const elAvail = document.getElementById('adm-kpi-available');
+        if (elAvail) elAvail.textContent = Number(stats.totalAvailablePoints || 0).toLocaleString('en-US', { minimumFractionDigits: 0 }) + ' pts';
+
+        const elPending = document.getElementById('adm-kpi-pending');
+        if (elPending) elPending.textContent = Number(stats.totalPendingPoints || 0).toLocaleString('en-US', { minimumFractionDigits: 0 }) + ' pts';
+
+        const elRev = document.getElementById('adm-kpi-reversed');
+        if (elRev) elRev.textContent = Number(stats.totalReversedPoints || 0).toLocaleString('en-US', { minimumFractionDigits: 0 }) + ' pts';
+
+        const elSales = document.getElementById('adm-kpi-sales');
+        if (elSales) elSales.textContent = '৳' + Number(stats.totalEligibleSales || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        const poolEl = document.getElementById('kpi-total-points');
+        if (poolEl) poolEl.textContent = Number(stats.totalAvailablePoints || 0).toLocaleString('en-US', { minimumFractionDigits: 0 }) + ' pts';
+
+        const badgeCount = document.getElementById('badge-rewards-count');
+        if (badgeCount && cachedAdminPolicy.reward_rate !== undefined) {
+          badgeCount.textContent = (cachedAdminPolicy.reward_rate * 100).toFixed(0) + '% Active';
+        }
+
+        // Fill Policy Form
+        if (cachedAdminPolicy.reward_rate !== undefined) {
+          const elRate = document.getElementById('adm-policy-rate');
+          if (elRate) elRate.value = cachedAdminPolicy.reward_rate;
+
+          const elPtsVal = document.getElementById('adm-policy-points-val');
+          if (elPtsVal) elPtsVal.value = cachedAdminPolicy.points_per_bdt;
+
+          const elMinRed = document.getElementById('adm-policy-min-redeem');
+          if (elMinRed) elMinRed.value = cachedAdminPolicy.min_redemption_points;
+
+          const elAutoApprove = document.getElementById('adm-policy-auto-approve');
+          if (elAutoApprove) elAutoApprove.checked = Boolean(cachedAdminPolicy.auto_approve);
+
+          const elRenewals = document.getElementById('adm-policy-renewals');
+          if (elRenewals) elRenewals.checked = Boolean(cachedAdminPolicy.apply_to_renewals);
+
+          const elAntiAbuse = document.getElementById('adm-policy-anti-abuse');
+          if (elAntiAbuse) elAntiAbuse.checked = Boolean(cachedAdminPolicy.anti_abuse_self_referral);
+
+          const elRedeem = document.getElementById('adm-policy-redeem-enabled');
+          if (elRedeem) elRedeem.checked = Boolean(cachedAdminPolicy.redemption_enabled);
+
+          let cats = [];
+          try {
+            cats = typeof cachedAdminPolicy.eligible_categories === 'string'
+              ? JSON.parse(cachedAdminPolicy.eligible_categories)
+              : cachedAdminPolicy.eligible_categories;
+          } catch (e) { cats = []; }
+
+          if (Array.isArray(cats)) {
+            document.querySelectorAll('#adm-policy-categories-wrap input[type="checkbox"]').forEach(cb => {
+              cb.checked = cats.includes(cb.value);
+            });
+          }
+        }
+
+        populatePartnerSelects();
+        await loadAdminRewardTransactions();
+      } catch (err) {
+        console.error('Failed to load admin rewards overview:', err);
+      }
+    }
+
+    async function loadAdminRewardTransactions() {
+      try {
+        const status = document.getElementById('adm-rew-status-filter').value;
+        const partnerId = document.getElementById('adm-rew-partner-filter').value;
+        const search = (document.getElementById('adm-rew-search').value || '').trim();
+
+        let url = '/api/admin/rewards/transactions?limit=100';
+        if (status && status !== 'ALL') url += '&status=' + encodeURIComponent(status);
+        if (partnerId) url += '&partnerId=' + encodeURIComponent(partnerId);
+        if (search) url += '&search=' + encodeURIComponent(search);
+
+        const res = await fetch(url);
+        const data = await res.json();
+        cachedAdminRewardTx = data.transactions || [];
+        renderAdminRewardTransactions();
+      } catch (err) {
+        console.error('Failed to load admin reward transactions:', err);
+      }
+    }
+
+    function renderAdminRewardTransactions() {
+      const tbody = document.getElementById('adm-rew-transactions-tbody');
+      if (!tbody) return;
+
+      if (!cachedAdminRewardTx.length) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:32px; color:var(--ptn-text-muted);">No reward transactions recorded matching criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = cachedAdminRewardTx.map(tx => {
+        let statusBadge = '<span class="ptn-badge-running">APPROVED</span>';
+        if (tx.status === 'PENDING') {
+          statusBadge = '<span class="ptn-badge-pending" style="background:rgba(250,204,21,0.15); color:#facc15; border:1px solid rgba(250,204,21,0.35);">PENDING</span>';
+        } else if (tx.status === 'REVERSED') {
+          statusBadge = '<span class="ptn-badge-pending" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">REVERSED</span>';
+        } else if (tx.status === 'REJECTED') {
+          statusBadge = '<span class="ptn-badge-pending" style="background:rgba(100,116,139,0.2); color:#94a3b8;">REJECTED</span>';
+        }
+
+        let ptsFormatted = '';
+        if (tx.points > 0) {
+          ptsFormatted = `<strong style="color:#4ade80; font-size:13.5px;">+${Number(tx.points).toLocaleString('en-US', {minimumFractionDigits: 2})} pts</strong>`;
+        } else if (tx.points < 0) {
+          ptsFormatted = `<strong style="color:#f87171; font-size:13.5px;">${Number(tx.points).toLocaleString('en-US', {minimumFractionDigits: 2})} pts</strong>`;
+        } else {
+          ptsFormatted = `<span style="color:var(--ptn-text-muted);">0.00 pts</span>`;
+        }
+
+        let actionsHtml = '<span style="color:var(--ptn-text-muted); font-size:12px;">--</span>';
+        if (tx.status === 'PENDING') {
+          actionsHtml = `
+            <div style="display:flex; gap:6px;">
+              <button class="ptn-table-action-btn adm-tx-approve-btn" data-id="${tx.id}" style="background:#10b981; color:#fff; padding:3px 8px; font-size:11.5px;">Approve</button>
+              <button class="ptn-table-action-btn adm-tx-reject-btn" data-id="${tx.id}" style="background:#ef4444; color:#fff; padding:3px 8px; font-size:11.5px;">Reject</button>
+            </div>
+          `;
+        } else if (tx.status === 'APPROVED' && tx.transaction_type === 'SALE_REWARD') {
+          actionsHtml = `
+            <button class="ptn-table-action-btn adm-tx-refund-btn" data-order="${tx.order_number || tx.order_id}" style="color:#f87171; border-color:rgba(239,68,68,0.3); padding:3px 8px; font-size:11.5px;">
+              Reverse
+            </button>
+          `;
+        }
+
+        return `
+          <tr>
+            <td><code style="color:var(--ptn-cyan); font-size:11.5px;">${tx.id}</code></td>
+            <td>
+              <strong style="color:#fff;">${tx.partner_name || tx.partner_id}</strong><br>
+              <small style="color:var(--ptn-text-muted);">${tx.partner_email || tx.partner_id}</small>
+            </td>
+            <td><code style="color:#cbd5e1; font-size:12px;">${tx.order_number || tx.order_id || 'N/A'}</code></td>
+            <td>${tx.customer_name || 'N/A'}<br><small style="color:var(--ptn-text-muted);">${tx.customer_email || ''}</small></td>
+            <td>
+              <strong style="font-size:12.5px;">${tx.service_name || tx.description || 'Cloud Service'}</strong><br>
+              <span class="ptn-badge-tag" style="font-size:10px;">${tx.category || tx.transaction_type}</span>
+            </td>
+            <td><strong style="color:#60a5fa;">৳${Number(tx.eligible_sale_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></td>
+            <td><span class="ptn-badge-running" style="font-size:11px;">${(Number(tx.reward_rate || 0) * 100).toFixed(1)}%</span></td>
+            <td>${ptsFormatted}</td>
+            <td><small class="mono" style="color:var(--ptn-text-muted);">${(tx.created_at || '').slice(0, 16).replace('T', ' ')}</small></td>
+            <td>${statusBadge}</td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Wire action buttons
+      document.querySelectorAll('.adm-tx-approve-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          btn.disabled = true;
+          btn.textContent = '...';
+          const res = await fetch(`/api/admin/rewards/transactions/${id}/approve`, { method: 'POST' });
+          const d = await res.json();
+          showBanner(d.message || 'Transaction approved.');
+          loadRewardsAdmin();
+        });
+      });
+
+      document.querySelectorAll('.adm-tx-reject-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const reason = prompt('Enter mandatory rejection reason for partner audit ledger:', 'Ineligible promotion or fraudulent order');
+          if (!reason) return;
+          btn.disabled = true;
+          btn.textContent = '...';
+          const res = await fetch(`/api/admin/rewards/transactions/${id}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+          });
+          const d = await res.json();
+          showBanner(d.message || 'Transaction rejected.');
+          loadRewardsAdmin();
+        });
+      });
+
+      document.querySelectorAll('.adm-tx-refund-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const orderId = btn.getAttribute('data-order');
+          document.getElementById('modal-refund-order-id').value = orderId;
+          document.getElementById('modal-admin-refund').style.display = 'flex';
+        });
+      });
+    }
+
+    // Modal Trigger Buttons
+    const btnOpenAdj = document.getElementById('btn-admin-open-adjust');
+    if (btnOpenAdj) {
+      btnOpenAdj.addEventListener('click', () => {
+        populatePartnerSelects();
+        document.getElementById('modal-admin-adjust').style.display = 'flex';
+      });
+    }
+
+    const btnOpenRef = document.getElementById('btn-admin-open-refund');
+    if (btnOpenRef) {
+      btnOpenRef.addEventListener('click', () => {
+        document.getElementById('modal-admin-refund').style.display = 'flex';
+      });
+    }
+
+    const btnOpenSim = document.getElementById('btn-admin-open-sim');
+    if (btnOpenSim) {
+      btnOpenSim.addEventListener('click', () => {
+        populatePartnerSelects();
+        updateAdminSimPreview();
+        document.getElementById('modal-admin-simulate').style.display = 'flex';
+      });
+    }
+
+    // Real-time Preview in Admin Simulate Modal
+    function updateAdminSimPreview() {
+      const gross = Number(document.getElementById('modal-sim-gross').value) || 0;
+      const discount = Number(document.getElementById('modal-sim-discount').value) || 0;
+      const tax = Number(document.getElementById('modal-sim-tax').value) || 0;
+      const net = Math.max(0, gross - discount - tax);
+      const rate = cachedAdminPolicy ? Number(cachedAdminPolicy.reward_rate) : 0.10;
+      const points = net * rate;
+
+      const elNet = document.getElementById('modal-sim-net-display');
+      if (elNet) elNet.textContent = '৳' + net.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' BDT';
+
+      const elRate = document.getElementById('modal-sim-rate-display');
+      if (elRate) elRate.textContent = (rate * 100).toFixed(1) + '%';
+
+      const elPts = document.getElementById('modal-sim-points-display');
+      if (elPts) elPts.textContent = '+' + points.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' pts';
+    }
+
+    ['modal-sim-gross', 'modal-sim-discount', 'modal-sim-tax'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateAdminSimPreview);
+    });
+
+    // Form: Admin Reward Policy Update
+    const formPolicy = document.getElementById('admin-reward-policy-form');
+    if (formPolicy) {
+      formPolicy.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const rewardRate = Number(document.getElementById('adm-policy-rate').value);
+        const pointsPerBdt = Number(document.getElementById('adm-policy-points-val').value);
+        const minRedemptionPoints = Number(document.getElementById('adm-policy-min-redeem').value);
+        const autoApprove = document.getElementById('adm-policy-auto-approve').checked ? 1 : 0;
+        const applyToRenewals = document.getElementById('adm-policy-renewals').checked ? 1 : 0;
+        const antiAbuseSelfReferral = document.getElementById('adm-policy-anti-abuse').checked ? 1 : 0;
+        const redemptionEnabled = document.getElementById('adm-policy-redeem-enabled').checked ? 1 : 0;
+
+        const checkedCats = [];
+        document.querySelectorAll('#adm-policy-categories-wrap input[type="checkbox"]:checked').forEach(cb => {
+          checkedCats.push(cb.value);
+        });
+
+        const btn = document.getElementById('btn-save-policy');
+        btn.disabled = true;
+        btn.textContent = 'Saving Settings...';
+
+        try {
+          const res = await fetch('/api/admin/rewards/policy', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rewardRate,
+              pointsPerBdt,
+              minRedemptionPoints,
+              autoApprove,
+              applyToRenewals,
+              antiAbuseSelfReferral,
+              redemptionEnabled,
+              eligibleCategories: checkedCats
+            })
+          });
+          const d = await res.json();
+          btn.disabled = false;
+          btn.textContent = 'Save Reward Policy Settings';
+          if (res.ok) {
+            showBanner('Reward points policy updated successfully.');
+            loadRewardsAdmin();
+          } else {
+            alert(d.message || 'Failed to update policy');
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Save Reward Policy Settings';
+          alert('Network error saving policy');
+        }
+      });
+    }
+
+    // Form: Manual Adjustment
+    const formAdjust = document.getElementById('admin-adjust-form');
+    if (formAdjust) {
+      formAdjust.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const partnerId = document.getElementById('modal-adj-partner-id').value;
+        const type = document.getElementById('modal-adj-type').value;
+        const points = document.getElementById('modal-adj-points').value;
+        const reason = document.getElementById('modal-adj-reason').value;
+
+        if (!partnerId) {
+          alert('Please select a partner');
+          return;
+        }
+
+        const btn = document.getElementById('btn-submit-adjust');
+        btn.disabled = true;
+        btn.textContent = 'Executing...';
+
+        try {
+          const res = await fetch('/api/admin/rewards/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ partnerId, type, points, reason })
+          });
+          const d = await res.json();
+          btn.disabled = false;
+          btn.textContent = 'Execute Adjustment';
+          if (res.ok) {
+            document.getElementById('modal-admin-adjust').style.display = 'none';
+            document.getElementById('admin-adjust-form').reset();
+            showBanner(d.message || 'Points adjustment recorded.');
+            loadRewardsAdmin();
+          } else {
+            alert(d.message || 'Adjustment failed');
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Execute Adjustment';
+          alert('Network error executing adjustment');
+        }
+      });
+    }
+
+    // Form: Refund Reversal
+    const formRefund = document.getElementById('admin-refund-form');
+    if (formRefund) {
+      formRefund.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const orderId = document.getElementById('modal-refund-order-id').value.trim();
+        const reason = document.getElementById('modal-refund-reason').value.trim();
+
+        const btn = document.getElementById('btn-submit-refund');
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        try {
+          const res = await fetch('/api/admin/rewards/process-refund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, reason })
+          });
+          const d = await res.json();
+          btn.disabled = false;
+          btn.textContent = 'Confirm Reversal';
+          if (res.ok) {
+            document.getElementById('modal-admin-refund').style.display = 'none';
+            document.getElementById('admin-refund-form').reset();
+            showBanner(d.message || 'Reward points reversed for refund.');
+            loadRewardsAdmin();
+          } else {
+            alert(d.message || 'Reversal failed');
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Confirm Reversal';
+          alert('Network error processing refund');
+        }
+      });
+    }
+
+    // Form: Simulate Partner Sale
+    const formSim = document.getElementById('admin-simulate-form');
+    if (formSim) {
+      formSim.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const partnerId = document.getElementById('modal-sim-partner-id').value;
+        const customerName = document.getElementById('modal-sim-customer-name').value;
+        const customerEmail = document.getElementById('modal-sim-customer-email').value;
+        const serviceName = document.getElementById('modal-sim-service-name').value;
+        const category = document.getElementById('modal-sim-category').value;
+        const grossAmount = document.getElementById('modal-sim-gross').value;
+        const discountAmount = document.getElementById('modal-sim-discount').value;
+        const taxAmount = document.getElementById('modal-sim-tax').value;
+
+        if (!partnerId) {
+          alert('Please select a partner');
+          return;
+        }
+
+        const btn = document.getElementById('btn-submit-sim');
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        try {
+          const res = await fetch('/api/admin/rewards/simulate-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              partnerId,
+              customerName,
+              customerEmail,
+              serviceName,
+              category,
+              grossAmount,
+              discountAmount,
+              taxAmount
+            })
+          });
+          const d = await res.json();
+          btn.disabled = false;
+          btn.textContent = 'Process Sale & Award Points';
+          if (res.ok) {
+            document.getElementById('modal-admin-simulate').style.display = 'none';
+            showBanner(d.message || 'Order simulated and reward points awarded.');
+            loadRewardsAdmin();
+          } else {
+            alert(d.message || 'Simulation failed');
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Process Sale & Award Points';
+          alert('Network error simulating order');
+        }
+      });
+    }
+
+    // Search and Filters
+    const searchEl = document.getElementById('adm-rew-search');
+    if (searchEl) searchEl.addEventListener('input', loadAdminRewardTransactions);
+
+    const partnerFilterEl = document.getElementById('adm-rew-partner-filter');
+    if (partnerFilterEl) partnerFilterEl.addEventListener('change', loadAdminRewardTransactions);
+
+    const statusFilterEl = document.getElementById('adm-rew-status-filter');
+    if (statusFilterEl) statusFilterEl.addEventListener('change', loadAdminRewardTransactions);
 
     // Initial Authentication Check
     checkAdminAuth();

@@ -4,6 +4,7 @@ import { initDatabase, hashPassword, verifyPassword } from '../server/db.mjs';
 import { PricingEngine } from '../server/pricing-engine.mjs';
 import { WHMCSAdapter } from '../server/whmcs-adapter.mjs';
 import { CloudStackAdapter } from '../server/cloudstack-adapter.mjs';
+import { RewardProcessingService } from '../server/reward-service.mjs';
 import { handleLogin, sessionStore } from '../server/auth.mjs';
 
 describe('Unified Cloud Partner Program - Production Test Suite', () => {
@@ -11,6 +12,7 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
   let pricing;
   let whmcs;
   let cloudstack;
+  let rewardService;
 
   before(() => {
     // In-memory isolated database for tests
@@ -18,6 +20,7 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
     pricing = new PricingEngine(db);
     whmcs = new WHMCSAdapter();
     cloudstack = new CloudStackAdapter();
+    rewardService = new RewardProcessingService(db);
   });
 
   // 1. Database & Security
@@ -243,4 +246,283 @@ describe('Unified Cloud Partner Program - Production Test Suite', () => {
       }, /Quota Exceeded/);
     });
   });
+
+  // 6. Partner Sales-Based Reward Points System (Comprehensive Production Suite)
+  describe('Partner Sales-Based Reward Points System', () => {
+    const testPartnerId = 'ptn-reward-test';
+    const testPartnerEmail = 'reseller@rewardtest.com';
+
+    before(() => {
+      // Create isolated test partner for reward tests
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status)
+        VALUES (?, 'Matrix Cloud Solutions', 'Samiul Alom', ?, '+8801700112233', 'BD', 'Agency', 'tier-gold', 'ACTIVE')
+      `).run(testPartnerId, testPartnerEmail);
+
+      rewardService.getOrCreateAccount(testPartnerId);
+    });
+
+    it('should award 1,000 reward points for a ৳10,000 eligible sale at 10% reward rate', () => {
+      const result = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-10K',
+        customerName: 'Dhaka Retail Corp',
+        customerEmail: 'billing@dhakaretail.com',
+        serviceName: 'Business Cloud VPS',
+        category: 'Cloud VPS',
+        grossAmount: 10000.00,
+        discountAmount: 0,
+        taxAmount: 0
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.eligibleNetAmount, 10000.00);
+      assert.equal(result.rewardRate, 0.10);
+      assert.equal(result.pointsAwarded, 1000.00);
+      assert.equal(result.status, 'APPROVED');
+
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(account.available_points, 1000.00);
+      assert.equal(account.total_eligible_sales, 10000.00);
+      assert.equal(account.total_points_earned, 1000.00);
+    });
+
+    it('should award 5,000 reward points for a ৳50,000 eligible sale at 10% rate', () => {
+      const result = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-50K',
+        customerName: 'Chittagong Maritime Ltd.',
+        customerEmail: 'it@cmaritime.com',
+        serviceName: 'Enterprise Cloud VPS Cluster',
+        category: 'Cloud VPS',
+        grossAmount: 50000.00,
+        discountAmount: 0,
+        taxAmount: 0
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.eligibleNetAmount, 50000.00);
+      assert.equal(result.pointsAwarded, 5000.00);
+
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      // Previous 1,000 + 5,000 = 6,000 points
+      assert.equal(account.available_points, 6000.00);
+      assert.equal(account.total_eligible_sales, 60000.00);
+      assert.equal(account.total_points_earned, 6000.00);
+    });
+
+    it('should calculate net eligible amount by subtracting discounts and taxes', () => {
+      const result = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-DISCOUNT',
+        customerName: 'Fintech Hub',
+        customerEmail: 'ops@fintechhub.bd',
+        serviceName: 'Dedicated Bare Metal DB',
+        category: 'Dedicated Server',
+        grossAmount: 20000.00,
+        discountAmount: 3000.00,
+        taxAmount: 1000.00
+      });
+
+      // Eligible Net = 20,000 - 3,000 - 1,000 = 16,000 => Points = 1,600
+      assert.equal(result.eligibleNetAmount, 16000.00);
+      assert.equal(result.pointsAwarded, 1600.00);
+
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(account.available_points, 7600.00);
+      assert.equal(account.total_eligible_sales, 76000.00);
+    });
+
+    it('should prevent partners from earning rewards on self-purchases under anti-abuse policy', () => {
+      const result = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-SELF',
+        customerName: 'Matrix Cloud Admin',
+        customerEmail: testPartnerEmail, // Partner's own email!
+        serviceName: 'Cloud VPS Self Host',
+        category: 'Cloud VPS',
+        grossAmount: 5000.00
+      });
+
+      assert.equal(result.success, false);
+      assert.equal(result.reason, 'SELF_PURCHASE_RESTRICTED');
+      assert.equal(result.pointsAwarded, 0);
+
+      // Account balance must remain unchanged at 7,600
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(account.available_points, 7600.00);
+    });
+
+    it('should award zero points for ineligible categories', () => {
+      const result = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-INELIGIBLE-CAT',
+        customerName: 'Generic Client',
+        customerEmail: 'client@example.com',
+        serviceName: 'Custom Hardware Colocation',
+        category: 'Hardware Colocation', // Not in eligible categories
+        grossAmount: 15000.00
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.eligibleNetAmount, 0);
+      assert.equal(result.pointsAwarded, 0);
+    });
+
+    it('should enforce idempotency and prevent duplicate rewards on duplicate webhooks', () => {
+      const idempotencyKey = 'webhook-event-pay-unique-9918';
+
+      const call1 = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-IDEMP',
+        paymentId: 'pay-tx-8812',
+        customerName: 'Dhaka Logistics',
+        customerEmail: 'info@dhakalogistics.com',
+        serviceName: 'Cloud VPS Storage',
+        category: 'Cloud Storage',
+        grossAmount: 8000.00,
+        idempotencyKey
+      });
+
+      const call2 = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-TEST-IDEMP',
+        paymentId: 'pay-tx-8812',
+        customerName: 'Dhaka Logistics',
+        customerEmail: 'info@dhakalogistics.com',
+        serviceName: 'Cloud VPS Storage',
+        category: 'Cloud Storage',
+        grossAmount: 8000.00,
+        idempotencyKey
+      });
+
+      assert.equal(call1.pointsAwarded, 800.00);
+      assert.equal(call2.isIdempotentReplay, true);
+      assert.equal(call2.transaction.id, call1.transactionId);
+
+      // Points should have been added only once (+800 => 7600 + 800 = 8400)
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(account.available_points, 8400.00);
+    });
+
+    it('should process refunds and reverse rewards safely without duplicate reversals', () => {
+      const refundResult = rewardService.processRefund({
+        orderId: 'ORD-TEST-10K',
+        reason: 'Client requested full refund within 30 days',
+        actorEmail: 'admin@unified.test'
+      });
+
+      assert.equal(refundResult.success, true);
+      assert.equal(refundResult.reversedPoints, 1000.00);
+
+      // Available points should be reduced by 1,000 (8,400 - 1,000 = 7,400)
+      const account = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(account.available_points, 7400.00);
+      assert.equal(account.reversed_points, 1000.00);
+
+      // Attempting second refund must be idempotent
+      const duplicateRefund = rewardService.processRefund({
+        orderId: 'ORD-TEST-10K'
+      });
+      assert.equal(duplicateRefund.success, true);
+      const accountAfterDup = rewardService.getOrCreateAccount(testPartnerId);
+      assert.equal(accountAfterDup.available_points, 7400.00); // Unchanged!
+    });
+
+    it('should allow administrators to update the reward rate and snapshot historical rates', () => {
+      // Update rate to 15%
+      rewardService.updatePolicy({
+        rewardRate: 0.15,
+        minRedemptionPoints: 1000,
+        redemptionEnabled: false,
+        autoApprove: true,
+        applyToRenewals: true,
+        disallowSelfReferral: true,
+        expirationDays: 0,
+        eligibleCategories: ["Cloud VPS", "Dedicated Server", "Reseller Hosting", "Cloud Storage", "SSL"],
+        actorEmail: 'admin@unified.test'
+      });
+
+      const updatedPolicy = rewardService.getPolicy();
+      assert.equal(updatedPolicy.reward_rate, 0.15);
+
+      // New sale under 15% rate: ৳10,000 * 15% = 1,500 points
+      const newSale = rewardService.processSaleReward({
+        partnerId: testPartnerId,
+        orderNumber: 'ORD-NEW-RATE-15',
+        customerName: 'Khulna Software',
+        customerEmail: 'billing@khulnasoft.io',
+        serviceName: 'Enterprise Cloud VPS',
+        category: 'Cloud VPS',
+        grossAmount: 10000.00
+      });
+
+      assert.equal(newSale.rewardRate, 0.15);
+      assert.equal(newSale.pointsAwarded, 1500.00);
+
+      // Reset policy back to 10%
+      rewardService.updatePolicy({
+        rewardRate: 0.10,
+        minRedemptionPoints: 1000,
+        redemptionEnabled: false,
+        autoApprove: true,
+        applyToRenewals: true,
+        disallowSelfReferral: true,
+        expirationDays: 0,
+        eligibleCategories: ["Cloud VPS", "Dedicated Server", "Reseller Hosting", "Cloud Storage", "SSL", "Domain"],
+        actorEmail: 'admin@unified.test'
+      });
+    });
+
+    it('should enforce mandatory documented reasons for manual administrative adjustments', () => {
+      // Fails without reason
+      assert.throws(() => {
+        rewardService.processAdminAdjustment({
+          partnerId: testPartnerId,
+          points: 500,
+          type: 'CREDIT',
+          reason: '',
+          actorEmail: 'admin@unified.test'
+        });
+      }, /documented reason is mandatory/);
+
+      // Succeeds with documented reason
+      const adj = rewardService.processAdminAdjustment({
+        partnerId: testPartnerId,
+        points: 500,
+        type: 'CREDIT',
+        reason: 'Q4 Performance Incentive Bonus',
+        actorEmail: 'admin@unified.test'
+      });
+
+      assert.equal(adj.success, true);
+    });
+
+    it('should audit and reconcile partner account balance with immutable ledger', () => {
+      const reconciliation = rewardService.reconcile(testPartnerId);
+      assert.equal(reconciliation.isReconciled, true);
+      assert.equal(reconciliation.discrepancy, 0);
+    });
+
+    it('should strictly isolate partner sales and rewards data', () => {
+      const otherPartnerId = 'ptn-isolated-other';
+      db.prepare(`
+        INSERT INTO partners (id, company_name, contact_name, email, phone, country, business_type, tier_id, status)
+        VALUES (?, 'Other Agency', 'Tanvir', 'tanvir@other.test', '+8801900000000', 'BD', 'Agency', 'tier-silver', 'ACTIVE')
+      `).run(otherPartnerId);
+
+      const salesPartner1 = rewardService.getSales(testPartnerId, {});
+      const salesPartner2 = rewardService.getSales(otherPartnerId, {});
+
+      assert.ok(salesPartner1.sales.length > 0);
+      assert.equal(salesPartner2.sales.length, 0);
+
+      const txPartner1 = rewardService.getTransactions(testPartnerId, {});
+      const txPartner2 = rewardService.getTransactions(otherPartnerId, {});
+
+      assert.ok(txPartner1.transactions.length > 0);
+      assert.equal(txPartner2.transactions.length, 0);
+    });
+  });
 });
+

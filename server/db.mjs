@@ -244,13 +244,94 @@ export function initDatabase(dbPath = DB_FILE) {
       published_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS partner_reward_policies (
+      id TEXT PRIMARY KEY,
+      reward_rate REAL NOT NULL DEFAULT 0.10,
+      points_per_bdt REAL NOT NULL DEFAULT 1.0,
+      min_redemption_points REAL NOT NULL DEFAULT 1000,
+      redemption_enabled INTEGER NOT NULL DEFAULT 0,
+      redemption_conversion_rate REAL NOT NULL DEFAULT 0.10,
+      auto_approve INTEGER NOT NULL DEFAULT 1,
+      apply_to_renewals INTEGER NOT NULL DEFAULT 1,
+      disallow_self_referral INTEGER NOT NULL DEFAULT 1,
+      expiration_days INTEGER NOT NULL DEFAULT 0,
+      eligible_categories TEXT NOT NULL DEFAULT '["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_by TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS partner_reward_accounts (
+      id TEXT PRIMARY KEY,
+      partner_id TEXT UNIQUE NOT NULL,
+      total_eligible_sales REAL NOT NULL DEFAULT 0,
+      total_points_earned REAL NOT NULL DEFAULT 0,
+      available_points REAL NOT NULL DEFAULT 0,
+      pending_points REAL NOT NULL DEFAULT 0,
+      redeemed_points REAL NOT NULL DEFAULT 0,
+      reversed_points REAL NOT NULL DEFAULT 0,
+      expired_points REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(partner_id) REFERENCES partners(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS partner_sales (
+      id TEXT PRIMARY KEY,
+      order_number TEXT UNIQUE NOT NULL,
+      partner_id TEXT NOT NULL,
+      customer_id TEXT,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      service_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      product_code TEXT NOT NULL,
+      gross_amount REAL NOT NULL,
+      discount_amount REAL NOT NULL DEFAULT 0,
+      tax_amount REAL NOT NULL DEFAULT 0,
+      eligible_net_amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'BDT',
+      payment_status TEXT NOT NULL DEFAULT 'PAID' CHECK(payment_status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED')),
+      payment_id TEXT,
+      is_recurring INTEGER NOT NULL DEFAULT 0,
+      billing_cycle TEXT DEFAULT 'monthly',
+      is_self_purchase INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(partner_id) REFERENCES partners(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS partner_reward_transactions (
+      id TEXT PRIMARY KEY,
+      partner_id TEXT NOT NULL,
+      order_id TEXT,
+      payment_id TEXT,
+      transaction_type TEXT NOT NULL CHECK(transaction_type IN ('SALE_REWARD', 'REWARD_REVERSAL', 'REDEMPTION', 'EXPIRATION', 'ADMIN_ADJUSTMENT')),
+      eligible_sale_amount REAL NOT NULL DEFAULT 0,
+      reward_rate REAL NOT NULL DEFAULT 0.10,
+      points REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'APPROVED' CHECK(status IN ('PENDING', 'APPROVED', 'REVERSED', 'REJECTED')),
+      idempotency_key TEXT UNIQUE,
+      description TEXT,
+      metadata_json TEXT,
+      processed_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      processed_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(partner_id) REFERENCES partners(id) ON DELETE CASCADE,
+      FOREIGN KEY(order_id) REFERENCES partner_sales(id) ON DELETE SET NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_partner_apps_email ON partner_applications(email);
     CREATE INDEX IF NOT EXISTS idx_partner_apps_status ON partner_applications(status);
     CREATE INDEX IF NOT EXISTS idx_partner_services_partner ON partner_services(partner_id);
     CREATE INDEX IF NOT EXISTS idx_partner_audit_actor ON partner_audit_logs(actor_email);
+    CREATE INDEX IF NOT EXISTS idx_reward_tx_partner ON partner_reward_transactions(partner_id);
+    CREATE INDEX IF NOT EXISTS idx_reward_tx_order ON partner_reward_transactions(order_id);
+    CREATE INDEX IF NOT EXISTS idx_reward_tx_status ON partner_reward_transactions(status);
+    CREATE INDEX IF NOT EXISTS idx_partner_sales_partner ON partner_sales(partner_id);
+    CREATE INDEX IF NOT EXISTS idx_partner_sales_order ON partner_sales(order_number);
   `);
 
   seedDefaultData(db);
+  seedRewardSystemData(db);
   return db;
 }
 
@@ -587,3 +668,203 @@ function seedDefaultData(db) {
     '127.0.0.1'
   );
 }
+
+function seedRewardSystemData(db) {
+  // 1. Ensure default reward policy exists
+  const existingPolicy = db.prepare('SELECT id FROM partner_reward_policies WHERE id = ?').get('default');
+  if (!existingPolicy) {
+    db.prepare(`
+      INSERT INTO partner_reward_policies (
+        id, reward_rate, points_per_bdt, min_redemption_points, redemption_enabled,
+        redemption_conversion_rate, auto_approve, apply_to_renewals, disallow_self_referral,
+        expiration_days, eligible_categories, updated_at, updated_by
+      ) VALUES (
+        'default', 0.10, 1.0, 1000, 0, 0.10, 1, 1, 1, 0,
+        '["Cloud VPS","Dedicated Server","Reseller Hosting","Cloud Storage","Web Hosting","SSL","Domain"]',
+        datetime('now'), 'system-init'
+      )
+    `).run();
+  }
+
+  // 2. Ensure reward account exists for all existing partners
+  const partners = db.prepare('SELECT id FROM partners').all();
+  const insertAccount = db.prepare(`
+    INSERT OR IGNORE INTO partner_reward_accounts (
+      id, partner_id, total_eligible_sales, total_points_earned,
+      available_points, pending_points, redeemed_points, reversed_points, expired_points
+    ) VALUES (?, ?, 0, 0, 0, 0, 0, 0, 0)
+  `);
+
+  for (const p of partners) {
+    insertAccount.run('racc-' + p.id, p.id);
+  }
+
+  // 3. Seed initial sales & rewards for demo partner 'ptn-apex-101' if empty
+  const demoPartnerId = 'ptn-apex-101';
+  const existingSales = db.prepare('SELECT COUNT(*) as count FROM partner_sales WHERE partner_id = ?').get(demoPartnerId);
+  if (!existingSales || existingSales.count === 0) {
+    const demoSales = [
+      {
+        id: 'sal-seed-1',
+        orderNumber: 'ORD-2026-8011',
+        customerName: 'Rahim Garments Ltd.',
+        customerEmail: 'it@rahimgarments.com',
+        serviceName: 'Enterprise Cloud VPS (8 vCPU, 16GB RAM)',
+        category: 'Cloud VPS',
+        productCode: 'VPS-ENTERPRISE',
+        gross: 11712.00,
+        discount: 1756.80,
+        tax: 0,
+        eligibleNet: 9955.20,
+        rate: 0.10,
+        points: 995.52,
+        status: 'APPROVED',
+        created_at: '2026-10-01 10:15:00'
+      },
+      {
+        id: 'sal-seed-2',
+        orderNumber: 'ORD-2026-8012',
+        customerName: 'Bengal Fintech Labs',
+        customerEmail: 'ops@bengalfintech.io',
+        serviceName: 'Bare Metal DB Host (Dual EPYC, 64GB)',
+        category: 'Dedicated Server',
+        productCode: 'VDS-BUSINESS',
+        gross: 25620.00,
+        discount: 3843.00,
+        tax: 0,
+        eligibleNet: 21777.00,
+        rate: 0.10,
+        points: 2177.70,
+        status: 'APPROVED',
+        created_at: '2026-10-05 14:20:00'
+      },
+      {
+        id: 'sal-seed-3',
+        orderNumber: 'ORD-2026-8013',
+        customerName: 'Dhaka Commerce Hub',
+        customerEmail: 'admin@dhakacommerce.com',
+        serviceName: 'Reseller cPanel Hosting 50 Accounts',
+        category: 'Reseller Hosting',
+        productCode: 'HOST-CPANEL-RES',
+        gross: 10000.00,
+        discount: 0,
+        tax: 0,
+        eligibleNet: 10000.00,
+        rate: 0.10,
+        points: 1000.00,
+        status: 'APPROVED',
+        created_at: '2026-10-10 11:00:00'
+      },
+      {
+        id: 'sal-seed-4',
+        orderNumber: 'ORD-2026-8014',
+        customerName: 'Metro Diagnostic Center',
+        customerEmail: 'sysadmin@metrohealth.bd',
+        serviceName: 'DigiCert Secure Site Pro EV SSL',
+        category: 'SSL',
+        productCode: 'SSL-DIGICERT',
+        gross: 9516.00,
+        discount: 0,
+        tax: 0,
+        eligibleNet: 9516.00,
+        rate: 0.10,
+        points: 951.60,
+        status: 'APPROVED',
+        created_at: '2026-10-12 16:45:00'
+      },
+      {
+        id: 'sal-seed-5',
+        orderNumber: 'ORD-2026-8015',
+        customerName: 'Apex Digital Labs',
+        customerEmail: 'client@apexdigital.com',
+        serviceName: 'High-Performance Cloud Cluster (VPS-PRO + Storage)',
+        category: 'Cloud VPS',
+        productCode: 'VPS-PRO',
+        gross: 50000.00,
+        discount: 0,
+        tax: 0,
+        eligibleNet: 50000.00,
+        rate: 0.10,
+        points: 5000.00,
+        status: 'APPROVED',
+        created_at: '2026-10-14 09:30:00'
+      },
+      {
+        id: 'sal-seed-6',
+        orderNumber: 'ORD-2026-8016',
+        customerName: 'Sylhet Web Agency',
+        customerEmail: 'info@sylhetweb.com',
+        serviceName: 'Starter Cloud VPS (1 vCPU, 2GB RAM)',
+        category: 'Cloud VPS',
+        productCode: 'VPS-STARTER',
+        gross: 2928.00,
+        discount: 0,
+        tax: 0,
+        eligibleNet: 2928.00,
+        rate: 0.10,
+        points: 292.80,
+        status: 'PENDING',
+        created_at: '2026-10-18 12:00:00'
+      }
+    ];
+
+    let totalEligible = 0;
+    let totalPoints = 0;
+    let availablePoints = 0;
+    let pendingPoints = 0;
+
+    for (const s of demoSales) {
+      db.prepare(`
+        INSERT INTO partner_sales (
+          id, order_number, partner_id, customer_name, customer_email,
+          service_name, category, product_code, gross_amount, discount_amount, tax_amount,
+          eligible_net_amount, currency, payment_status, payment_id, is_recurring, billing_cycle,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'BDT', 'PAID', ?, 1, 'monthly', ?)
+      `).run(
+        s.id, s.orderNumber, demoPartnerId, s.customerName, s.customerEmail,
+        s.serviceName, s.category, s.productCode, s.gross, s.discount, s.tax,
+        s.eligibleNet, 'PAY-WHMCS-' + s.orderNumber, s.created_at
+      );
+
+      const txId = 'rtx-seed-' + s.orderNumber;
+      db.prepare(`
+        INSERT INTO partner_reward_transactions (
+          id, partner_id, order_id, payment_id, transaction_type, eligible_sale_amount,
+          reward_rate, points, status, idempotency_key, description, processed_by, created_at, processed_at
+        ) VALUES (?, ?, ?, ?, 'SALE_REWARD', ?, ?, ?, ?, ?, ?, 'system-seed', ?, ?)
+      `).run(
+        txId, demoPartnerId, s.id, 'PAY-WHMCS-' + s.orderNumber,
+        s.eligibleNet, s.rate, s.points, s.status,
+        'seed-' + s.orderNumber,
+        `10% Reward for Order ${s.orderNumber} - ${s.serviceName}`,
+        s.created_at, s.created_at
+      );
+
+      if (s.status === 'APPROVED') {
+        totalEligible += s.eligibleNet;
+        totalPoints += s.points;
+        availablePoints += s.points;
+      } else if (s.status === 'PENDING') {
+        pendingPoints += s.points;
+      }
+    }
+
+    db.prepare(`
+      UPDATE partner_reward_accounts
+      SET total_eligible_sales = ?,
+          total_points_earned = ?,
+          available_points = ?,
+          pending_points = ?,
+          updated_at = datetime('now')
+      WHERE partner_id = ?
+    `).run(
+      Math.round(totalEligible * 100) / 100,
+      Math.round(totalPoints * 100) / 100,
+      Math.round(availablePoints * 100) / 100,
+      Math.round(pendingPoints * 100) / 100,
+      demoPartnerId
+    );
+  }
+}
+
