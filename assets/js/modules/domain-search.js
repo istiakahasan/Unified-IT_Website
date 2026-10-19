@@ -80,17 +80,6 @@ try {
           category: 'premium'
         },
         {
-          type: 'addon',
-          name: 'SSL Site security made simple',
-          pic: 'pic-ssl',
-          icon: ICONS.lock,
-          price: 'BDT 1,320/yr',
-          retail: null,
-          discount: null,
-          info: true,
-          category: 'domains'
-        },
-        {
           tld: '.net',
           pic: 'pic-net',
           icon: ICONS.globe,
@@ -228,11 +217,8 @@ try {
         }
 
         resultsList.innerHTML = filtered.map(function(item) {
-          var isAddon = item.type === 'addon';
-          var domainName = isAddon ? item.name : parsed.base + item.tld;
-          var titleHtml = isAddon
-            ? '<span class="dom-domain-title">SSL <span class="dom-ssl-desc">Site security made simple</span></span>'
-            : '<span class="dom-domain-title">' + parsed.base + '<span class="tld">' + item.tld + '</span></span>';
+          var domainName = parsed.base + item.tld;
+          var titleHtml = '<span class="dom-domain-title">' + parsed.base + '<span class="tld">' + item.tld + '</span></span>';
 
           var discountBadge = item.discount
             ? '<span class="dom-discount-badge">' + item.discount + '</span>'
@@ -243,9 +229,7 @@ try {
             : '';
 
           var isFav = !!favorites[domainName];
-          var starBtn = !isAddon
-            ? '<button class="dom-icon-btn dom-star-btn ' + (isFav ? 'active' : '') + '" type="button" data-fav="' + domainName + '" title="Favorite" aria-label="Favorite">' + ICONS.star + '</button>'
-            : '';
+          var starBtn = '<button class="dom-icon-btn dom-star-btn ' + (isFav ? 'active' : '') + '" type="button" data-fav="' + domainName + '" title="Favorite" aria-label="Favorite">' + ICONS.star + '</button>';
 
           var retailHtml = item.retail
             ? '<div class="dom-retail-price">Retail <span>' + item.retail + '</span></div>'

@@ -591,12 +591,6 @@
   letter-spacing: .04em;
 }
 
-.dom-ssl-desc {
-  font-size: 13.5px;
-  color: #94a3b8;
-  margin-left: 2px;
-}
-
 /* Right Side: Price + CTA */
 .dom-row-right {
   display: flex;
