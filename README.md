@@ -30,7 +30,7 @@ unified-it/
 │   ├── whmcs-adapter.mjs               # WHMCS enterprise billing & account adapter
 │   └── cloudstack-adapter.mjs          # Apache CloudStack infrastructure & VM provisioning adapter
 ├── tests/
-│   └── partner-system.test.mjs         # Production automated test suite (29 tests)
+│   └── partner-system.test.mjs         # Production automated test suite (33 tests)
 ├── scripts/
 │   ├── serve.js                        # `npm start` entrypoint (port 3000)
 │   ├── update-digicert-prices.mjs      # Digicert list price scraper & currency converter
@@ -69,6 +69,7 @@ unified-it/
     │   │   ├── comodo-prices.js        # Comodo SSL catalog plans and pricing
     │   │   └── model-data.js           # Embedded 3D model fallback (for file:// protocol)
     │   ├── modules/
+    │   │   ├── webgl-perf.js           # WebGL hardware tiers, context loss recovery & DPR manager
     │   │   ├── flight-scene.js         # Three.js hero: cloud shader, server racks, camera fly-through
     │   │   ├── services-gallery.js     # Scroll-driven service showcase slides (#svc)
     │   │   ├── latency-widget.js       # Live Anycast ping read-out (#lat)
@@ -133,10 +134,12 @@ A complete wholesale reseller and partner ecosystem backed by SQLite and a REST 
   - Dedicated exclusively to domain TLD options (standalone SSL addon rows excluded to prevent clutter).
   - Direct integration with `window.UnifiedCart` for instant checkout.
 
-### 3. 3D WebGL Flight Experience & Design System
-- Volumetric cloud fragment shader rendered with Three.js r128 and Meshopt-compressed server rack models.
-- Deep space cosmic backdrop, ambient glow particles, and glassmorphism styling (`backdrop-filter`).
-- Dynamic interactive calculators for Cloud VPS, VDS, Cloud Storage, and Microsoft 365 licensing.
+### 3. 3D WebGL Flight Experience, Performance & Compatibility
+- **Cinematic 3D Hero Scene**: Volumetric raymarched cloud dive, server rack swoop, animated sliding/typing laptop, pulsating rack LEDs, and interactive cursor damping using Three.js r128 and Meshopt compression.
+- **Hardware-Adaptive Tiers**: Automatically detects GPU and memory constraints (Discrete vs. Integrated vs. Low-End) to balance soft shadows, draw calls, and particle density.
+- **Battery-Saving Throttling**: Pauses frame rendering immediately when the browser tab is hidden or minimized (`document.hidden`), eliminating idle GPU/CPU battery drain.
+- **Graceful Non-WebGL Fallback**: Fully operable without WebGL via the `runDomScrollDriver()` engine; content, Live Latency Widget, and navigation remain 100% functional over a styled CSS cosmic gradient.
+- **Deep Space Design System**: Glassmorphism frosted navigation, dynamic particle galleries, and responsive product matrices for Cloud VPS, VDS, Cloud Storage, and Microsoft 365.
 
 ---
 
