@@ -114,7 +114,8 @@ A complete wholesale reseller and partner ecosystem backed by SQLite and a REST 
   - Stored securely in the SQLite `partner_applications` table (`trade_license_pdf`, `trade_license_filename`, `nid_document_pdf`, `nid_document_filename`) with automatic schema migration.
   - In [admin-partners.html](file:///e:/Projects/unified-it/admin-partners.html), administrators can inspect applicant credentials with **PDF Preview** (opens in a new tab) and **Download PDF** buttons in the Application Details modal, accompanied by verification badges in the Applications directory table.
 - **Admin Governance & Custom Discounts**:
-  - In [admin-partners.html](file:///e:/Projects/unified-it/admin-partners.html), the **Assigned Tier** and **Monthly Spend** are strictly read-only and governed automatically by verified infrastructure sales.
+  - In [admin-partners.html](file:///e:/Projects/unified-it/admin-partners.html), the 
+  **Assigned Tier** and **Monthly Spend** are strictly read-only and governed automatically by verified infrastructure sales.
   - Administrators can grant bespoke **Custom Commercial Discounts** (e.g. 20%, 25%) via the `[Give Discount]` management action.
   - When saved, custom discounts synchronize immediately to the [partner-dashboard.html](file:///e:/Projects/unified-it/partner-dashboard.html), displaying a special approved discount badge while preserving automatic spend progression toward future tiers.
 - **Partner Sales Reward Points System**:
@@ -193,7 +194,18 @@ npm run preview    # Previews production build
 
 ---
 
-## 🧩 Browser Support & Compatibility
+## 🧩 WebGL Compatibility, Performance Architecture & Hardware Tiers
 
-- Compatible with modern Chromium-based browsers (Chrome, Edge, Brave), Firefox, and Safari with WebGL 2.0.
-- Fallback mechanics ensure full catalog functionality and direct checkout if WebGL is disabled or unsupported.
+The website implements an enterprise-grade hardware detection and adaptive rendering engine (`assets/js/modules/webgl-perf.js`) ensuring seamless operation on integrated GPUs, laptops, tablets, and devices without dedicated graphics hardware:
+
+### 1. Hardware Quality Tiers
+- **High Tier (Discrete GPU + ≥6GB RAM):** Full 2048×2048 PCF soft shadow maps, dynamic shadows on all 7 server racks, 2,200 particle density, capped at `Math.min(devicePixelRatio, 1.6)`.
+- **Medium Tier (Integrated Intel UHD/Iris/AMD APU & Apple Silicon):** 1024×1024 soft shadow maps, dynamic shadow casting prioritized on the center server rack and laptop (bypassing redundant shadow caster passes on background rack clones), 1,400 particle density, capped at `Math.min(devicePixelRatio, 1.25)`.
+- **Low Tier (Software Rasterizers, SwiftShader, Low-End Mobile):** Minimal shadow mapping, 700 particle density, 1.0 DPR clamp for fluid framerates.
+- **Graceful DOM Fallback (WebGL Unavailable / Disabled):** When WebGL is unavailable or context cannot be created, the site automatically activates the `runDomScrollDriver()` engine. Hero text, header navigation, live latency telemetry, and interactive service galleries remain 100% visible, responsive, and interactive with smooth CSS gradient backgrounds.
+
+### 2. Runtime Optimizations
+- **Tab Background Pausing:** All render loops immediately check `if (document.hidden) return;`, eliminating unnecessary GPU/CPU battery drain when the browser tab is inactive.
+- **On-Demand Overlay Animation:** Overlays (`#about`, `#vps`, `#vds`, `#bem`, `#partner`) run their Three.js particle loops only while open, terminating frame requests when closed.
+- **WebGL Context Loss Recovery:** Listens for `webglcontextlost` and `webglcontextrestored` events on canvas surfaces, preventing browser freezes and automatically falling back or recovering state.
+- **Testing Fallback Mode:** Simulate the non-WebGL experience anytime by appending `?fallback=1` to the URL: `http://localhost:3000/?fallback=1`.

@@ -620,13 +620,14 @@
     // 1. Ambient 3D Three.js Particle Background
     try {
       const cv = document.getElementById('ptn-canvas');
+      if (!cv) throw new Error('No canvas element');
       const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.z = 10;
 
-      const N = 1800;
+      const N = (window.innerWidth < 768) ? 800 : 1600;
       const pos = new Float32Array(N * 3);
       const sd = new Float32Array(N);
       const sz = new Float32Array(N);
@@ -683,16 +684,18 @@
       scene.add(new THREE.Points(geo, mat));
 
       function onResize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
         renderer.setSize(window.innerWidth, window.innerHeight, false);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
       }
-      window.addEventListener('resize', onResize);
+      window.addEventListener('resize', onResize, { passive: true });
       onResize();
 
       const clock = new THREE.Clock();
       function renderLoop() {
         requestAnimationFrame(renderLoop);
+        if (document.hidden) return;
         mat.uniforms.uTime.value = clock.getElapsedTime();
         mat.uniforms.uPx.value = renderer.getPixelRatio();
         renderer.render(scene, camera);

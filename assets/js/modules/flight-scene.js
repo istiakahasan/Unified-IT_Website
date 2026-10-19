@@ -1,19 +1,105 @@
 /**
  * Three.js hero scene: cloud-dive shader, server racks from assets/models, laptop and
  * camera path driven by scroll. Publishes window.__sm (smoothed scroll progress).
+ * Optimized with adaptive hardware tiers (high, medium, low, fallback), context loss
+ * recovery, capped pixel ratio, tab-background pausing, and graceful non-WebGL fallback.
  */
 /* ---- Hero scene ---- */
 try {
 (function(){
 var T=THREE, canvas=document.getElementById('gl');
-var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-var renderer;
-try{renderer=new T.WebGLRenderer({canvas:canvas,antialias:true,powerPreference:'high-performance'});}catch(e){return;}
-renderer.autoClear=false;
-renderer.outputEncoding=T.sRGBEncoding; renderer.toneMapping=T.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
-renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+var perf = window.WebGLPerf;
+var tier = perf ? perf.getTier() : 'high';
+var reduce = (perf && perf.isReducedMotion()) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 var ss=function(a,b,x){x=Math.min(1,Math.max(0,(x-a)/(b-a)));return x*x*(3-2*x);};
 var lerp=function(a,b,k){return a+(b-a)*k;};
+function show(n,o,dy){if(n){n.style.opacity=o;n.style.transform='translateY('+(1-o)*dy+'px)';}}
+
+/* ---------- Graceful non-WebGL fallback driver ---------- */
+function runDomScrollDriver(){
+  if(canvas){
+    canvas.style.opacity='0.25';
+  }
+  var bgEl=document.getElementById('bg');
+  if(bgEl){
+    bgEl.style.background='radial-gradient(ellipse at 50% 40%, hsl(265,60%,22%) 0%, hsl(255,65%,10%) 50%, hsl(245,70%,4%) 90%)';
+  }
+  var elA=document.getElementById('a'), elB=document.getElementById('b'), elC=document.getElementById('c'), elLat=document.getElementById('lat'), elHdr=document.getElementById('hdr');
+  var ticking=false;
+  function updateFallback(){
+    ticking=false;
+    var max=Math.max(1,innerHeight*4);
+    var s=(function(f){
+      f=Math.min(1,Math.max(0,f));
+      return f<.34?f/.34*.64:.64+(f-.34)/.66*.36;
+    })(scrollY/max);
+    window.__sm=s;
+    if(elHdr){
+      var o=window.__aboutOpen?1:Math.min(1,Math.max(0,(s-.6)/.08));
+      elHdr.style.opacity=o;
+      elHdr.style.transform='translateY('+(-(1-o)*24)+'px)';
+      elHdr.style.pointerEvents=o>.9?'auto':'none';
+      elHdr.classList.toggle('on',o>.5);
+    }
+    show(elA,1-ss(.03,.18,s),-30);
+    show(elB,ss(.62,.7,s)*(1-ss(.8,.88,s)),30);
+    show(elC,ss(.92,.98,s),30);
+    if(elLat){
+      var lo=ss(.62,.7,s)*(1-ss(.8,.88,s));
+      elLat.style.opacity=lo;
+      elLat.style.transform='translateY('+(1-lo)*30+'px)';
+      elLat.style.pointerEvents=lo>.6?'auto':'none';
+    }
+  }
+  window.addEventListener('scroll',function(){
+    if(!ticking){
+      requestAnimationFrame(updateFallback);
+      ticking=true;
+    }
+  },{passive:true});
+  updateFallback();
+}
+
+if(tier==='fallback'||(perf&&!perf.checkSupport())){
+  console.warn('[Hero scene] WebGL is unsupported or software-only, activating graceful DOM scroll fallback.');
+  runDomScrollDriver();
+  return;
+}
+
+var renderer;
+try{
+  renderer=new T.WebGLRenderer({
+    canvas:canvas,
+    antialias:tier!=='low',
+    powerPreference:'high-performance'
+  });
+}catch(e){
+  console.warn('[Hero scene] WebGLRenderer construction failed:',e);
+  runDomScrollDriver();
+  return;
+}
+
+var targetDPR = perf ? perf.getTargetPixelRatio() : Math.min(window.devicePixelRatio||1, 1.5);
+renderer.setPixelRatio(targetDPR);
+renderer.autoClear=false;
+renderer.outputEncoding=T.sRGBEncoding; renderer.toneMapping=T.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled = (tier !== 'low');
+if (renderer.shadowMap.enabled) {
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+}
+
+// Context Loss & Recovery
+if (perf && perf.initContextLossHandler) {
+  perf.initContextLossHandler(canvas, function() {
+    console.warn('[Hero scene] Context lost: switching to DOM scroll driver');
+    runDomScrollDriver();
+  }, function() {
+    console.info('[Hero scene] Context restored: recovering');
+    renderer.setPixelRatio(perf.getTargetPixelRatio());
+  });
+}
+
 var ortho=new T.OrthographicCamera(-1,1,1,-1,0,1);
 var QV='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';
 function quad(mat){var m=new T.Mesh(new T.PlaneGeometry(2,2),mat);m.frustumCulled=false;return m;}
@@ -65,7 +151,7 @@ var floor=new T.Mesh(new T.PlaneGeometry(16,16),new T.ShadowMaterial({opacity:.5
 function tex(b64,srgb){var t=new T.TextureLoader().load('data:image/jpeg;base64,'+b64);if(srgb){t.encoding=T.sRGBEncoding;}t.anisotropy=8;return t;}
 function rod(a,b,r,m){var d=b.clone().sub(a),k=new T.Mesh(new T.CylinderGeometry(r,r,d.length(),10),m);k.position.copy(a).add(b).multiplyScalar(.5);k.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());k.castShadow=true;return k;}
 function rr(w,h,r){var s=new T.Shape(),x=-w/2,y=-h/2;s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.absarc(x+w-r,y+r,r,-Math.PI/2,0);s.lineTo(x+w,y+h-r);s.absarc(x+w-r,y+h-r,r,0,Math.PI/2);s.lineTo(x+r,y+h);s.absarc(x+r,y+h-r,r,Math.PI/2,Math.PI);s.lineTo(x,y+r);s.absarc(x+r,y+r,r,Math.PI,Math.PI*1.5);return s;}
-// no table any more: a laptop slides out of the back server rack and opens
+// a laptop slides out of the back server rack and opens
 var steel=new T.MeshStandardMaterial({color:0x26262b,roughness:.38,metalness:.85,envMapIntensity:.8});
 function sh(m){m.castShadow=m.receiveShadow=true;return m;}
 var LW=.62,LD=.42,LH=.4,LY=1.0,LZ0=-1.62,LZ1=-1.05,LOPEN=-.2;
@@ -104,8 +190,15 @@ loadModel((window.UNIFIED_CONFIG&&window.UNIFIED_CONFIG.modelUrl)||'assets/model
    else{p=p||[0x15161b,.2,.6];m=new T.MeshStandardMaterial({color:p[0],metalness:p[1],roughness:p[2],envMapIntensity:.55});}
    if(!RM[n]||/Green_5|Red_5|Blue/.test(n)){m.polygonOffset=true;m.polygonOffsetFactor=-2;m.polygonOffsetUnits=-2;}
    o.material=m;});
-  [0,38,-38,76,-76,114,-114].forEach(function(off,k){var r=k?root.clone(true):root;var ph=(180+off)*Math.PI/180;
-   r.position.set(Math.sin(ph)*1.75,.06,Math.cos(ph)*1.75);r.rotation.y=ph+Math.PI;rig.add(r);});
+  [0,38,-38,76,-76,114,-114].forEach(function(off,k){
+    var r=k?root.clone(true):root;
+    // On integrated or low-tier hardware, only center rack and laptop cast shadows to save hundreds of draw calls
+    if(k>0&&tier!=='high'){
+      r.traverse(function(o){if(o.isMesh)o.castShadow=false;});
+    }
+    var ph=(180+off)*Math.PI/180;
+    r.position.set(Math.sin(ph)*1.75,.06,Math.cos(ph)*1.75);r.rotation.y=ph+Math.PI;rig.add(r);
+  });
   /* put the laptop in front of wherever the back server really ends, so it never sinks into it */
   rig.updateMatrixWorld(true);
   var bb=new T.Box3().setFromObject(root),fz=bb.max.z-rig.position.z,rh=bb.max.y-bb.min.y;
@@ -115,12 +208,21 @@ loadModel((window.UNIFIED_CONFIG&&window.UNIFIED_CONFIG.modelUrl)||'assets/model
 },console.error);
 
 // lights: warm key, magenta rim, flickering screen glow
-var key=new T.SpotLight(0xffd2a6,1.0,0,.6,1); key.position.set(-3.6,4.6,4.8); key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.radius=5; key.shadow.camera.fov=45; key.shadow.camera.near=2; key.shadow.camera.far=16; key.shadow.bias=-.0005; key.shadow.normalBias=.02; pc.add(key,key.target);
+var key=new T.SpotLight(0xffd2a6,1.0,0,.6,1); key.position.set(-3.6,4.6,4.8);
+if(tier!=='low'){
+  key.castShadow=true;
+  var shadowRes = (tier==='high') ? 2048 : 1024;
+  key.shadow.mapSize.set(shadowRes,shadowRes);
+  key.shadow.radius=5; key.shadow.camera.fov=45; key.shadow.camera.near=2; key.shadow.camera.far=16;
+  key.shadow.bias=-.0005; key.shadow.normalBias=.02;
+}
+pc.add(key,key.target);
+
 var rim=new T.PointLight(0xff5fb8,.55); rim.position.set(3.4,1.6,-3.2); pc.add(rim);
 var glow=new T.PointLight(0xffc27a,.9,4,2); glow.position.set(scrCtr.x,scrCtr.y,scrCtr.z+.45); rig.add(glow);
 pc.add(new T.HemisphereLight(0x3b4d7a,0x120a18,.22));
 // floating dust
-var dp=new Float32Array(900); for(var i=0;i<dp.length;i++)dp[i]=(Math.random()-.5)*(i%3==1?5:9);
+var dp=new Float32Array(tier==='low'?450:900); for(var i=0;i<dp.length;i++)dp[i]=(Math.random()-.5)*(i%3==1?5:9);
 var dg=new T.BufferGeometry(); dg.setAttribute('position',new T.BufferAttribute(dp,3));
 var dust=new T.Points(dg,new T.PointsMaterial({size:.022,color:0xffe3c4,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending})); pc.add(dust);
 
@@ -139,19 +241,25 @@ veil.add(quad(new T.ShaderMaterial({uniforms:vu,vertexShader:QV,transparent:true
 /* ---------- sizing, input, loop ---------- */
 var scale=.5,ceilS=.9,avg=.016,cool=0,aspect=1,fitD=4,closeD=1.2;
 function sizeCloud(){var w=Math.max(2,Math.round(innerWidth*scale)),h=Math.max(2,Math.round(innerHeight*scale));cloudRT.setSize(w,h);cu.uRes.value.set(w,h);}
-function resize(){renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight,false);
+function resize(){
+ targetDPR = perf ? perf.getTargetPixelRatio() : Math.min(window.devicePixelRatio||1, 1.5);
+ renderer.setPixelRatio(targetDPR);
+ renderer.setSize(innerWidth,innerHeight,false);
  aspect=innerWidth/innerHeight;cam.aspect=aspect;cam.fov=38;cam.updateProjectionMatrix();var t=Math.tan(cam.fov*Math.PI/360),ea=aspect>=1?aspect*.5:aspect*.95;fitD=Math.max(1.85/t,1.55/(t*ea));closeD=Math.max(.36/(.62*2*t),.62/(.8*2*t*aspect));sizeCloud();}
-addEventListener('resize',resize); resize();
+var onResize = perf ? perf.debounce(resize, 80) : resize;
+addEventListener('resize',onResize); resize();
+
 var mx=0,my=0,sx=0,sy=0,travel=0,sm=0,last=performance.now(),t0=last,lastKey=0;
-var moved=false; addEventListener('pointermove',function(e){if(e.pointerType==='mouse')moved=true;mx=e.clientX/innerWidth*2-1;my=e.clientY/innerHeight*2-1;});
+var moved=false;
+addEventListener('pointermove',function(e){if(e.pointerType==='mouse')moved=true;mx=e.clientX/innerWidth*2-1;my=e.clientY/innerHeight*2-1;},{passive:true});
 var el={a:document.getElementById('a'),b:document.getElementById('b'),c:document.getElementById('c')};
-function show(n,o,dy){n.style.opacity=o;n.style.transform='translateY('+(1-o)*dy+'px)';}
 
 function frame(now){
+ if(document.hidden){requestAnimationFrame(frame);return;}
  var dt=Math.min((now-last)/1000,.05); last=now; var time=(now-t0)/1000;
  var max=Math.max(1,innerHeight*4), s=(function(f){f=Math.min(1,f);return f<.34?f/.34*.64:.64+(f-.34)/.66*.36})(scrollY/max);
- sm+=(s-sm)*.1; window.__sm=sm; (function(){var h=document.getElementById("hdr"),o=window.__aboutOpen?1:Math.min(1,Math.max(0,(sm-.6)/.08));h.style.opacity=o;h.style.transform="translateY("+(-(1-o)*24)+"px)";h.style.pointerEvents=o>.9?"auto":"none";h.classList.toggle("on",o>.5);if(sm<.86){h.style.setProperty("--hb","hsla(228,50%,14%,.62)");h.style.setProperty("--ph",String(Math.round(222+Math.sin(performance.now()*.0007)*16+sm*10)));}})(); if((window.__svcOpen&&sm>.5)||window.__aboutOpen){requestAnimationFrame(frame);return;} if(!moved)mx=Math.sin(time*.35)*.6; sx+=(mx-sx)*.05; sy+=(my-sy)*.05;
- show(el.a,1-ss(.03,.18,sm),-30); show(el.b,ss(.62,.7,sm)*(1-ss(.8,.88,sm)),30); show(el.c,ss(.92,.98,sm),30); (function(){var d=document.getElementById('lat'),lo=ss(.62,.7,sm)*(1-ss(.8,.88,sm));d.style.opacity=lo;d.style.transform='translateY('+(1-lo)*30+'px)';d.style.pointerEvents=lo>.6?'auto':'none';})();
+ sm+=(s-sm)*.1; window.__sm=sm; (function(){var h=document.getElementById("hdr"),o=window.__aboutOpen?1:Math.min(1,Math.max(0,(sm-.6)/.08));if(h){h.style.opacity=o;h.style.transform="translateY("+(-(1-o)*24)+"px)";h.style.pointerEvents=o>.9?"auto":"none";h.classList.toggle("on",o>.5);if(sm<.86){h.style.setProperty("--hb","hsla(228,50%,14%,.62)");h.style.setProperty("--ph",String(Math.round(222+Math.sin(performance.now()*.0007)*16+sm*10)));}}})(); if((window.__svcOpen&&sm>.5)||window.__aboutOpen){requestAnimationFrame(frame);return;} if(!moved)mx=Math.sin(time*.35)*.6; sx+=(mx-sx)*.05; sy+=(my-sy)*.05;
+ show(el.a,1-ss(.03,.18,sm),-30); show(el.b,ss(.62,.7,sm)*(1-ss(.8,.88,sm)),30); show(el.c,ss(.92,.98,sm),30); (function(){var d=document.getElementById('lat');if(d){var lo=ss(.62,.7,sm)*(1-ss(.8,.88,sm));d.style.opacity=lo;d.style.transform='translateY('+(1-lo)*30+'px)';d.style.pointerEvents=lo>.6?'auto':'none';}})();
 
  if(sm<.5){ // dive through the cloud layer
   avg+=(dt-avg)*.05; cool++;
