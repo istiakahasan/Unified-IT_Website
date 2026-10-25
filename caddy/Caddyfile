@@ -1,0 +1,107 @@
+# ==============================================================================
+# Unified Cloud Platform - Caddy 2 Production Reverse Proxy Configuration
+# Features automated Let's Encrypt / ZeroSSL TLS certificates, HTTP/3, and gzip/zstd
+# ==============================================================================
+
+{
+    email noc@unifiedit.xyz
+    admin off
+}
+
+# 1. Canonical Redirect: www.example.com -> example.com
+www.example.com {
+    redir https://example.com{uri} permanent
+}
+
+# 2. Public Cloud Website: example.com
+example.com {
+    encode zstd gzip
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # Hide private administrative paths on public domain
+    @adminPath path /admin /admin/*
+    respond @adminPath 404
+
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# 3. Dedicated Centralized Admin Portal: admin.example.com
+admin.example.com {
+    encode zstd gzip
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "no-referrer"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';"
+    }
+
+    # Optional IP restriction snippet:
+    # @allowedIPs remote_ip 103.145.22.0/24 10.0.0.0/8
+    # handle !@allowedIPs {
+    #     respond "Access Denied: Enterprise Admin Network required" 403
+    # }
+
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# 4. Partner Portal: partners.example.com
+partners.example.com {
+    encode zstd gzip
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000"
+    }
+
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# 5. Shared REST API: api.example.com
+api.example.com {
+    encode zstd gzip
+
+    header {
+        Access-Control-Allow-Origin "{header.Origin}"
+        Access-Control-Allow-Credentials "true"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type, X-CSRF-Token, X-Requested-With"
+        X-Content-Type-Options "nosniff"
+    }
+
+    @options method OPTIONS
+    respond @options 204
+
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}

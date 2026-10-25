@@ -1,11 +1,11 @@
 import crypto from 'node:crypto';
-import { handleLogin, sessionStore, extractToken } from './auth.mjs';
+import { handleLogin, sessionStore, extractToken, hasPermission, ROLE_PERMISSIONS } from './auth.mjs';
 import { hashPassword } from './db.mjs';
 import { RewardProcessingService } from './reward-service.mjs';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 
 /**
- * REST API Router for Cloud Partner Program
+ * REST API Router for Cloud Partner Program & Centralized Admin Portal
  */
 export async function handleApiRequest({ req, res, pathname, query, body, db, pricingEngine, whmcsAdapter, cloudstackAdapter, rewardService }) {
   const rewards = rewardService || new RewardProcessingService(db);
@@ -25,6 +25,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
   };
 
   const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+  const userAgent = req.headers['user-agent'] || 'Unknown Client';
 
   // Audit log helper
   const logAudit = (actorType, actorId, actorEmail, action, entityType, entityId, details) => {
@@ -45,6 +46,32 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       );
     } catch (e) {
       console.error('[Audit Log Error]', e.message);
+    }
+  };
+
+  // Security telemetry and audit helper (append-only)
+  const logSecurityEvent = (eventType, actorId, actorEmail, actorRole, targetResource, targetId, action, outcome, details = {}) => {
+    try {
+      db.prepare(`
+        INSERT INTO security_events (id, timestamp, event_type, actor_id, actor_email, actor_role, target_resource, target_id, action, outcome, ip_address, user_agent, details_json, correlation_id)
+        VALUES (?, datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'sec-' + crypto.randomBytes(6).toString('hex'),
+        eventType,
+        actorId || 'anonymous',
+        actorEmail || 'anonymous',
+        actorRole || 'UNKNOWN',
+        targetResource,
+        targetId || null,
+        action,
+        outcome,
+        clientIp,
+        userAgent,
+        JSON.stringify(details),
+        'corr-' + crypto.randomBytes(4).toString('hex')
+      );
+    } catch (e) {
+      console.error('[Security Event Error]', e.message);
     }
   };
 
@@ -71,6 +98,34 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
         cloudstack: cloudstackAdapter.getStatus()
       }
     });
+  }
+
+  // GET /api/public/announcements (Public active announcements & banners)
+  if (req.method === 'GET' && pathname === '/api/public/announcements') {
+    const announcements = db.prepare(`
+      SELECT id, title, type, message, starts_at, ends_at, created_at
+      FROM website_announcements
+      WHERE is_active = 1
+      ORDER BY created_at DESC
+    `).all();
+    return sendJson(200, { announcements });
+  }
+
+  // GET /api/public/plans (Public service catalog & pricing)
+  if (req.method === 'GET' && pathname === '/api/public/plans') {
+    const categoryFilter = query.category || null;
+    let sql = 'SELECT * FROM website_plans WHERE is_available = 1';
+    const params = [];
+    if (categoryFilter) {
+      sql += ' AND category = ?';
+      params.push(categoryFilter);
+    }
+    sql += ' ORDER BY price_bdt ASC';
+    const plans = db.prepare(sql).all(...params);
+    plans.forEach(p => {
+      try { p.features = JSON.parse(p.features_json); } catch { p.features = []; }
+    });
+    return sendJson(200, { plans });
   }
 
   // POST /api/public/pricing/quote
@@ -823,9 +878,954 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
     if (!req.session) {
       return sendError(401, 'Administrative authentication required.');
     }
-    if (req.session.role !== 'ADMIN') {
+    const adminRoles = [
+      'ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN',
+      'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR'
+    ];
+    if (!adminRoles.includes(req.session.role)) {
       return sendError(403, 'Forbidden: Administrative privilege required.');
     }
+
+    const requirePermission = (permission) => {
+      if (!hasPermission(req.session.role, permission)) {
+        sendError(403, `Forbidden: Permission '${permission}' is required for this operation.`);
+        return false;
+      }
+      return true;
+    };
+
+    // =========================================================================
+    // 4.1. CENTRALIZED DASHBOARD TELEMETRY
+    // =========================================================================
+
+    // GET /api/admin/dashboard/stats
+    if (req.method === 'GET' && pathname === '/api/admin/dashboard/stats') {
+      const custSummary = db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active,
+          SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended,
+          SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending
+        FROM customers
+      `).get();
+
+      const ptnSummary = db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active,
+          SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended
+        FROM partners
+      `).get();
+
+      const appPending = db.prepare(`
+        SELECT COUNT(*) as count FROM partner_applications WHERE status = 'PENDING'
+      `).get();
+
+      const tckSummary = db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'OPEN' THEN 1 ELSE 0 END) as open,
+          SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as inProgress,
+          SUM(CASE WHEN priority = 'CRITICAL' AND status != 'RESOLVED' AND status != 'CLOSED' THEN 1 ELSE 0 END) as critical
+        FROM support_tickets
+      `).get();
+
+      const secAlerts = db.prepare(`
+        SELECT COUNT(*) as count FROM security_events 
+        WHERE outcome IN ('FAILURE', 'BLOCKED') AND timestamp >= datetime('now', '-24 hours')
+      `).get();
+
+      const infra = cloudstackAdapter.getInfrastructureOverview(db);
+      const billing = whmcsAdapter.getBillingOverview(db);
+
+      return sendJson(200, {
+        customers: {
+          total: custSummary?.total || 0,
+          active: custSummary?.active || 0,
+          suspended: custSummary?.suspended || 0,
+          pending: custSummary?.pending || 0
+        },
+        partners: {
+          total: ptnSummary?.total || 0,
+          active: ptnSummary?.active || 0,
+          suspended: ptnSummary?.suspended || 0,
+          pendingApplications: appPending?.count || 0
+        },
+        cloud: {
+          status: infra.status,
+          totalVMs: infra.totals.totalVMs,
+          runningVMs: infra.totals.runningVMs,
+          stoppedVMs: infra.totals.stoppedVMs,
+          allocatedvCPUs: infra.totals.allocatedvCPUs,
+          allocatedRAMGB: infra.totals.allocatedRAMGB,
+          allocatedStorageGB: infra.totals.allocatedStorageGB
+        },
+        billing: {
+          totalGrossRevenueBDT: billing.totalGrossRevenueBDT,
+          mrrBDT: billing.mrrBDT,
+          totalOutstandingBDT: billing.totalOutstandingBDT,
+          totalRefundedBDT: billing.totalRefundedBDT,
+          paidInvoices: billing.paidCount,
+          unpaidInvoices: billing.unpaidCount,
+          refundedInvoices: billing.refundedCount
+        },
+        support: {
+          totalTickets: tckSummary?.total || 0,
+          openTickets: tckSummary?.open || 0,
+          inProgressTickets: tckSummary?.inProgress || 0,
+          criticalTickets: tckSummary?.critical || 0
+        },
+        security: {
+          recentAlerts24h: secAlerts?.count || 0,
+          activeSessionsCount: sessionStore.listActiveSessions().length
+        },
+        systemStatus: {
+          whmcs: whmcsAdapter.getStatus(),
+          cloudstack: cloudstackAdapter.getStatus(),
+          database: { service: 'SQLite Core Ledger', status: 'HEALTHY', mode: 'WAL_SYNC' }
+        }
+      });
+    }
+
+    // GET /api/admin/dashboard/activity
+    if (req.method === 'GET' && pathname === '/api/admin/dashboard/activity') {
+      const securityEvents = db.prepare(`
+        SELECT id, timestamp, event_type, actor_email, actor_role, action, outcome, ip_address, details_json
+        FROM security_events
+        ORDER BY timestamp DESC
+        LIMIT 15
+      `).all();
+
+      const auditLogs = db.prepare(`
+        SELECT id, created_at as timestamp, action, actor_email, actor_type, entity_type, ip_address, details_json
+        FROM partner_audit_logs
+        ORDER BY created_at DESC
+        LIMIT 15
+      `).all();
+
+      return sendJson(200, { securityEvents, auditLogs });
+    }
+
+    // =========================================================================
+    // 4.2. CUSTOMER MANAGEMENT
+    // =========================================================================
+
+    // GET /api/admin/customers
+    if (req.method === 'GET' && pathname === '/api/admin/customers') {
+      if (!requirePermission('customers:read')) return;
+
+      const { status, search, limit = 50, offset = 0 } = query;
+      let sql = `
+        SELECT c.*,
+               (SELECT COUNT(*) FROM customer_services WHERE customer_id = c.id AND status != 'TERMINATED') as active_services_count,
+               (SELECT COALESCE(SUM(total), 0) FROM invoices WHERE customer_id = c.id AND status = 'PAID') as total_spend_bdt,
+               p.company_name as partner_company_name
+        FROM customers c
+        LEFT JOIN partners p ON c.partner_id = p.id
+        WHERE 1=1
+      `;
+      const params = [];
+
+      if (status && status !== 'ALL') {
+        sql += ` AND c.status = ?`;
+        params.push(status);
+      }
+      if (search) {
+        sql += ` AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.company_name LIKE ? OR c.email LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      sql += ` ORDER BY c.created_at DESC LIMIT ? OFFSET ?`;
+      params.push(Number(limit) || 50, Number(offset) || 0);
+
+      const customers = db.prepare(sql).all(...params);
+      const total = db.prepare(`SELECT COUNT(*) as count FROM customers`).get()?.count || 0;
+
+      return sendJson(200, { customers, total });
+    }
+
+    // GET /api/admin/customers/:id
+    if (req.method === 'GET' && pathname.startsWith('/api/admin/customers/') && !pathname.endsWith('/status') && !pathname.endsWith('/reset-password')) {
+      if (!requirePermission('customers:read')) return;
+      const custId = pathname.replace('/api/admin/customers/', '');
+
+      const customer = db.prepare(`
+        SELECT c.*, p.company_name as partner_company_name
+        FROM customers c
+        LEFT JOIN partners p ON c.partner_id = p.id
+        WHERE c.id = ?
+      `).get(custId);
+
+      if (!customer) {
+        return sendError(404, `Customer '${custId}' not found.`);
+      }
+
+      // Associated Cloud Services
+      const services = db.prepare(`
+        SELECT * FROM customer_services WHERE customer_id = ? ORDER BY created_at DESC
+      `).all(custId);
+
+      // Associated Invoices
+      const invoices = db.prepare(`
+        SELECT * FROM invoices WHERE customer_id = ? ORDER BY created_at DESC LIMIT 20
+      `).all(custId);
+
+      // Associated Orders
+      const orders = db.prepare(`
+        SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC LIMIT 20
+      `).all(custId);
+
+      // Associated Support Tickets
+      const tickets = db.prepare(`
+        SELECT * FROM support_tickets WHERE customer_id = ? ORDER BY created_at DESC LIMIT 20
+      `).all(custId);
+
+      // Activity / Security events
+      const securityEvents = db.prepare(`
+        SELECT * FROM security_events 
+        WHERE target_id = ? OR actor_email = ?
+        ORDER BY timestamp DESC LIMIT 20
+      `).all(custId, customer.email);
+
+      return sendJson(200, {
+        customer,
+        services,
+        invoices,
+        orders,
+        tickets,
+        securityEvents
+      });
+    }
+
+    // POST /api/admin/customers/:id/status (Suspend / Reactivate with mandatory reason)
+    if (req.method === 'POST' && pathname.includes('/customers/') && pathname.endsWith('/status')) {
+      if (!requirePermission('customers:write') && !requirePermission('security:write')) return;
+      const parts = pathname.split('/');
+      const custId = parts[4];
+      const { status, reason } = body;
+
+      if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
+        return sendError(400, 'Invalid status. Must be ACTIVE or SUSPENDED.');
+      }
+      if (!reason || reason.trim().length < 5) {
+        return sendError(400, 'A documented justification reason (min 5 characters) is required for account status changes.');
+      }
+
+      const cust = db.prepare(`SELECT * FROM customers WHERE id = ?`).get(custId);
+      if (!cust) return sendError(404, `Customer '${custId}' not found.`);
+
+      db.prepare(`
+        UPDATE customers
+        SET status = ?, suspension_reason = ?, suspended_by = ?, suspended_at = datetime('now'), updated_at = datetime('now')
+        WHERE id = ?
+      `).run(status, status === 'SUSPENDED' ? reason.trim() : null, status === 'SUSPENDED' ? req.session.email : null, custId);
+
+      // If suspended, also pause compute instances safely
+      if (status === 'SUSPENDED') {
+        db.prepare(`
+          UPDATE customer_services
+          SET status = 'SUSPENDED', updated_at = datetime('now')
+          WHERE customer_id = ? AND status = 'RUNNING'
+        `).run(custId);
+      } else if (status === 'ACTIVE') {
+        db.prepare(`
+          UPDATE customer_services
+          SET status = 'RUNNING', updated_at = datetime('now')
+          WHERE customer_id = ? AND status = 'SUSPENDED'
+        `).run(custId);
+      }
+
+      logSecurityEvent(
+        status === 'SUSPENDED' ? 'ACCOUNT_SUSPENDED' : 'ACCOUNT_REACTIVATED',
+        req.session.userId,
+        req.session.email,
+        req.session.role,
+        'customers',
+        custId,
+        status === 'SUSPENDED' ? 'SUSPEND_CUSTOMER' : 'REACTIVATE_CUSTOMER',
+        'SUCCESS',
+        { customerEmail: cust.email, company: cust.company_name, reason }
+      );
+
+      logAudit('ADMIN', req.session.userId, req.session.email, `CUSTOMER_${status}`, 'customers', custId, {
+        customerEmail: cust.email,
+        reason
+      });
+
+      return sendJson(200, {
+        success: true,
+        message: `Customer ${cust.company_name || cust.email} status changed to ${status}.`,
+        status
+      });
+    }
+
+    // POST /api/admin/customers/:id/reset-password (Secure reset workflow without exposing password)
+    if (req.method === 'POST' && pathname.includes('/customers/') && pathname.endsWith('/reset-password')) {
+      if (!requirePermission('customers:reset_password') && !requirePermission('security:write')) return;
+      const parts = pathname.split('/');
+      const custId = parts[4];
+
+      const cust = db.prepare(`SELECT * FROM customers WHERE id = ?`).get(custId);
+      if (!cust) return sendError(404, `Customer '${custId}' not found.`);
+
+      const resetToken = 'rst_' + crypto.randomBytes(24).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+      db.prepare(`
+        UPDATE customers
+        SET password_reset_token = ?, password_reset_expires = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(resetToken, expiresAt, custId);
+
+      logSecurityEvent(
+        'PASSWORD_RESET_TRIGGERED',
+        req.session.userId,
+        req.session.email,
+        req.session.role,
+        'customers',
+        custId,
+        'TRIGGER_PASSWORD_RESET',
+        'SUCCESS',
+        { customerEmail: cust.email, resetTokenExp: expiresAt }
+      );
+
+      logAudit('ADMIN', req.session.userId, req.session.email, 'CUSTOMER_PASSWORD_RESET_TRIGGERED', 'customers', custId, {
+        customerEmail: cust.email
+      });
+
+      return sendJson(200, {
+        success: true,
+        message: `Secure one-time password reset token issued for ${cust.email}. Expiration: 1 hour. Customer password remains strictly encrypted and unexposed.`,
+        resetToken,
+        expiresAt
+      });
+    }
+
+    // POST /api/admin/customers (Create new customer)
+    if (req.method === 'POST' && pathname === '/api/admin/customers') {
+      if (!requirePermission('customers:read') && !requirePermission('security:write')) return;
+      const { firstName, lastName, companyName, email, phone, country, city, address, whmcsClientId, partnerId } = body;
+
+      if (!firstName || !lastName || !email) {
+        return sendError(400, 'First name, last name, and email are required.');
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const existing = db.prepare(`SELECT id FROM customers WHERE email = ?`).get(cleanEmail);
+      if (existing) {
+        return sendError(409, `A customer account with email '${cleanEmail}' already exists.`);
+      }
+
+      const id = 'cust-' + crypto.randomBytes(5).toString('hex');
+      db.prepare(`
+        INSERT INTO customers (id, first_name, last_name, company_name, email, phone, country, city, address, whmcs_client_id, partner_id, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
+      `).run(
+        id, firstName.trim(), lastName.trim(), (companyName || '').trim(), cleanEmail,
+        phone || '+8801700000000', country || 'Bangladesh', city || 'Dhaka', address || 'Dhaka',
+        whmcsClientId ? Number(whmcsClientId) : null, partnerId || null
+      );
+
+      logSecurityEvent(
+        'CUSTOMER_CREATED',
+        req.session.userId,
+        req.session.email,
+        req.session.role,
+        'customers',
+        id,
+        'CREATE_CUSTOMER',
+        'SUCCESS',
+        { email: cleanEmail, company: companyName }
+      );
+
+      return sendJson(201, {
+        success: true,
+        customerId: id,
+        message: `Customer account created successfully for ${cleanEmail}.`
+      });
+    }
+
+    // =========================================================================
+    // 4.3. CLOUD INFRASTRUCTURE MANAGEMENT
+    // =========================================================================
+
+    // GET /api/admin/cloud/overview
+    if (req.method === 'GET' && pathname === '/api/admin/cloud/overview') {
+      if (!requirePermission('infrastructure:read') && !requirePermission('cloud:read')) return;
+      const overview = cloudstackAdapter.getInfrastructureOverview(db);
+      return sendJson(200, overview);
+    }
+
+    // GET /api/admin/cloud/vms
+    if (req.method === 'GET' && pathname === '/api/admin/cloud/vms') {
+      if (!requirePermission('infrastructure:read') && !requirePermission('cloud:read')) return;
+      const vms = cloudstackAdapter.listVirtualMachines(query, db);
+      return sendJson(200, { vms, total: vms.length });
+    }
+
+    // POST /api/admin/cloud/vms/:id/action (start, stop, reboot, terminate)
+    if (req.method === 'POST' && pathname.includes('/cloud/vms/') && pathname.endsWith('/action')) {
+      if (!requirePermission('infrastructure:manage_vm') && !requirePermission('cloud:write')) return;
+      const vmId = pathname.split('/')[5];
+      const { action, reason, forced = false } = body;
+
+      if (!['start', 'stop', 'reboot', 'terminate'].includes(action)) {
+        return sendError(400, "Invalid action. Supported: 'start', 'stop', 'reboot', 'terminate'.");
+      }
+
+      if (['stop', 'terminate'].includes(action) && (!reason || reason.trim().length < 5)) {
+        return sendError(400, `Mandatory justification reason (min 5 chars) is required to ${action} an active compute instance.`);
+      }
+
+      try {
+        let result;
+        if (action === 'start') {
+          result = cloudstackAdapter.startVM(vmId, db, req.session.email);
+        } else if (action === 'stop') {
+          result = cloudstackAdapter.stopVM(vmId, forced, reason, db, req.session.email);
+        } else if (action === 'reboot') {
+          result = await cloudstackAdapter.rebootVM(vmId, 'unified-root');
+        } else if (action === 'terminate') {
+          result = cloudstackAdapter.terminateVM(vmId, reason, db, req.session.email);
+        }
+
+        logSecurityEvent(
+          'VM_LIFECYCLE_ACTION',
+          req.session.userId,
+          req.session.email,
+          req.session.role,
+          'customer_services',
+          vmId,
+          `VM_${action.toUpperCase()}`,
+          'SUCCESS',
+          { vmId, action, reason, forced }
+        );
+
+        logAudit('ADMIN', req.session.userId, req.session.email, `VM_${action.toUpperCase()}`, 'cloud_instances', vmId, {
+          reason,
+          action
+        });
+
+        return sendJson(200, result);
+      } catch (err) {
+        logSecurityEvent(
+          'VM_LIFECYCLE_ACTION',
+          req.session.userId,
+          req.session.email,
+          req.session.role,
+          'customer_services',
+          vmId,
+          `VM_${action.toUpperCase()}`,
+          'FAILURE',
+          { error: err.message }
+        );
+        return sendError(400, err.message);
+      }
+    }
+
+    // GET /api/admin/cloud/incidents
+    if (req.method === 'GET' && pathname === '/api/admin/cloud/incidents') {
+      if (!requirePermission('infrastructure:read')) return;
+      const incidents = cloudstackAdapter.getIncidents(db);
+      return sendJson(200, { incidents });
+    }
+
+    // POST /api/admin/cloud/incidents
+    if (req.method === 'POST' && pathname === '/api/admin/cloud/incidents') {
+      if (!requirePermission('infrastructure:incidents') && !requirePermission('infrastructure:manage_vm')) return;
+      const { zone, cluster, component, severity, title, description } = body;
+      if (!title || !description || !component) {
+        return sendError(400, 'Title, description, and affected component are required.');
+      }
+      const result = cloudstackAdapter.logIncident({
+        zone: zone || 'Dhaka DC-01',
+        cluster: cluster || 'Cluster-AMD-EPYC-01',
+        component,
+        severity: severity || 'WARNING',
+        title,
+        description,
+        createdBy: req.session.email
+      }, db);
+      return sendJson(201, result);
+    }
+
+    // POST /api/admin/cloud/incidents/:id/resolve
+    if (req.method === 'POST' && pathname.includes('/cloud/incidents/') && pathname.endsWith('/resolve')) {
+      if (!requirePermission('infrastructure:incidents') && !requirePermission('infrastructure:manage_vm')) return;
+      const incidentId = pathname.split('/')[5];
+      const result = cloudstackAdapter.resolveIncident(incidentId, db, req.session.email);
+      return sendJson(200, result);
+    }
+
+    // =========================================================================
+    // 4.4. BILLING & FINANCIAL ADMINISTRATION
+    // =========================================================================
+
+    // GET /api/admin/billing/overview
+    if (req.method === 'GET' && pathname === '/api/admin/billing/overview') {
+      if (!requirePermission('billing:read')) return;
+      const overview = whmcsAdapter.getBillingOverview(db);
+      return sendJson(200, overview);
+    }
+
+    // GET /api/admin/billing/invoices
+    if (req.method === 'GET' && pathname === '/api/admin/billing/invoices') {
+      if (!requirePermission('billing:read')) return;
+      const invoices = whmcsAdapter.listInvoices(query, db);
+      return sendJson(200, { invoices, total: invoices.length });
+    }
+
+    // GET /api/admin/billing/orders
+    if (req.method === 'GET' && pathname === '/api/admin/billing/orders') {
+      if (!requirePermission('billing:read')) return;
+      const orders = whmcsAdapter.listOrders(query, db);
+      return sendJson(200, { orders, total: orders.length });
+    }
+
+    // POST /api/admin/billing/invoices/:id/refund
+    if (req.method === 'POST' && pathname.includes('/billing/invoices/') && pathname.endsWith('/refund')) {
+      if (!requirePermission('billing:refund')) return;
+      const invoiceId = pathname.split('/')[5];
+      const { reason } = body;
+
+      try {
+        const result = whmcsAdapter.processRefund(invoiceId, reason, req.session.email, db);
+
+        logSecurityEvent(
+          'REFUND_PROCESSED',
+          req.session.userId,
+          req.session.email,
+          req.session.role,
+          'invoices',
+          invoiceId,
+          'PROCESS_REFUND',
+          'SUCCESS',
+          { invoiceNumber: result.invoiceNumber, amount: result.refundAmount, reason }
+        );
+
+        logAudit('ADMIN', req.session.userId, req.session.email, 'FINANCIAL_REFUND_APPROVED', 'invoices', invoiceId, {
+          refundAmount: result.refundAmount,
+          reason
+        });
+
+        return sendJson(200, result);
+      } catch (err) {
+        return sendError(400, err.message);
+      }
+    }
+
+    // GET /api/admin/billing/gateways
+    if (req.method === 'GET' && pathname === '/api/admin/billing/gateways') {
+      if (!requirePermission('billing:read')) return;
+      const gateways = whmcsAdapter.getGatewaysStatus();
+      return sendJson(200, { gateways });
+    }
+
+    // =========================================================================
+    // 4.5. SUPPORT OPERATIONS
+    // =========================================================================
+
+    // GET /api/admin/support/tickets
+    if (req.method === 'GET' && pathname === '/api/admin/support/tickets') {
+      if (!requirePermission('support:read')) return;
+      const { status, priority, department, search, limit = 50, offset = 0 } = query;
+
+      let sql = `
+        SELECT t.*, c.company_name as customer_company
+        FROM support_tickets t
+        LEFT JOIN customers c ON t.customer_id = c.id
+        WHERE 1=1
+      `;
+      const params = [];
+
+      if (status && status !== 'ALL') {
+        sql += ` AND t.status = ?`;
+        params.push(status);
+      }
+      if (priority && priority !== 'ALL') {
+        sql += ` AND t.priority = ?`;
+        params.push(priority);
+      }
+      if (department && department !== 'ALL') {
+        sql += ` AND t.department = ?`;
+        params.push(department);
+      }
+      if (search) {
+        sql += ` AND (t.ticket_number LIKE ? OR t.subject LIKE ? OR t.requester_email LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      sql += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`;
+      params.push(Number(limit) || 50, Number(offset) || 0);
+
+      const tickets = db.prepare(sql).all(...params);
+      return sendJson(200, { tickets, total: tickets.length });
+    }
+
+    // GET /api/admin/support/tickets/:id
+    if (req.method === 'GET' && pathname.startsWith('/api/admin/support/tickets/') && !pathname.endsWith('/reply') && !pathname.endsWith('/status')) {
+      if (!requirePermission('support:read')) return;
+      const ticketId = pathname.replace('/api/admin/support/tickets/', '');
+
+      const ticket = db.prepare(`
+        SELECT t.*, c.company_name as customer_company, c.phone as customer_phone
+        FROM support_tickets t
+        LEFT JOIN customers c ON t.customer_id = c.id
+        WHERE t.id = ? OR t.ticket_number = ?
+      `).get(ticketId, ticketId);
+
+      if (!ticket) return sendError(404, `Ticket '${ticketId}' not found.`);
+
+      const replies = db.prepare(`
+        SELECT * FROM ticket_replies WHERE ticket_id = ? ORDER BY created_at ASC
+      `).all(ticket.id);
+
+      return sendJson(200, { ticket, replies });
+    }
+
+    // POST /api/admin/support/tickets/:id/reply
+    if (req.method === 'POST' && pathname.includes('/support/tickets/') && pathname.endsWith('/reply')) {
+      if (!requirePermission('support:write')) return;
+      const ticketId = pathname.split('/')[5];
+      const { message } = body;
+
+      if (!message || message.trim().length < 3) {
+        return sendError(400, 'Reply message is required (min 3 characters).');
+      }
+
+      const ticket = db.prepare(`SELECT * FROM support_tickets WHERE id = ? OR ticket_number = ?`).get(ticketId, ticketId);
+      if (!ticket) return sendError(404, 'Ticket not found.');
+
+      const replyId = 'rep-' + crypto.randomBytes(5).toString('hex');
+      db.prepare(`
+        INSERT INTO ticket_replies (id, ticket_id, author_type, author_name, author_email, message)
+        VALUES (?, ?, 'STAFF', ?, ?, ?)
+      `).run(replyId, ticket.id, req.session.name || req.session.email.split('@')[0], req.session.email, message.trim());
+
+      db.prepare(`
+        UPDATE support_tickets SET status = 'ANSWERED', updated_at = datetime('now') WHERE id = ?
+      `).run(ticket.id);
+
+      return sendJson(201, {
+        success: true,
+        replyId,
+        message: 'Support response sent successfully.'
+      });
+    }
+
+    // POST /api/admin/support/tickets/:id/status
+    if (req.method === 'POST' && pathname.includes('/support/tickets/') && pathname.endsWith('/status')) {
+      if (!requirePermission('support:write')) return;
+      const ticketId = pathname.split('/')[5];
+      const { status } = body;
+
+      if (!['OPEN', 'IN_PROGRESS', 'ANSWERED', 'RESOLVED', 'CLOSED'].includes(status)) {
+        return sendError(400, 'Invalid status.');
+      }
+
+      db.prepare(`
+        UPDATE support_tickets SET status = ?, updated_at = datetime('now') WHERE id = ? OR ticket_number = ?
+      `).run(status, ticketId, ticketId);
+
+      return sendJson(200, { success: true, message: `Ticket status updated to ${status}.` });
+    }
+
+    // =========================================================================
+    // 4.6. PUBLIC WEBSITE CMS MANAGEMENT
+    // =========================================================================
+
+    // GET /api/admin/cms/overview
+    if (req.method === 'GET' && pathname === '/api/admin/cms/overview') {
+      if (!requirePermission('content:read')) return;
+      const annCount = db.prepare(`SELECT COUNT(*) as count FROM website_announcements`).get()?.count || 0;
+      const plansCount = db.prepare(`SELECT COUNT(*) as count FROM website_plans`).get()?.count || 0;
+      const couponsCount = db.prepare(`SELECT COUNT(*) as count FROM website_coupons`).get()?.count || 0;
+      const seoCount = db.prepare(`SELECT COUNT(*) as count FROM website_seo`).get()?.count || 0;
+      return sendJson(200, { annCount, plansCount, couponsCount, seoCount });
+    }
+
+    // GET /api/admin/cms/announcements
+    if (req.method === 'GET' && pathname === '/api/admin/cms/announcements') {
+      if (!requirePermission('announcements:read') && !requirePermission('content:read')) return;
+      const announcements = db.prepare(`SELECT * FROM website_announcements ORDER BY created_at DESC`).all();
+      return sendJson(200, { announcements });
+    }
+
+    // POST /api/admin/cms/announcements
+    if (req.method === 'POST' && pathname === '/api/admin/cms/announcements') {
+      if (!requirePermission('announcements:write') && !requirePermission('content:write')) return;
+      const { title, type, message, isActive = 1, startsAt, endsAt } = body;
+      if (!title || !message) return sendError(400, 'Title and message are required.');
+
+      const id = 'ann-' + crypto.randomBytes(4).toString('hex');
+      db.prepare(`
+        INSERT INTO website_announcements (id, title, type, message, is_active, starts_at, ends_at, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, title.trim(), type || 'BANNER', message.trim(), isActive ? 1 : 0, startsAt || null, endsAt || null, req.session.email);
+
+      logAudit('ADMIN', req.session.userId, req.session.email, 'CMS_ANNOUNCEMENT_CREATED', 'website_announcements', id, { title });
+      return sendJson(201, { success: true, announcementId: id, message: 'Announcement created successfully.' });
+    }
+
+    // PUT /api/admin/cms/announcements/:id
+    if (req.method === 'PUT' && pathname.startsWith('/api/admin/cms/announcements/')) {
+      if (!requirePermission('announcements:write') && !requirePermission('content:write')) return;
+      const annId = pathname.replace('/api/admin/cms/announcements/', '');
+      const { title, type, message, isActive, startsAt, endsAt } = body;
+
+      db.prepare(`
+        UPDATE website_announcements
+        SET title = COALESCE(?, title),
+            type = COALESCE(?, type),
+            message = COALESCE(?, message),
+            is_active = COALESCE(?, is_active),
+            starts_at = COALESCE(?, starts_at),
+            ends_at = COALESCE(?, ends_at),
+            updated_at = datetime('now')
+        WHERE id = ?
+      `).run(title, type, message, isActive !== undefined ? (isActive ? 1 : 0) : null, startsAt, endsAt, annId);
+
+      return sendJson(200, { success: true, message: 'Announcement updated.' });
+    }
+
+    // DELETE /api/admin/cms/announcements/:id
+    if (req.method === 'DELETE' && pathname.startsWith('/api/admin/cms/announcements/')) {
+      if (!requirePermission('announcements:write') && !requirePermission('content:write')) return;
+      const annId = pathname.replace('/api/admin/cms/announcements/', '');
+      db.prepare(`DELETE FROM website_announcements WHERE id = ?`).run(annId);
+      return sendJson(200, { success: true, message: 'Announcement deleted.' });
+    }
+
+    // GET /api/admin/cms/plans
+    if (req.method === 'GET' && pathname === '/api/admin/cms/plans') {
+      if (!requirePermission('plans:read') && !requirePermission('content:read')) return;
+      const plans = db.prepare(`SELECT * FROM website_plans ORDER BY category, price_bdt ASC`).all();
+      plans.forEach(p => {
+        try { p.features = JSON.parse(p.features_json); } catch { p.features = []; }
+      });
+      return sendJson(200, { plans });
+    }
+
+    // PUT /api/admin/cms/plans/:id
+    if (req.method === 'PUT' && pathname.startsWith('/api/admin/cms/plans/')) {
+      if (!requirePermission('plans:write') && !requirePermission('content:write')) return;
+      const planId = pathname.replace('/api/admin/cms/plans/', '');
+      const { priceBdt, priceUsd, isAvailable, isPopular, features } = body;
+
+      db.prepare(`
+        UPDATE website_plans
+        SET price_bdt = COALESCE(?, price_bdt),
+            price_usd = COALESCE(?, price_usd),
+            is_available = COALESCE(?, is_available),
+            is_popular = COALESCE(?, is_popular),
+            features_json = COALESCE(?, features_json),
+            updated_by = ?,
+            updated_at = datetime('now')
+        WHERE id = ?
+      `).run(
+        priceBdt !== undefined ? Number(priceBdt) : null,
+        priceUsd !== undefined ? Number(priceUsd) : null,
+        isAvailable !== undefined ? (isAvailable ? 1 : 0) : null,
+        isPopular !== undefined ? (isPopular ? 1 : 0) : null,
+        features ? JSON.stringify(features) : null,
+        req.session.email,
+        planId
+      );
+
+      logAudit('ADMIN', req.session.userId, req.session.email, 'CMS_PLAN_PRICING_UPDATED', 'website_plans', planId, {
+        priceBdt,
+        priceUsd
+      });
+
+      return sendJson(200, { success: true, message: 'Service plan specifications updated.' });
+    }
+
+    // GET /api/admin/cms/seo
+    if (req.method === 'GET' && pathname === '/api/admin/cms/seo') {
+      if (!requirePermission('seo:read') && !requirePermission('content:read')) return;
+      const seo = db.prepare(`SELECT * FROM website_seo`).all();
+      return sendJson(200, { seo });
+    }
+
+    // PUT /api/admin/cms/seo/:pageKey
+    if (req.method === 'PUT' && pathname.startsWith('/api/admin/cms/seo/')) {
+      if (!requirePermission('seo:write') && !requirePermission('content:write')) return;
+      const pageKey = pathname.replace('/api/admin/cms/seo/', '');
+      const { metaTitle, metaDescription, canonicalUrl, ogTitle, ogDescription } = body;
+
+      db.prepare(`
+        UPDATE website_seo
+        SET meta_title = COALESCE(?, meta_title),
+            meta_description = COALESCE(?, meta_description),
+            canonical_url = COALESCE(?, canonical_url),
+            og_title = COALESCE(?, og_title),
+            og_description = COALESCE(?, og_description),
+            updated_by = ?,
+            updated_at = datetime('now')
+        WHERE page_key = ?
+      `).run(
+        metaTitle || null,
+        metaDescription || null,
+        canonicalUrl || null,
+        ogTitle || null,
+        ogDescription || null,
+        req.session.email,
+        pageKey
+      );
+
+      return sendJson(200, { success: true, message: `SEO configuration updated for '${pageKey}'.` });
+    }
+
+    // GET /api/admin/cms/coupons
+    if (req.method === 'GET' && pathname === '/api/admin/cms/coupons') {
+      if (!requirePermission('coupons:read') && !requirePermission('content:read')) return;
+      const coupons = db.prepare(`SELECT * FROM website_coupons ORDER BY created_at DESC`).all();
+      return sendJson(200, { coupons });
+    }
+
+    // POST /api/admin/cms/coupons
+    if (req.method === 'POST' && pathname === '/api/admin/cms/coupons') {
+      if (!requirePermission('coupons:write') && !requirePermission('content:write')) return;
+      const { code, discountType = 'PERCENTAGE', discountValue, maxUses = 100 } = body;
+      if (!code || discountValue === undefined) return sendError(400, 'Coupon code and discount value are required.');
+
+      const id = 'cpn-' + crypto.randomBytes(4).toString('hex');
+      db.prepare(`
+        INSERT INTO website_coupons (id, code, discount_type, discount_value, max_uses, is_active, created_by)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
+      `).run(id, code.toUpperCase().trim(), discountType, Number(discountValue), Number(maxUses), req.session.email);
+
+      return sendJson(201, { success: true, couponId: id, message: `Promo coupon '${code}' created.` });
+    }
+
+    // =========================================================================
+    // 4.7. SECURITY, AUTHENTICATION & ACCESS MONITORING
+    // =========================================================================
+
+    // GET /api/admin/security/events
+    if (req.method === 'GET' && pathname === '/api/admin/security/events') {
+      if (!requirePermission('security:read') && !requirePermission('security:audit_logs') && !requirePermission('audit:read')) return;
+      const { eventType, outcome, search, limit = 50, offset = 0 } = query;
+
+      let sql = 'SELECT * FROM security_events WHERE 1=1';
+      const params = [];
+
+      if (eventType && eventType !== 'ALL') {
+        sql += ' AND event_type = ?';
+        params.push(eventType);
+      }
+      if (outcome && outcome !== 'ALL') {
+        sql += ' AND outcome = ?';
+        params.push(outcome);
+      }
+      if (search) {
+        sql += ' AND (actor_email LIKE ? OR ip_address LIKE ? OR action LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      sql += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+      params.push(Number(limit) || 50, Number(offset) || 0);
+
+      const events = db.prepare(sql).all(...params);
+      return sendJson(200, { events, total: events.length });
+    }
+
+    // GET /api/admin/security/sessions
+    if (req.method === 'GET' && pathname === '/api/admin/security/sessions') {
+      if (!requirePermission('security:read') && !requirePermission('security:revoke_session')) return;
+      const sessions = sessionStore.listActiveSessions();
+      return sendJson(200, { sessions });
+    }
+
+    // POST /api/admin/security/sessions/revoke
+    if (req.method === 'POST' && pathname === '/api/admin/security/sessions/revoke') {
+      if (!requirePermission('security:revoke_session')) return;
+      const { token, userId, allForUser } = body;
+
+      if (allForUser && userId) {
+        const count = sessionStore.revokeAllUserSessions(userId);
+        logSecurityEvent('SESSION_REVOKED', req.session.userId, req.session.email, req.session.role, 'users', userId, 'REVOKE_ALL_SESSIONS', 'SUCCESS', { revokedCount: count });
+        return sendJson(200, { success: true, message: `Revoked ${count} active session(s) for user.` });
+      }
+
+      if (!token) return sendError(400, 'Session token is required for revocation.');
+
+      const revoked = sessionStore.revokeSession(token);
+      logSecurityEvent('SESSION_REVOKED', req.session.userId, req.session.email, req.session.role, 'sessions', null, 'REVOKE_SESSION', revoked ? 'SUCCESS' : 'FAILURE', { tokenMasked: token.slice(0, 8) + '...' });
+
+      return sendJson(200, { success: revoked, message: revoked ? 'Session successfully terminated and invalidated.' : 'Session not found or already expired.' });
+    }
+
+    // GET /api/admin/security/admins
+    if (req.method === 'GET' && pathname === '/api/admin/security/admins') {
+      if (!requirePermission('users:read') && !requirePermission('users:manage_roles')) return;
+      const admins = db.prepare(`
+        SELECT id, email, name, role, status, last_login_at, created_at
+        FROM users
+        WHERE role != 'PARTNER' AND role != 'CUSTOMER'
+        ORDER BY created_at ASC
+      `).all();
+      return sendJson(200, { admins, availableRoles: Object.keys(ROLE_PERMISSIONS).filter(r => !['PARTNER', 'CUSTOMER'].includes(r)) });
+    }
+
+    // POST /api/admin/security/admins (Create admin account)
+    if (req.method === 'POST' && pathname === '/api/admin/security/admins') {
+      if (!requirePermission('users:manage_roles')) return;
+      const { email, password, role, name } = body;
+
+      if (!email || !password || !role) {
+        return sendError(400, 'Email, password, and role are required.');
+      }
+      if (!ROLE_PERMISSIONS[role] || ['PARTNER', 'CUSTOMER'].includes(role)) {
+        return sendError(400, `Invalid administrative role: ${role}`);
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get(cleanEmail);
+      if (existing) return sendError(409, `An account with email '${cleanEmail}' already exists.`);
+
+      const auth = hashPassword(password);
+      const id = 'usr-adm-' + crypto.randomBytes(4).toString('hex');
+
+      db.prepare(`
+        INSERT INTO users (id, email, password_hash, salt, role, partner_id, name, status)
+        VALUES (?, ?, ?, ?, ?, NULL, ?, 'ACTIVE')
+      `).run(id, cleanEmail, auth.hash, auth.salt, role, name || cleanEmail.split('@')[0]);
+
+      logSecurityEvent('ROLE_ASSIGNED', req.session.userId, req.session.email, req.session.role, 'users', id, 'CREATE_ADMIN_USER', 'SUCCESS', { email: cleanEmail, assignedRole: role });
+
+      return sendJson(201, {
+        success: true,
+        userId: id,
+        message: `Administrative user '${cleanEmail}' provisioned with role '${role}'.`
+      });
+    }
+
+    // PUT /api/admin/security/admins/:id/role (Change role)
+    if (req.method === 'PUT' && pathname.includes('/security/admins/') && pathname.endsWith('/role')) {
+      if (!requirePermission('users:manage_roles')) return;
+      const targetUserId = pathname.split('/')[5];
+      const { role } = body;
+
+      if (!ROLE_PERMISSIONS[role] || ['PARTNER', 'CUSTOMER'].includes(role)) {
+        return sendError(400, `Invalid administrative role: ${role}`);
+      }
+
+      // Prevent non-superadmins from granting superadmin
+      if (role === 'SUPER_ADMIN' && req.session.role !== 'SUPER_ADMIN' && req.session.role !== 'ADMIN') {
+        return sendError(403, 'Only a Super Administrator can assign the SUPER_ADMIN role.');
+      }
+
+      db.prepare(`UPDATE users SET role = ? WHERE id = ?`).run(role, targetUserId);
+
+      logSecurityEvent('ROLE_CHANGED', req.session.userId, req.session.email, req.session.role, 'users', targetUserId, 'CHANGE_ROLE', 'SUCCESS', { newRole: role });
+
+      return sendJson(200, { success: true, message: `Role updated to '${role}'.` });
+    }
+
+    // =========================================================================
+    // 4.8. PARTNER MANAGEMENT (Existing Partner Admin Module)
+    // =========================================================================
 
     // GET /api/admin/applications
     if (req.method === 'GET' && pathname === '/api/admin/applications') {

@@ -1,0 +1,3245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Centralized Enterprise Administrative Portal for Unified Cloud Service Provider. Manage public website, partner network, customer accounts, cloud infrastructure, billing, and security monitoring.">
+  <meta name="theme-color" content="#060913">
+  <base href="/">
+  <title>Centralized Admin Portal - Unified Cloud Platform</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="assets/css/main.css">
+  
+  <style>
+    /* ==========================================================================
+       Unified Cloud Centralized Admin Portal - Enterprise Console Theme
+       ========================================================================== */
+    :root {
+      --adm-bg-main: #060913;
+      --adm-bg-surface: #0c1222;
+      --adm-bg-surface-elevated: #131b31;
+      --adm-bg-surface-glass: rgba(12, 18, 34, 0.78);
+      --adm-border: rgba(255, 255, 255, 0.08);
+      --adm-border-hover: rgba(93, 224, 196, 0.3);
+      --adm-border-focus: #5de0c4;
+      --adm-text-main: #f8fafc;
+      --adm-text-muted: #94a3b8;
+      --adm-text-subtle: #64748b;
+      
+      --adm-teal: #5de0c4;
+      --adm-teal-glow: rgba(93, 224, 196, 0.22);
+      --adm-blue: #38bdf8;
+      --adm-blue-glow: rgba(56, 189, 248, 0.2);
+      --adm-amber: #f59e0b;
+      --adm-amber-glow: rgba(245, 158, 11, 0.2);
+      --adm-emerald: #10b981;
+      --adm-rose: #f43f5e;
+      --adm-purple: #c084fc;
+      --adm-sidebar-width: 270px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.admin-body {
+      background-color: var(--adm-bg-main);
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, #152238 0%, #080d1a 50%, #03060c 100%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: var(--adm-text-main);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Ambient atmospheric background orbs */
+    .admin-ambient-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(140px);
+      z-index: 0;
+      opacity: 0.15;
+    }
+    .glow-1 { top: -100px; left: -100px; background: var(--adm-teal); }
+    .glow-2 { top: 40%; right: -150px; background: var(--adm-blue); }
+    .glow-3 { bottom: -100px; left: 30%; background: var(--adm-purple); }
+
+    /* Admin Layout Structure */
+    .admin-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .admin-sidebar {
+      width: var(--adm-sidebar-width);
+      background: rgba(8, 13, 26, 0.92);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--adm-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 40;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .admin-brand {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--adm-border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .admin-brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(93, 224, 196, 0.2), rgba(56, 189, 248, 0.2));
+      border: 1px solid rgba(93, 224, 196, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .admin-brand-logo img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .admin-brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .admin-brand-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(93, 224, 196, 0.15);
+      color: var(--adm-teal);
+      border: 1px solid rgba(93, 224, 196, 0.3);
+      letter-spacing: 0.05em;
+    }
+    .admin-brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--adm-text-subtle);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--adm-text-subtle);
+      letter-spacing: 0.08em;
+      padding: 0 0.65rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      color: var(--adm-text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .nav-link.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(93, 224, 196, 0.14) 0%, rgba(93, 224, 196, 0.04) 100%);
+      border: 1px solid rgba(93, 224, 196, 0.25);
+    }
+    .nav-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+      background: var(--adm-teal);
+      box-shadow: 0 0 10px var(--adm-teal);
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+    .nav-link.active .nav-icon {
+      color: var(--adm-teal);
+      opacity: 1;
+    }
+
+    .nav-pill {
+      margin-left: auto;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--adm-text-muted);
+    }
+    .nav-pill.pill-alert {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--adm-border);
+      background: rgba(4, 7, 15, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .user-profile-summary {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      overflow: hidden;
+    }
+    .user-avatar-initials {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--adm-teal);
+    }
+    .user-info-text {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .user-display-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .user-role-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--adm-teal);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Main Content Container */
+    .admin-main {
+      margin-left: var(--adm-sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Top Navigation Bar */
+    .admin-topbar {
+      height: 68px;
+      background: rgba(8, 13, 26, 0.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--adm-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .env-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--adm-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .env-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--adm-emerald);
+      box-shadow: 0 0 8px var(--adm-emerald);
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .domain-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--adm-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .domain-tag {
+      padding: 0.2rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--adm-border);
+      border-radius: 6px;
+      color: var(--adm-blue);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .telemetry-status-strip {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--adm-border);
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: var(--adm-text-muted);
+    }
+    .service-ping {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .ping-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--adm-emerald);
+    }
+    .ping-dot.amber { background: var(--adm-amber); }
+
+    .utc-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--adm-text-muted);
+    }
+
+    .btn-icon-top {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--adm-border);
+      color: var(--adm-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .btn-icon-top:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .notification-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--adm-rose);
+      box-shadow: 0 0 6px var(--adm-rose);
+    }
+
+    .btn-logout {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      color: #fb7185;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .btn-logout:hover {
+      background: rgba(244, 63, 94, 0.22);
+      border-color: #fb7185;
+      color: #fff;
+    }
+
+    /* Page Content Viewport */
+    .admin-content-viewport {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1680px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .section-title-group h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: #fff;
+    }
+    .section-title-group p {
+      font-size: 0.85rem;
+      color: var(--adm-text-muted);
+      margin-top: 0.2rem;
+    }
+    .section-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Action Buttons */
+    .btn-admin {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.25);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--adm-border);
+      color: var(--adm-text-main);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: rgba(244, 63, 94, 0.35);
+      color: #fb7185;
+    }
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: #f43f5e;
+      color: #fff;
+    }
+
+    /* KPI Metric Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: var(--adm-bg-surface-glass);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--adm-border);
+      border-radius: 12px;
+      padding: 1.35rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+    .kpi-card:hover {
+      border-color: var(--adm-border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, var(--adm-teal)), transparent);
+    }
+    .kpi-card.teal { --card-accent: var(--adm-teal); }
+    .kpi-card.blue { --card-accent: var(--adm-blue); }
+    .kpi-card.amber { --card-accent: var(--adm-amber); }
+    .kpi-card.purple { --card-accent: var(--adm-purple); }
+
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--adm-text-subtle);
+    }
+    .kpi-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--card-accent, var(--adm-teal));
+    }
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+      font-family: 'Inter', system-ui, sans-serif;
+      margin-bottom: 0.4rem;
+    }
+    .kpi-footer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--adm-text-muted);
+    }
+
+    /* Badges & Tags */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-danger {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .badge-info {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .badge-purple {
+      background: rgba(192, 132, 252, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(192, 132, 252, 0.3);
+    }
+
+    /* Data Tables & Glass Panels */
+    .data-panel {
+      background: var(--adm-bg-surface-glass);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--adm-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .data-panel-header {
+      padding: 1.15rem 1.5rem;
+      border-bottom: 1px solid var(--adm-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.015);
+    }
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-filters {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--adm-border);
+      border-radius: 8px;
+      padding: 0.45rem 0.85rem;
+      color: #fff;
+      font-size: 0.82rem;
+      min-width: 220px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      border-color: var(--adm-teal);
+      box-shadow: 0 0 0 2px var(--adm-teal-glow);
+    }
+
+    .select-filter {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--adm-border);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      color: #fff;
+      font-size: 0.82rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .select-filter option {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .data-table th {
+      padding: 0.85rem 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--adm-text-subtle);
+      border-bottom: 1px solid var(--adm-border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--adm-text-muted);
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+      color: #fff;
+    }
+
+    .table-entity-title {
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .table-entity-sub {
+      font-size: 0.75rem;
+      color: var(--adm-text-subtle);
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-action-sm {
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--adm-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--adm-text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-action-sm:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-action-sm.danger:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: var(--adm-rose);
+      color: #fff;
+    }
+
+    /* Modal Windows */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 5, 12, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--adm-bg-surface);
+      border: 1px solid var(--adm-border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-window.wide {
+      max-width: 900px;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--adm-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--adm-text-subtle);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 1.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 1.25rem 1.75rem;
+      border-top: 1px solid var(--adm-border);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Form Controls inside Modals */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--adm-text-muted);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-control {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--adm-border);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      color: #fff;
+      font-size: 0.88rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .form-control:focus {
+      border-color: var(--adm-teal);
+      box-shadow: 0 0 0 2px var(--adm-teal-glow);
+    }
+    textarea.form-control {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    /* Toast Notification System */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--adm-border);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 300px;
+      pointer-events: auto;
+      animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.success { border-color: rgba(16, 185, 129, 0.4); }
+    .toast.error { border-color: rgba(244, 63, 94, 0.4); color: #fecdd3; }
+    .toast.info { border-color: rgba(56, 189, 248, 0.4); }
+
+    @keyframes toastSlideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Authentication Screen Overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 20%, #0c162c 0%, #060a14 70%, #020408 100%);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(12, 18, 34, 0.85);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 2.25rem 2.25rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--adm-teal), transparent);
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-logo {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(93, 224, 196, 0.25), rgba(56, 189, 248, 0.25));
+      border: 1px solid rgba(93, 224, 196, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-logo img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .auth-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .auth-sub {
+      font-size: 0.82rem;
+      color: var(--adm-text-muted);
+      margin-top: 0.3rem;
+    }
+
+    .quick-role-selector {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--adm-border);
+    }
+    .quick-role-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--adm-text-subtle);
+      margin-bottom: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+    .role-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .role-chip {
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--adm-border);
+      color: var(--adm-text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .role-chip:hover {
+      background: rgba(93, 224, 196, 0.15);
+      border-color: var(--adm-teal);
+      color: #fff;
+    }
+
+    /* Views visibility */
+    .admin-view {
+      display: none;
+    }
+    .admin-view.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+  <!-- Ambient Glow Effects -->
+  <div class="admin-ambient-glow glow-1"></div>
+  <div class="admin-ambient-glow glow-2"></div>
+  <div class="admin-ambient-glow glow-3"></div>
+
+  <!-- Toast Notification Hub -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Authentication Modal Screen (Shown when not authenticated) -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <img src="assets/images/logo.png" alt="Unified Cloud" onerror="this.style.display='none'">
+        </div>
+        <h2 class="auth-title">Unified Cloud Admin</h2>
+        <p class="auth-sub">Centralized Enterprise Management & NOC Control</p>
+      </div>
+
+      <form id="adminLoginForm" onsubmit="handleAdminLoginSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Administrator Email</label>
+          <input type="email" id="authEmail" class="form-control" required placeholder="admin@unified.cloud" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Security Password</label>
+          <input type="password" id="authPassword" class="form-control" required placeholder="••••••••••••" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <button type="submit" id="authSubmitBtn" class="btn-admin btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">
+            Authenticate & Access Portal
+          </button>
+        </div>
+      </form>
+
+      <!-- Quick Roles Demo Selector -->
+      <div class="quick-role-selector">
+        <div class="quick-role-title">Fast-Fill Role Credentials (Demo / Testing)</div>
+        <div class="role-chips">
+          <button type="button" class="role-chip" onclick="fillAdminLogin('superadmin@unified.cloud', 'SuperAdmin2026!', true)">Super Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('security@unified.cloud', 'SecurityAdmin2026!', true)">Security Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('infra@unified.cloud', 'InfraAdmin2026!', true)">Infra Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('finance@unified.cloud', 'FinanceAdmin2026!', true)">Finance Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('partners@unified.cloud', 'PartnerAdmin2026!', true)">Partner Mgr</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('support@unified.cloud', 'SupportAdmin2026!', true)">Support Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('content@unified.cloud', 'ContentAdmin2026!', true)">Content Admin</button>
+          <button type="button" class="role-chip" onclick="fillAdminLogin('auditor@unified.cloud', 'AuditorAdmin2026!', true)">Auditor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div class="admin-wrapper" id="adminAppWrapper" style="display: none;">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-logo">
+          <img src="assets/images/logo.png" alt="Unified" onerror="this.style.display='none'">
+        </div>
+        <div class="admin-brand-text">
+          <div class="admin-brand-title">
+            Unified Cloud
+            <span class="admin-brand-badge">ADMIN</span>
+          </div>
+          <div class="admin-brand-subtitle">v3.0.0-PROD</div>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll">
+        <!-- 1. Core Telemetry -->
+        <div>
+          <div class="nav-section-title">Core Operations</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link active" onclick="switchAdminView('dashboard')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                <span>Live Dashboard</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2. Accounts & Partners -->
+        <div>
+          <div class="nav-section-title">Client Relations</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('customers')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Customer Accounts</span>
+                <span class="nav-pill" id="sidebarCustCount">-</span>
+              </a>
+            </li>
+            <li>
+              <a class="nav-link" onclick="switchAdminView('partners')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Partner Portal Desk</span>
+                <span class="nav-pill" id="sidebarPartnerCount">-</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 3. Infrastructure & Cloud -->
+        <div>
+          <div class="nav-section-title">Cloud Infrastructure</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('cloud')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                <span>CloudStack VMs & NOC</span>
+                <span class="nav-pill" id="sidebarVMCount">-</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 4. Financial Administration -->
+        <div>
+          <div class="nav-section-title">Finance & Billing</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('billing')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <span>Invoices & Billing</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 5. Support Operations -->
+        <div>
+          <div class="nav-section-title">Support & Incidents</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('support')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span>Support Tickets</span>
+                <span class="nav-pill pill-alert" id="sidebarTicketAlert">-</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 6. Public Website CMS -->
+        <div>
+          <div class="nav-section-title">Website Management</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('cms')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                <span>Content & Plans CMS</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 7. Security, Access & RBAC -->
+        <div>
+          <div class="nav-section-title">Security & Governance</div>
+          <ul class="nav-list">
+            <li>
+              <a class="nav-link" onclick="switchAdminView('security')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Security & Sessions</span>
+              </a>
+            </li>
+            <li>
+              <a class="nav-link" onclick="switchAdminView('audit')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Audit Trail</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- User Profile in Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="user-profile-summary">
+          <div class="user-avatar-initials" id="sidebarUserInitials">SA</div>
+          <div class="user-info-text">
+            <span class="user-display-name" id="sidebarUserName">Admin User</span>
+            <span class="user-role-badge" id="sidebarUserRole">SUPER_ADMIN</span>
+          </div>
+        </div>
+        <button type="button" class="btn-logout" onclick="handleAdminLogout()" title="Terminate administrative session">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Viewport Area -->
+    <main class="admin-main">
+      
+      <!-- Top Status Bar -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <div class="env-indicator">
+            <span class="env-dot"></span>
+            <span id="envLabel">Production</span>
+          </div>
+          <div class="domain-indicator">
+            Subdomain: <span class="domain-tag" id="currentSubdomainTag">admin.example.com</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="telemetry-status-strip">
+            <div class="service-ping">
+              <span class="ping-dot"></span>
+              <span>WHMCS: <strong id="whmcsStatusBadge">Online</strong></span>
+            </div>
+            <span>•</span>
+            <div class="service-ping">
+              <span class="ping-dot"></span>
+              <span>CloudStack: <strong id="cloudstackStatusBadge">Healthy</strong></span>
+            </div>
+            <span>•</span>
+            <div class="service-ping">
+              <span class="ping-dot"></span>
+              <span>DB: <strong>Sync</strong></span>
+            </div>
+          </div>
+
+          <div class="utc-clock" id="liveUtcClock">00:00:00 UTC</div>
+
+          <button class="btn-icon-top" onclick="switchAdminView('security')" title="Security Monitoring">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="notification-dot"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Views Container -->
+      <div class="admin-content-viewport">
+
+        <!-- ===================================================================
+             VIEW 1: CENTRALIZED DASHBOARD
+             =================================================================== -->
+        <section id="view-dashboard" class="admin-view active">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Centralized Command Dashboard</h1>
+              <p>Live synchronized telemetry across public website, partner portal, cloud infrastructure, and billing.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-secondary" onclick="loadDashboardData()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Refresh Data
+              </button>
+              <button class="btn-admin btn-primary" onclick="openCreateCustomerModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Customer
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Metrics Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card teal">
+              <div class="kpi-header">
+                <span class="kpi-label">Customer Accounts</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiTotalCustomers">0</div>
+              <div class="kpi-footer">
+                <span class="badge badge-success" id="kpiActiveCustBadge">0 Active</span>
+                <span class="badge badge-warning" id="kpiSuspendedCustBadge">0 Suspended</span>
+              </div>
+            </div>
+
+            <div class="kpi-card blue">
+              <div class="kpi-header">
+                <span class="kpi-label">Cloud Instances (VMs)</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/></svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiRunningVMs">0</div>
+              <div class="kpi-footer">
+                <span id="kpiVMSubtext">0 vCPUs • 0 GB RAM Allocated</span>
+              </div>
+            </div>
+
+            <div class="kpi-card amber">
+              <div class="kpi-header">
+                <span class="kpi-label">Monthly Recurring Rev (MRR)</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiMRR">৳0</div>
+              <div class="kpi-footer">
+                <span class="badge badge-success" id="kpiPaidInvBadge">0 Paid Invoices</span>
+                <span id="kpiOutstandingBadge">৳0 Pending</span>
+              </div>
+            </div>
+
+            <div class="kpi-card purple">
+              <div class="kpi-header">
+                <span class="kpi-label">Open Support Tickets</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiOpenTickets">0</div>
+              <div class="kpi-footer">
+                <span class="badge badge-danger" id="kpiCriticalTickets">0 Critical</span>
+                <span id="kpiInProgressTickets">0 in progress</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Datacenter Zone Status Strip -->
+          <div class="data-panel" style="margin-bottom: 2rem;">
+            <div class="data-panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Live Datacenter Infrastructure Clusters</span>
+              </div>
+              <span class="badge badge-success">SLA: 99.992% Uptime</span>
+            </div>
+            <div style="padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+              <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--adm-border); border-radius: 10px; padding: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <strong style="color: #fff; font-size: 0.95rem;">Dhaka DC-01 (Primary Tier-III)</strong>
+                  <span class="badge badge-success">ONLINE</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--adm-text-subtle); margin-bottom: 0.5rem;">Peering: BDIX, Tata Communications, Bharti Airtel</div>
+                <div style="font-size: 0.8rem; color: var(--adm-text-muted); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div>Compute Cores: <strong>48 / 256 vCPUs (18.7%)</strong></div>
+                  <div>ECC Memory: <strong>168 / 1024 GB (16.4%)</strong></div>
+                  <div>NVMe SAN Storage: <strong>28.5 / 120 TB (23.7%)</strong></div>
+                </div>
+              </div>
+
+              <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--adm-border); border-radius: 10px; padding: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <strong style="color: #fff; font-size: 0.95rem;">Singapore SG-01 (Edge Datacenter)</strong>
+                  <span class="badge badge-success">ONLINE</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--adm-text-subtle); margin-bottom: 0.5rem;">Peering: Equinix SG1, Singtel, Telia Carrier</div>
+                <div style="font-size: 0.8rem; color: var(--adm-text-muted); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div>Compute Cores: <strong>24 / 128 vCPUs (18.7%)</strong></div>
+                  <div>ECC Memory: <strong>96 / 512 GB (18.7%)</strong></div>
+                  <div>NVMe SAN Storage: <strong>14.0 / 60 TB (23.3%)</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Activity & Audit Feed -->
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Recent Security Events & Administrative Actions</span>
+              </div>
+              <button class="btn-action-sm" onclick="switchAdminView('audit')">View Full Audit Trail</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Event Type</th>
+                    <th>Actor</th>
+                    <th>Role</th>
+                    <th>Outcome</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardActivityTableBody">
+                  <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading security telemetry...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 2: CUSTOMER MANAGEMENT
+             =================================================================== -->
+        <section id="view-customers" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Customer Accounts Directory</h1>
+              <p>Manage customer profiles, inspect active compute services, review invoices, and enforce account restrictions.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-primary" onclick="openCreateCustomerModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Customer
+              </button>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Accounts List</div>
+              <div class="panel-filters">
+                <input type="text" id="custSearchInput" class="search-input" placeholder="Search by name, company, email..." oninput="debounceLoadCustomers()">
+                <select id="custStatusFilter" class="select-filter" onchange="loadCustomers()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="PENDING">Pending</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Company / Customer</th>
+                    <th>Contact Email</th>
+                    <th>Status</th>
+                    <th>Active Services</th>
+                    <th>Total Spend</th>
+                    <th>Partner Affiliation</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading customers...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: PARTNER MANAGEMENT (Integrated Partner Desk)
+             =================================================================== -->
+        <section id="view-partners" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Partner Program Management Desk</h1>
+              <p>Review reseller applications, configure tiers, enforce tenant isolation, and manage sales rewards.</p>
+            </div>
+            <div class="section-actions">
+              <a href="/admin/partners" class="btn-admin btn-secondary" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Open Full Partner Workspace
+              </a>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Approved Partner Organizations</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Partner Organization</th>
+                    <th>Contact Person</th>
+                    <th>Tier / Discount Margin</th>
+                    <th>Monthly Spend</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="partnersTableBody">
+                  <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading partners...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 4: CLOUD INFRASTRUCTURE & VM NOC
+             =================================================================== -->
+        <section id="view-cloud" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>CloudStack Orchestration & Virtual Machines</h1>
+              <p>Direct infrastructure management, VM lifecycle operations (Start, Stop, Reboot, Terminate), and NOC incident logging.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-danger" onclick="openReportIncidentModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Log NOC Incident
+              </button>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Deployed Virtual Machine Instances</div>
+              <div class="panel-filters">
+                <input type="text" id="vmSearchInput" class="search-input" placeholder="Search by VM name, IP, client..." oninput="debounceLoadVMs()">
+                <select id="vmStatusFilter" class="select-filter" onchange="loadVMs()">
+                  <option value="ALL">All States</option>
+                  <option value="RUNNING">Running</option>
+                  <option value="STOPPED">Stopped</option>
+                  <option value="SUSPENDED">Suspended</option>
+                </select>
+                <select id="vmZoneFilter" class="select-filter" onchange="loadVMs()">
+                  <option value="ALL">All Zones</option>
+                  <option value="Dhaka">Dhaka DC-01</option>
+                  <option value="Singapore">Singapore SG-01</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Service & Instance</th>
+                    <th>Client / Owner</th>
+                    <th>Zone</th>
+                    <th>IP Address</th>
+                    <th>vCPU / RAM / Disk</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vmsTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading compute instances...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 5: BILLING & FINANCIALS
+             =================================================================== -->
+        <section id="view-billing" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Billing & Financial Administration</h1>
+              <p>Invoices, payment reconciliation, gateway health monitoring, and authorized refund workflows.</p>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Billing Invoices Ledger</div>
+              <div class="panel-filters">
+                <select id="invStatusFilter" class="select-filter" onchange="loadInvoices()">
+                  <option value="ALL">All Invoices</option>
+                  <option value="PAID">Paid</option>
+                  <option value="UNPAID">Unpaid</option>
+                  <option value="REFUNDED">Refunded</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Customer</th>
+                    <th>Amount (BDT)</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Payment Method</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoicesTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading invoices...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 6: SUPPORT TICKETS
+             =================================================================== -->
+        <section id="view-support" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Helpdesk & Incident Response</h1>
+              <p>Respond to customer and partner operational support requests with SLA priority escalation.</p>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Support Tickets Queue</div>
+              <div class="panel-filters">
+                <select id="ticketStatusFilter" class="select-filter" onchange="loadSupportTickets()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="ANSWERED">Answered</option>
+                  <option value="RESOLVED">Resolved</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticket #</th>
+                    <th>Subject</th>
+                    <th>Customer / Requester</th>
+                    <th>Department</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ticketsTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading tickets...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 7: PUBLIC WEBSITE CMS
+             =================================================================== -->
+        <section id="view-cms" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Public Website Content & Service Plans CMS</h1>
+              <p>Configure homepage announcements, banners, pricing plans, SEO metadata, and promotional coupons.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-primary" onclick="openCreateAnnouncementModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Announcement
+              </button>
+            </div>
+          </div>
+
+          <div class="data-panel" style="margin-bottom: 2rem;">
+            <div class="data-panel-header">
+              <div class="panel-title">Active Homepage Banners & Notices</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Title & Announcement</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Display Window</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cmsAnnouncementsTableBody">
+                  <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading announcements...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Cloud Infrastructure Service Plans & Pricing Catalog</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Plan Name & Code</th>
+                    <th>Category</th>
+                    <th>Price (BDT / Mo)</th>
+                    <th>Price (USD / Mo)</th>
+                    <th>vCPU / RAM / Disk</th>
+                    <th>Catalog Availability</th>
+                  </tr>
+                </thead>
+                <tbody id="cmsPlansTableBody">
+                  <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading plans...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 8: SECURITY & ACCESS GOVERNANCE
+             =================================================================== -->
+        <section id="view-security" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Security, Access & RBAC Governance</h1>
+              <p>Real-time authentication monitoring, active session revocation, and role-based access control.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-primary" onclick="openCreateAdminUserModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Administrator
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Sessions Panel -->
+          <div class="data-panel" style="margin-bottom: 2rem;">
+            <div class="data-panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
+                <span>Currently Active Administrative Sessions</span>
+              </div>
+              <button class="btn-action-sm" onclick="loadActiveSessions()">Refresh Sessions</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>User & Email</th>
+                    <th>Role</th>
+                    <th>IP Address</th>
+                    <th>Client Agent</th>
+                    <th>Expires At (UTC)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="activeSessionsTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading active sessions...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Administrators Directory Panel -->
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Platform Administrators & Role Permissions</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Administrator</th>
+                    <th>Email Address</th>
+                    <th>Assigned Role</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading admin users...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 9: CENTRALIZED AUDIT TRAIL
+             =================================================================== -->
+        <section id="view-audit" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Centralized Tamper-Evident Audit Trail</h1>
+              <p>Immutable log of every state-changing administrative, financial, and security event across the platform.</p>
+            </div>
+            <div class="section-actions">
+              <a href="/api/admin/export?type=audit" class="btn-admin btn-secondary" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Audit CSV
+              </a>
+            </div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Audit Action Records</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Target Resource</th>
+                    <th>Outcome</th>
+                    <th>Client IP</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="fullAuditTableBody">
+                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading audit records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       MODALS: CUSTOMER INSPECTION, SUSPENSION, VM ACTIONS, REFUNDS, REPLIES
+       ========================================================================= -->
+
+  <!-- Customer Detail & Inspection Modal -->
+  <div id="customerDetailModal" class="modal-backdrop">
+    <div class="modal-window wide">
+      <div class="modal-header">
+        <h3 class="modal-title" id="custModalTitle">Customer Profile</h3>
+        <button type="button" class="modal-close" onclick="closeModal('customerDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="custModalContent">
+          Loading customer profile...
+        </div>
+      </div>
+      <div class="modal-footer" id="custModalFooter">
+        <button type="button" class="btn-admin btn-secondary" onclick="closeModal('customerDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Suspension Reason Modal -->
+  <div id="suspendCustomerModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="suspendModalTitle">Account Restriction</h3>
+        <button type="button" class="modal-close" onclick="closeModal('suspendCustomerModal')">&times;</button>
+      </div>
+      <form onsubmit="handleCustomerStatusSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="suspendCustomerId">
+          <input type="hidden" id="suspendTargetStatus">
+          <p id="suspendModalNotice" style="margin-bottom: 1rem; color: var(--adm-text-muted); font-size: 0.88rem;"></p>
+          <div class="form-group">
+            <label class="form-label">Mandatory Administrative Justification Reason</label>
+            <textarea id="suspendReasonInput" class="form-control" required placeholder="Document the reason for this account restriction (minimum 5 characters)..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('suspendCustomerModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-danger" id="suspendModalConfirmBtn">Apply Status Change</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VM Lifecycle Action Confirmation Modal -->
+  <div id="vmActionModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="vmActionModalTitle">Confirm VM Operation</h3>
+        <button type="button" class="modal-close" onclick="closeModal('vmActionModal')">&times;</button>
+      </div>
+      <form onsubmit="handleVMActionSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="vmActionId">
+          <input type="hidden" id="vmActionType">
+          <p id="vmActionNotice" style="margin-bottom: 1rem; color: var(--adm-text-muted); font-size: 0.88rem;"></p>
+          <div class="form-group" id="vmReasonGroup">
+            <label class="form-label">Operational Justification / Reason</label>
+            <textarea id="vmReasonInput" class="form-control" placeholder="Provide justification for stopping or terminating this compute resource..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('vmActionModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-danger" id="vmActionConfirmBtn">Confirm Operation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invoice Refund Modal -->
+  <div id="refundInvoiceModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Approve Financial Refund</h3>
+        <button type="button" class="modal-close" onclick="closeModal('refundInvoiceModal')">&times;</button>
+      </div>
+      <form onsubmit="handleRefundSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="refundInvoiceId">
+          <p id="refundNotice" style="margin-bottom: 1rem; color: var(--adm-text-muted); font-size: 0.88rem;"></p>
+          <div class="form-group">
+            <label class="form-label">Documented Refund Justification</label>
+            <textarea id="refundReasonInput" class="form-control" required placeholder="Mandatory documented reason for compliance audit clearance (minimum 5 characters)..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('refundInvoiceModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-danger">Approve Refund</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Customer Modal -->
+  <div id="createCustomerModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Provision New Customer Account</h3>
+        <button type="button" class="modal-close" onclick="closeModal('createCustomerModal')">&times;</button>
+      </div>
+      <form onsubmit="handleCreateCustomerSubmit(event)">
+        <div class="modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input type="text" id="newCustFirstName" class="form-control" required placeholder="Rahim">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input type="text" id="newCustLastName" class="form-control" required placeholder="Khan">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company / Organization</label>
+            <input type="text" id="newCustCompany" class="form-control" placeholder="Dhaka FinTech Labs Ltd">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="newCustEmail" class="form-control" required placeholder="admin@dhakafintech.io">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Phone</label>
+            <input type="text" id="newCustPhone" class="form-control" placeholder="+8801711000000">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('createCustomerModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-primary">Create Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Announcement Modal -->
+  <div id="createAnnouncementModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Broadcast Public Website Announcement</h3>
+        <button type="button" class="modal-close" onclick="closeModal('createAnnouncementModal')">&times;</button>
+      </div>
+      <form onsubmit="handleCreateAnnouncementSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Announcement Title</label>
+            <input type="text" id="newAnnTitle" class="form-control" required placeholder="Scheduled Datacenter Power Maintenance">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="newAnnType" class="select-filter form-control">
+              <option value="BANNER">Information Banner</option>
+              <option value="MAINTENANCE">Maintenance Notice</option>
+              <option value="PROMOTION">Special Promotion</option>
+              <option value="NEWS">General News</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Announcement Content</label>
+            <textarea id="newAnnMessage" class="form-control" required placeholder="Detailed message displayed on public cloud website..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('createAnnouncementModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-primary">Publish Announcement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Admin User Modal -->
+  <div id="createAdminUserModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Provision Platform Administrator</h3>
+        <button type="button" class="modal-close" onclick="closeModal('createAdminUserModal')">&times;</button>
+      </div>
+      <form onsubmit="handleCreateAdminUserSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="newAdminName" class="form-control" required placeholder="Tanvir Islam">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Corporate Email</label>
+            <input type="email" id="newAdminEmail" class="form-control" required placeholder="tanvir@unified.cloud">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assigned Role</label>
+            <select id="newAdminRole" class="select-filter form-control">
+              <option value="SECURITY_ADMIN">Security Administrator</option>
+              <option value="INFRASTRUCTURE_ADMIN">Infrastructure Administrator</option>
+              <option value="FINANCE_ADMIN">Finance Administrator</option>
+              <option value="PARTNER_MANAGER">Partner Manager</option>
+              <option value="SUPPORT_ADMIN">Support Administrator</option>
+              <option value="CONTENT_ADMIN">Content Administrator</option>
+              <option value="AUDITOR">Compliance Auditor (Read-Only)</option>
+              <option value="SUPER_ADMIN">Super Administrator</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Temporary Password</label>
+            <input type="password" id="newAdminPassword" class="form-control" required placeholder="••••••••••••">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('createAdminUserModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-primary">Provision Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ticket Conversation Modal -->
+  <div id="ticketDetailModal" class="modal-backdrop">
+    <div class="modal-window wide">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ticketModalTitle">Support Ticket</h3>
+        <button type="button" class="modal-close" onclick="closeModal('ticketDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="ticketModalContent">Loading ticket details...</div>
+        <hr style="border: 0; border-top: 1px solid var(--adm-border); margin: 1.5rem 0;">
+        <form onsubmit="handleTicketReplySubmit(event)">
+          <input type="hidden" id="replyTicketId">
+          <div class="form-group">
+            <label class="form-label">Staff Response</label>
+            <textarea id="ticketReplyMessage" class="form-control" required placeholder="Type official response to customer..."></textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="submit" class="btn-admin btn-primary">Send Response</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOC Incident Modal -->
+  <div id="reportIncidentModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Infrastructure NOC Incident</h3>
+        <button type="button" class="modal-close" onclick="closeModal('reportIncidentModal')">&times;</button>
+      </div>
+      <form onsubmit="handleReportIncidentSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Zone</label>
+            <select id="incZone" class="select-filter form-control">
+              <option value="Dhaka DC-01">Dhaka DC-01</option>
+              <option value="Singapore SG-01">Singapore SG-01</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Affected Component</label>
+            <input type="text" id="incComponent" class="form-control" required placeholder="BGP Gateway / NVMe Storage / Power Switch">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Severity Level</label>
+            <select id="incSeverity" class="select-filter form-control">
+              <option value="WARNING">Warning</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="INFO">Information</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Incident Summary</label>
+            <input type="text" id="incTitle" class="form-control" required placeholder="Latency spike on upstream transit route">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description & Remediation Plan</label>
+            <textarea id="incDescription" class="form-control" required placeholder="NOC engineering details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-admin btn-secondary" onclick="closeModal('reportIncidentModal')">Cancel</button>
+          <button type="submit" class="btn-admin btn-danger">Dispatch Incident Alert</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       ADMIN PORTAL APPLICATION CLIENT JAVASCRIPT
+       ========================================================================= -->
+  <script>
+    // State management
+    const AdminApp = {
+      user: null,
+      token: localStorage.getItem('uct_admin_token') || null,
+      activeView: 'dashboard',
+      dashboardData: null,
+      customers: [],
+      vms: [],
+      invoices: []
+    };
+
+    // Global fetch interceptor ensuring Bearer token is attached
+    const _origFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+      const token = localStorage.getItem('uct_admin_token');
+      if (token && typeof url === 'string' && url.startsWith('/api/')) {
+        options = options || {};
+        options.headers = options.headers || {};
+        if (options.headers instanceof Headers) {
+          if (!options.headers.has('Authorization')) {
+            options.headers.set('Authorization', `Bearer ${token}`);
+          }
+        } else {
+          if (!options.headers['Authorization'] && !options.headers['authorization']) {
+            options.headers['Authorization'] = `Bearer ${token}`;
+          }
+        }
+      }
+      return _origFetch(url, options);
+    };
+
+    // Initialize application on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      startLiveClock();
+      checkAdminSession();
+      updateSubdomainDisplay();
+    });
+
+    function updateSubdomainDisplay() {
+      const host = window.location.hostname || 'admin.example.com';
+      const el = document.getElementById('currentSubdomainTag');
+      if (el) el.textContent = host;
+    }
+
+    function startLiveClock() {
+      const clockEl = document.getElementById('liveUtcClock');
+      if (!clockEl) return;
+      setInterval(() => {
+        const d = new Date();
+        clockEl.textContent = d.toISOString().slice(11, 19) + ' UTC';
+      }, 1000);
+    }
+
+    // Toast notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Modal Helpers
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    }
+
+    // Session Verification
+    async function checkAdminSession() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const adminRoles = [
+            'ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN',
+            'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR'
+          ];
+          if (data.authenticated && data.user && adminRoles.includes(data.user.role)) {
+            AdminApp.user = data.user;
+            showAdminApp();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Session check failed:', e);
+      }
+      showAuthOverlay();
+    }
+
+    function showAuthOverlay() {
+      document.getElementById('authOverlay').style.display = 'flex';
+      document.getElementById('adminAppWrapper').style.display = 'none';
+    }
+
+    function showAdminApp() {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('adminAppWrapper').style.display = 'flex';
+
+      // Update sidebar user display
+      if (AdminApp.user) {
+        document.getElementById('sidebarUserName').textContent = AdminApp.user.name || AdminApp.user.email.split('@')[0];
+        document.getElementById('sidebarUserRole').textContent = AdminApp.user.role;
+        const initials = (AdminApp.user.name || AdminApp.user.email).slice(0, 2).toUpperCase();
+        document.getElementById('sidebarUserInitials').textContent = initials;
+      }
+
+      // Initial Data Loading
+      loadDashboardData();
+    }
+
+    function fillAdminLogin(email, password, autoSubmit = false) {
+      document.getElementById('authEmail').value = email;
+      document.getElementById('authPassword').value = password;
+      if (autoSubmit) {
+        const fakeEvent = { preventDefault: () => {} };
+        handleAdminLoginSubmit(fakeEvent);
+      }
+    }
+
+    async function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying Credentials...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
+
+        const adminRoles = [
+          'ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN',
+          'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR'
+        ];
+
+        if (!adminRoles.includes(data.user.role)) {
+          throw new Error('Access denied. This account does not possess administrative privileges.');
+        }
+
+        if (data.token) {
+          localStorage.setItem('uct_admin_token', data.token);
+          AdminApp.token = data.token;
+        }
+
+        AdminApp.user = data.user;
+        showToast(`Authenticated successfully as ${data.user.role}`, 'success');
+        showAdminApp();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Authenticate & Access Portal';
+      }
+    }
+
+    async function handleAdminLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {
+        // ignore
+      }
+      localStorage.removeItem('uct_admin_token');
+      AdminApp.user = null;
+      AdminApp.token = null;
+      showToast('Session terminated successfully.', 'info');
+      showAuthOverlay();
+    }
+
+    // View Navigation Switcher
+    function switchAdminView(viewName) {
+      AdminApp.activeView = viewName;
+
+      // Update sidebar active link
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('onclick')?.includes(viewName)) {
+          link.classList.add('active');
+        }
+      });
+
+      // Switch visible view
+      document.querySelectorAll('.admin-view').forEach(view => view.classList.remove('active'));
+      const activeEl = document.getElementById(`view-${viewName}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      // Trigger view data loading
+      if (viewName === 'dashboard') loadDashboardData();
+      else if (viewName === 'customers') loadCustomers();
+      else if (viewName === 'partners') loadPartners();
+      else if (viewName === 'cloud') loadVMs();
+      else if (viewName === 'billing') loadInvoices();
+      else if (viewName === 'support') loadSupportTickets();
+      else if (viewName === 'cms') loadCMSData();
+      else if (viewName === 'security') { loadSecurityEvents(); loadActiveSessions(); loadAdminUsers(); }
+      else if (viewName === 'audit') loadFullAuditTrail();
+    }
+
+    // 1. Dashboard View Telemetry
+    async function loadDashboardData() {
+      try {
+        const [statsRes, actRes] = await Promise.all([
+          fetch('/api/admin/dashboard/stats'),
+          fetch('/api/admin/dashboard/activity')
+        ]);
+
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          document.getElementById('kpiTotalCustomers').textContent = stats.customers.total;
+          document.getElementById('kpiActiveCustBadge').textContent = `${stats.customers.active} Active`;
+          document.getElementById('kpiSuspendedCustBadge').textContent = `${stats.customers.suspended} Suspended`;
+          document.getElementById('sidebarCustCount').textContent = stats.customers.total;
+
+          document.getElementById('kpiRunningVMs').textContent = stats.cloud.runningVMs;
+          document.getElementById('kpiVMSubtext').textContent = `${stats.cloud.allocatedvCPUs} vCPUs • ${stats.cloud.allocatedRAMGB} GB RAM`;
+          document.getElementById('sidebarVMCount').textContent = stats.cloud.runningVMs;
+
+          document.getElementById('kpiMRR').textContent = `৳${stats.billing.mrrBDT.toLocaleString('en-US')}`;
+          document.getElementById('kpiPaidInvBadge').textContent = `${stats.billing.paidInvoices} Paid`;
+          document.getElementById('kpiOutstandingBadge').textContent = `৳${stats.billing.totalOutstandingBDT.toLocaleString('en-US')} Unpaid`;
+
+          document.getElementById('kpiOpenTickets').textContent = stats.support.openTickets;
+          document.getElementById('kpiCriticalTickets').textContent = `${stats.support.criticalTickets} Critical`;
+          document.getElementById('kpiInProgressTickets').textContent = `${stats.support.inProgressTickets} in progress`;
+          document.getElementById('sidebarTicketAlert').textContent = stats.support.openTickets;
+
+          document.getElementById('sidebarPartnerCount').textContent = stats.partners.total;
+        }
+
+        if (actRes.ok) {
+          const act = await actRes.json();
+          renderDashboardActivityTable(act.securityEvents);
+        }
+      } catch (e) {
+        console.error('Error loading dashboard:', e);
+      }
+    }
+
+    function renderDashboardActivityTable(events) {
+      const tbody = document.getElementById('dashboardActivityTableBody');
+      if (!tbody) return;
+      if (!events || events.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem;">No recent security activity logged.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = events.map(ev => `
+        <tr>
+          <td class="mono">${ev.timestamp.replace('T', ' ').slice(0, 19)}</td>
+          <td><span class="badge ${ev.event_type.includes('FAIL') ? 'badge-danger' : 'badge-info'}">${ev.event_type}</span></td>
+          <td class="mono" style="color: #fff;">${ev.actor_email || 'anonymous'}</td>
+          <td><span class="badge badge-purple">${ev.actor_role || 'UNKNOWN'}</span></td>
+          <td><span class="badge ${ev.outcome === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${ev.outcome}</span></td>
+          <td class="mono">${ev.ip_address || '127.0.0.1'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // 2. Customer Management
+    let debounceCustTimer = null;
+    function debounceLoadCustomers() {
+      clearTimeout(debounceCustTimer);
+      debounceCustTimer = setTimeout(loadCustomers, 300);
+    }
+
+    async function loadCustomers() {
+      const search = document.getElementById('custSearchInput')?.value || '';
+      const status = document.getElementById('custStatusFilter')?.value || 'ALL';
+
+      const tbody = document.getElementById('customersTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Searching customers...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/customers?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`);
+        if (!res.ok) throw new Error('Failed to load customers');
+        const data = await res.json();
+
+        if (data.customers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No customer accounts found matching criteria.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.customers.map(c => `
+          <tr>
+            <td>
+              <div class="table-entity-title">
+                ${c.company_name || `${c.first_name} ${c.last_name}`}
+                <span class="table-entity-sub">${c.first_name} ${c.last_name} • ${c.city}, ${c.country}</span>
+              </div>
+            </td>
+            <td class="mono" style="color: #fff;">${c.email}</td>
+            <td>
+              <span class="badge ${c.status === 'ACTIVE' ? 'badge-success' : (c.status === 'SUSPENDED' ? 'badge-danger' : 'badge-warning')}">
+                ${c.status}
+              </span>
+            </td>
+            <td><strong>${c.active_services_count || 0} Instances</strong></td>
+            <td class="mono" style="color: var(--adm-teal);">৳${(c.total_spend_bdt || 0).toLocaleString('en-US')}</td>
+            <td>${c.partner_company_name ? `<span class="badge badge-purple">${c.partner_company_name}</span>` : '<span style="color: var(--adm-text-subtle);">Direct Cloud Client</span>'}</td>
+            <td>
+              <div class="table-actions">
+                <button class="btn-action-sm" onclick="inspectCustomer('${c.id}')">Inspect</button>
+                <button class="btn-action-sm ${c.status === 'ACTIVE' ? 'danger' : ''}" onclick="promptCustomerStatus('${c.id}', '${c.status}', '${c.company_name || c.email}')">
+                  ${c.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+                </button>
+                <button class="btn-action-sm" onclick="triggerCustomerPasswordReset('${c.id}', '${c.email}')">Reset Pass</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function inspectCustomer(custId) {
+      openModal('customerDetailModal');
+      const content = document.getElementById('custModalContent');
+      content.innerHTML = '<div style="padding: 2rem; text-align: center;">Fetching customer records...</div>';
+
+      try {
+        const res = await fetch(`/api/admin/customers/${custId}`);
+        if (!res.ok) throw new Error('Failed to load customer profile');
+        const data = await res.json();
+        const c = data.customer;
+
+        document.getElementById('custModalTitle').textContent = `Customer: ${c.company_name || `${c.first_name} ${c.last_name}`}`;
+
+        content.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--adm-text-subtle);">Client Name</div>
+              <strong style="color: #fff;">${c.first_name} ${c.last_name}</strong>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--adm-text-subtle);">Email Address</div>
+              <strong class="mono" style="color: #fff;">${c.email}</strong>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--adm-text-subtle);">Phone & City</div>
+              <div>${c.phone || 'N/A'} • ${c.city}, ${c.country}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--adm-text-subtle);">Account Status</div>
+              <div>
+                <span class="badge ${c.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${c.status}</span>
+                ${c.suspension_reason ? `<span style="font-size: 0.75rem; color: #fb7185; margin-left: 0.5rem;">Reason: ${c.suspension_reason}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <h4 style="margin-bottom: 0.75rem; color: #fff;">Active Cloud Instances (${data.services.length})</h4>
+          <div style="margin-bottom: 1.5rem;">
+            ${data.services.length === 0 ? '<p style="color: var(--adm-text-subtle);">No active services.</p>' : `
+              <table class="data-table">
+                <thead><tr><th>Instance</th><th>Plan</th><th>IP</th><th>vCPU/RAM</th><th>Status</th></tr></thead>
+                <tbody>
+                  ${data.services.map(s => `
+                    <tr>
+                      <td style="color: #fff;">${s.service_name}</td>
+                      <td><span class="badge badge-info">${s.plan_code}</span></td>
+                      <td class="mono">${s.ip_address || 'DHCP'}</td>
+                      <td>${s.vcpu} vCPU / ${s.ram_mb} MB</td>
+                      <td><span class="badge ${s.status === 'RUNNING' ? 'badge-success' : 'badge-warning'}">${s.status}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `}
+          </div>
+
+          <h4 style="margin-bottom: 0.75rem; color: #fff;">Recent Invoices (${data.invoices.length})</h4>
+          <div>
+            ${data.invoices.length === 0 ? '<p style="color: var(--adm-text-subtle);">No invoices found.</p>' : `
+              <table class="data-table">
+                <thead><tr><th>Invoice #</th><th>Due Date</th><th>Total</th><th>Status</th></tr></thead>
+                <tbody>
+                  ${data.invoices.map(inv => `
+                    <tr>
+                      <td class="mono" style="color: #fff;">${inv.invoice_number}</td>
+                      <td>${inv.due_date}</td>
+                      <td class="mono">৳${inv.total.toLocaleString('en-US')}</td>
+                      <td><span class="badge ${inv.status === 'PAID' ? 'badge-success' : 'badge-warning'}">${inv.status}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `}
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<div style="padding: 2rem; color: #fb7185;">Error: ${err.message}</div>`;
+      }
+    }
+
+    function promptCustomerStatus(custId, currentStatus, name) {
+      const targetStatus = currentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+      document.getElementById('suspendCustomerId').value = custId;
+      document.getElementById('suspendTargetStatus').value = targetStatus;
+      document.getElementById('suspendReasonInput').value = '';
+
+      document.getElementById('suspendModalTitle').textContent = targetStatus === 'SUSPENDED' ? 'Suspend Customer Account' : 'Reactivate Customer Account';
+      document.getElementById('suspendModalNotice').textContent = targetStatus === 'SUSPENDED' 
+        ? `Are you sure you want to suspend "${name}"? Active virtual machines will be paused and portal access restricted.`
+        : `Reactivate "${name}" account and restore compute instances?`;
+
+      document.getElementById('suspendModalConfirmBtn').textContent = targetStatus === 'SUSPENDED' ? 'Confirm Suspension' : 'Confirm Reactivation';
+      document.getElementById('suspendModalConfirmBtn').className = targetStatus === 'SUSPENDED' ? 'btn-admin btn-danger' : 'btn-admin btn-primary';
+
+      openModal('suspendCustomerModal');
+    }
+
+    async function handleCustomerStatusSubmit(e) {
+      e.preventDefault();
+      const custId = document.getElementById('suspendCustomerId').value;
+      const status = document.getElementById('suspendTargetStatus').value;
+      const reason = document.getElementById('suspendReasonInput').value.trim();
+
+      try {
+        const res = await fetch(`/api/admin/customers/${custId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, reason })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Status update failed');
+
+        closeModal('suspendCustomerModal');
+        showToast(data.message, 'success');
+        loadCustomers();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function triggerCustomerPasswordReset(custId, email) {
+      if (!confirm(`Trigger a secure one-time password reset workflow for ${email}? A secure token will be generated without exposing raw passwords.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/admin/customers/${custId}/reset-password`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to trigger password reset');
+        alert(`Password Reset Token Generated for ${email}:\n\nToken: ${data.resetToken}\nExpires: ${data.expiresAt}\n\nThis token can now be used securely by customer authentication services.`);
+        showToast('Password reset workflow executed successfully.', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function openCreateCustomerModal() {
+      openModal('createCustomerModal');
+    }
+
+    async function handleCreateCustomerSubmit(e) {
+      e.preventDefault();
+      const body = {
+        firstName: document.getElementById('newCustFirstName').value,
+        lastName: document.getElementById('newCustLastName').value,
+        companyName: document.getElementById('newCustCompany').value,
+        email: document.getElementById('newCustEmail').value,
+        phone: document.getElementById('newCustPhone').value
+      };
+      try {
+        const res = await fetch('/api/admin/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Creation failed');
+        closeModal('createCustomerModal');
+        showToast('Customer account provisioned successfully.', 'success');
+        loadCustomers();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 3. Partner Management
+    async function loadPartners() {
+      const tbody = document.getElementById('partnersTableBody');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading partners...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/admin/partners');
+        if (!res.ok) throw new Error('Failed to load partners');
+        const data = await res.json();
+
+        tbody.innerHTML = data.partners.map(p => `
+          <tr>
+            <td>
+              <div class="table-entity-title">
+                ${p.company_name}
+                <span class="table-entity-sub">${p.email} • ${p.country}</span>
+              </div>
+            </td>
+            <td>${p.contact_name}</td>
+            <td>
+              <span class="badge badge-purple">${p.tier_name}</span>
+              <strong style="margin-left: 0.4rem; color: var(--adm-teal);">${Math.round(p.effective_discount_rate * 100)}% Margin</strong>
+            </td>
+            <td class="mono">৳${p.monthly_eligible_spend.toLocaleString('en-US')}</td>
+            <td><span class="badge ${p.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${p.status}</span></td>
+            <td>
+              <a href="/admin/partners" class="btn-action-sm" target="_blank">Manage Partner</a>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 4. Cloud Infrastructure & VM NOC
+    let debounceVMsTimer = null;
+    function debounceLoadVMs() {
+      clearTimeout(debounceVMsTimer);
+      debounceVMsTimer = setTimeout(loadVMs, 300);
+    }
+
+    async function loadVMs() {
+      const search = document.getElementById('vmSearchInput')?.value || '';
+      const status = document.getElementById('vmStatusFilter')?.value || 'ALL';
+      const zone = document.getElementById('vmZoneFilter')?.value || 'ALL';
+
+      const tbody = document.getElementById('vmsTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Querying hypervisors...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/cloud/vms?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}&zone=${encodeURIComponent(zone)}`);
+        if (!res.ok) throw new Error('Failed to query VMs');
+        const data = await res.json();
+
+        if (data.vms.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No virtual instances found.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.vms.map(vm => `
+          <tr>
+            <td>
+              <div class="table-entity-title">
+                ${vm.service_name}
+                <span class="table-entity-sub mono">${vm.cloudstack_vm_id || vm.id}</span>
+              </div>
+            </td>
+            <td>${vm.client_name || 'Enterprise'}</td>
+            <td><span class="badge badge-info">${vm.zone}</span></td>
+            <td class="mono" style="color: #fff;">${vm.ip_address || '103.145.22.x'}</td>
+            <td>${vm.vcpu} vCPU / ${Math.round(vm.ram_mb / 1024)}GB / ${vm.disk_gb}GB</td>
+            <td><span class="badge ${vm.status === 'RUNNING' ? 'badge-success' : (vm.status === 'STOPPED' ? 'badge-warning' : 'badge-danger')}">${vm.status}</span></td>
+            <td>
+              <div class="table-actions">
+                ${vm.status === 'RUNNING' ? `
+                  <button class="btn-action-sm danger" onclick="promptVMAction('${vm.id}', 'stop', '${vm.service_name}')">Stop</button>
+                  <button class="btn-action-sm" onclick="promptVMAction('${vm.id}', 'reboot', '${vm.service_name}')">Reboot</button>
+                ` : `
+                  <button class="btn-action-sm" onclick="promptVMAction('${vm.id}', 'start', '${vm.service_name}')">Start</button>
+                `}
+                <button class="btn-action-sm danger" onclick="promptVMAction('${vm.id}', 'terminate', '${vm.service_name}')">Terminate</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function promptVMAction(vmId, action, serviceName) {
+      document.getElementById('vmActionId').value = vmId;
+      document.getElementById('vmActionType').value = action;
+      document.getElementById('vmReasonInput').value = '';
+
+      document.getElementById('vmActionModalTitle').textContent = `Compute Operation: ${action.toUpperCase()} Instance`;
+      document.getElementById('vmActionNotice').textContent = `Are you sure you want to execute '${action}' on "${serviceName}"?`;
+
+      const reasonGroup = document.getElementById('vmReasonGroup');
+      if (['stop', 'terminate'].includes(action)) {
+        reasonGroup.style.display = 'block';
+        document.getElementById('vmReasonInput').setAttribute('required', 'true');
+      } else {
+        reasonGroup.style.display = 'none';
+        document.getElementById('vmReasonInput').removeAttribute('required');
+      }
+
+      openModal('vmActionModal');
+    }
+
+    async function handleVMActionSubmit(e) {
+      e.preventDefault();
+      const vmId = document.getElementById('vmActionId').value;
+      const action = document.getElementById('vmActionType').value;
+      const reason = document.getElementById('vmReasonInput').value.trim();
+
+      try {
+        const res = await fetch(`/api/admin/cloud/vms/${vmId}/action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, reason })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Operation failed');
+
+        closeModal('vmActionModal');
+        showToast(data.message, 'success');
+        loadVMs();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function openReportIncidentModal() {
+      openModal('reportIncidentModal');
+    }
+
+    async function handleReportIncidentSubmit(e) {
+      e.preventDefault();
+      const body = {
+        zone: document.getElementById('incZone').value,
+        component: document.getElementById('incComponent').value,
+        severity: document.getElementById('incSeverity').value,
+        title: document.getElementById('incTitle').value,
+        description: document.getElementById('incDescription').value
+      };
+      try {
+        const res = await fetch('/api/admin/cloud/incidents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to log incident');
+        closeModal('reportIncidentModal');
+        showToast('NOC incident registered and dispatched.', 'warning');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 5. Billing & Invoices
+    async function loadInvoices() {
+      const status = document.getElementById('invStatusFilter')?.value || 'ALL';
+      const tbody = document.getElementById('invoicesTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading invoices...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/billing/invoices?status=${encodeURIComponent(status)}`);
+        if (!res.ok) throw new Error('Failed to load invoices');
+        const data = await res.json();
+
+        if (data.invoices.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No invoices found.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.invoices.map(inv => `
+          <tr>
+            <td class="mono" style="color: #fff;">${inv.invoice_number}</td>
+            <td>
+              <div class="table-entity-title">
+                ${inv.customer_company || inv.customer_name}
+                <span class="table-entity-sub">${inv.customer_email}</span>
+              </div>
+            </td>
+            <td class="mono" style="color: var(--adm-teal); font-weight: 700;">৳${inv.total.toLocaleString('en-US')}</td>
+            <td>
+              <span class="badge ${inv.status === 'PAID' ? 'badge-success' : (inv.status === 'REFUNDED' ? 'badge-danger' : 'badge-warning')}">
+                ${inv.status}
+              </span>
+            </td>
+            <td>${inv.due_date}</td>
+            <td>${inv.payment_method || '<span style="color: var(--adm-text-subtle);">Awaiting Payment</span>'}</td>
+            <td>
+              ${inv.status === 'PAID' ? `
+                <button class="btn-action-sm danger" onclick="promptRefund('${inv.id}', '${inv.invoice_number}', ${inv.total})">Refund</button>
+              ` : '<span style="color: var(--adm-text-subtle);">-</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function promptRefund(invId, invNumber, amount) {
+      document.getElementById('refundInvoiceId').value = invId;
+      document.getElementById('refundReasonInput').value = '';
+      document.getElementById('refundNotice').textContent = `Are you sure you want to approve a financial refund for Invoice ${invNumber} in the amount of ৳${amount.toLocaleString('en-US')}?`;
+      openModal('refundInvoiceModal');
+    }
+
+    async function handleRefundSubmit(e) {
+      e.preventDefault();
+      const invoiceId = document.getElementById('refundInvoiceId').value;
+      const reason = document.getElementById('refundReasonInput').value.trim();
+
+      try {
+        const res = await fetch(`/api/admin/billing/invoices/${invoiceId}/refund`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Refund approval failed');
+        closeModal('refundInvoiceModal');
+        showToast(data.message, 'success');
+        loadInvoices();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 6. Support Tickets
+    async function loadSupportTickets() {
+      const status = document.getElementById('ticketStatusFilter')?.value || 'ALL';
+      const tbody = document.getElementById('ticketsTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Fetching tickets...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets?status=${encodeURIComponent(status)}`);
+        if (!res.ok) throw new Error('Failed to load tickets');
+        const data = await res.json();
+
+        if (data.tickets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No support tickets in queue.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.tickets.map(t => `
+          <tr>
+            <td class="mono" style="color: #fff;">${t.ticket_number}</td>
+            <td>
+              <div class="table-entity-title">
+                ${t.subject}
+                <span class="table-entity-sub">${t.created_at.slice(0, 16)}</span>
+              </div>
+            </td>
+            <td>${t.customer_company || t.requester_name}</td>
+            <td><span class="badge badge-info">${t.department}</span></td>
+            <td>
+              <span class="badge ${t.priority === 'CRITICAL' ? 'badge-danger' : (t.priority === 'HIGH' ? 'badge-warning' : 'badge-info')}">
+                ${t.priority}
+              </span>
+            </td>
+            <td>
+              <span class="badge ${t.status === 'OPEN' ? 'badge-danger' : (t.status === 'IN_PROGRESS' ? 'badge-warning' : 'badge-success')}">
+                ${t.status}
+              </span>
+            </td>
+            <td>
+              <button class="btn-action-sm" onclick="inspectTicket('${t.id}')">View & Reply</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function inspectTicket(ticketId) {
+      openModal('ticketDetailModal');
+      const content = document.getElementById('ticketModalContent');
+      content.innerHTML = '<div style="padding: 2rem; text-align: center;">Loading ticket thread...</div>';
+      document.getElementById('replyTicketId').value = ticketId;
+      document.getElementById('ticketReplyMessage').value = '';
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${ticketId}`);
+        if (!res.ok) throw new Error('Failed to load ticket');
+        const data = await res.json();
+        const t = data.ticket;
+
+        document.getElementById('ticketModalTitle').textContent = `[${t.ticket_number}] ${t.subject}`;
+        content.innerHTML = `
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <strong>Requester: ${t.requester_name} &lt;${t.requester_email}&gt;</strong>
+              <span class="badge badge-warning">${t.priority}</span>
+            </div>
+            <p style="color: #fff; font-size: 0.9rem;">${t.message}</p>
+          </div>
+
+          <h5 style="margin-bottom: 0.75rem; color: #fff;">Replies & Conversation History (${data.replies.length})</h5>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto;">
+            ${data.replies.length === 0 ? '<p style="color: var(--adm-text-subtle);">No staff replies yet.</p>' : data.replies.map(r => `
+              <div style="padding: 0.85rem; border-radius: 8px; background: rgba(93, 224, 196, 0.05); border: 1px solid rgba(93, 224, 196, 0.2);">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.35rem;">
+                  <strong style="color: var(--adm-teal);">${r.author_name}</strong>
+                  <span style="color: var(--adm-text-subtle);">${r.created_at.slice(0, 16)}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #fff;">${r.message}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<div style="padding: 2rem; color: #fb7185;">Error: ${err.message}</div>`;
+      }
+    }
+
+    async function handleTicketReplySubmit(e) {
+      e.preventDefault();
+      const ticketId = document.getElementById('replyTicketId').value;
+      const message = document.getElementById('ticketReplyMessage').value.trim();
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${ticketId}/reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to send reply');
+        showToast('Official reply sent to client.', 'success');
+        inspectTicket(ticketId);
+        loadSupportTickets();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 7. Public Website CMS
+    async function loadCMSData() {
+      const annTbody = document.getElementById('cmsAnnouncementsTableBody');
+      const plansTbody = document.getElementById('cmsPlansTableBody');
+
+      try {
+        const [annRes, plansRes] = await Promise.all([
+          fetch('/api/admin/cms/announcements'),
+          fetch('/api/admin/cms/plans')
+        ]);
+
+        if (annRes.ok) {
+          const annData = await annRes.json();
+          annTbody.innerHTML = annData.announcements.map(a => `
+            <tr>
+              <td>
+                <div class="table-entity-title">
+                  ${a.title}
+                  <span class="table-entity-sub">${a.message.slice(0, 70)}...</span>
+                </div>
+              </td>
+              <td><span class="badge badge-info">${a.type}</span></td>
+              <td><span class="badge ${a.is_active ? 'badge-success' : 'badge-danger'}">${a.is_active ? 'Active' : 'Draft'}</span></td>
+              <td>${a.starts_at || 'Immediate'} to ${a.ends_at || 'Indefinite'}</td>
+              <td>
+                <button class="btn-action-sm danger" onclick="deleteAnnouncement('${a.id}')">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        if (plansRes.ok) {
+          const plansData = await plansRes.json();
+          plansTbody.innerHTML = plansData.plans.map(p => `
+            <tr>
+              <td>
+                <div class="table-entity-title">
+                  ${p.name}
+                  <span class="table-entity-sub mono">${p.code}</span>
+                </div>
+              </td>
+              <td><span class="badge badge-purple">${p.category}</span></td>
+              <td class="mono" style="color: var(--adm-teal); font-weight: 700;">৳${p.price_bdt.toLocaleString('en-US')}</td>
+              <td class="mono">$${p.price_usd}</td>
+              <td>${p.vcpu ? `${p.vcpu} vCPU / ${p.ram_gb}GB / ${p.storage_gb}GB` : '-'}</td>
+              <td><span class="badge ${p.is_available ? 'badge-success' : 'badge-danger'}">${p.is_available ? 'Published' : 'Unavailable'}</span></td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('CMS load error:', err);
+      }
+    }
+
+    function openCreateAnnouncementModal() {
+      openModal('createAnnouncementModal');
+    }
+
+    async function handleCreateAnnouncementSubmit(e) {
+      e.preventDefault();
+      const body = {
+        title: document.getElementById('newAnnTitle').value,
+        type: document.getElementById('newAnnType').value,
+        message: document.getElementById('newAnnMessage').value
+      };
+      try {
+        const res = await fetch('/api/admin/cms/announcements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Announcement creation failed');
+        closeModal('createAnnouncementModal');
+        showToast('Announcement published to public website.', 'success');
+        loadCMSData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteAnnouncement(annId) {
+      if (!confirm('Are you sure you want to remove this announcement from the public website?')) return;
+      try {
+        const res = await fetch(`/api/admin/cms/announcements/${annId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Deletion failed');
+        showToast('Announcement removed.', 'info');
+        loadCMSData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 8. Security & Access Governance
+    async function loadSecurityEvents() {
+      // already partially integrated
+    }
+
+    async function loadActiveSessions() {
+      const tbody = document.getElementById('activeSessionsTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading active sessions...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/admin/security/sessions');
+        if (!res.ok) throw new Error('Failed to load active sessions');
+        const data = await res.json();
+
+        tbody.innerHTML = data.sessions.map(s => `
+          <tr>
+            <td class="mono" style="color: #fff;">${s.sessionId}</td>
+            <td>
+              <div class="table-entity-title">
+                ${s.name || s.email}
+                <span class="table-entity-sub">${s.email}</span>
+              </div>
+            </td>
+            <td><span class="badge badge-purple">${s.role}</span></td>
+            <td class="mono">${s.ipAddress}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.userAgent}</td>
+            <td class="mono">${s.expiresAt.replace('T', ' ').slice(0, 19)}</td>
+            <td>
+              <button class="btn-action-sm danger" onclick="revokeSession('${s.token}')">Revoke</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function revokeSession(token) {
+      if (!confirm('Immediately invalidate and terminate this session? The administrator will be logged out instantly.')) return;
+      try {
+        const res = await fetch('/api/admin/security/sessions/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Revocation failed');
+        showToast('Session invalidated.', 'success');
+        loadActiveSessions();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadAdminUsers() {
+      const tbody = document.getElementById('adminUsersTableBody');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading admin users...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/admin/security/admins');
+        if (!res.ok) throw new Error('Failed to load administrators');
+        const data = await res.json();
+
+        tbody.innerHTML = data.admins.map(u => `
+          <tr>
+            <td style="color: #fff; font-weight: 600;">${u.name || u.email.split('@')[0]}</td>
+            <td class="mono">${u.email}</td>
+            <td><span class="badge badge-purple">${u.role}</span></td>
+            <td><span class="badge ${u.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${u.status}</span></td>
+            <td>${u.last_login_at ? u.last_login_at.slice(0, 16) : 'Never'}</td>
+            <td>
+              <button class="btn-action-sm" onclick="promptChangeAdminRole('${u.id}', '${u.role}', '${u.email}')">Change Role</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function openCreateAdminUserModal() {
+      openModal('createAdminUserModal');
+    }
+
+    async function handleCreateAdminUserSubmit(e) {
+      e.preventDefault();
+      const body = {
+        name: document.getElementById('newAdminName').value,
+        email: document.getElementById('newAdminEmail').value,
+        role: document.getElementById('newAdminRole').value,
+        password: document.getElementById('newAdminPassword').value
+      };
+      try {
+        const res = await fetch('/api/admin/security/admins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Creation failed');
+        closeModal('createAdminUserModal');
+        showToast('Administrative user created successfully.', 'success');
+        loadAdminUsers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function promptChangeAdminRole(userId, currentRole, email) {
+      const newRole = prompt(`Assign new role to ${email}:\nOptions: SUPER_ADMIN, SECURITY_ADMIN, INFRASTRUCTURE_ADMIN, FINANCE_ADMIN, PARTNER_MANAGER, SUPPORT_ADMIN, CONTENT_ADMIN, AUDITOR`, currentRole);
+      if (!newRole || newRole === currentRole) return;
+
+      try {
+        const res = await fetch(`/api/admin/security/admins/${userId}/role`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to update role');
+        showToast(data.message, 'success');
+        loadAdminUsers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // 9. Centralized Audit Trail View
+    async function loadFullAuditTrail() {
+      const tbody = document.getElementById('fullAuditTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading full audit trail...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/admin/audit-logs');
+        if (!res.ok) throw new Error('Failed to load audit logs');
+        const data = await res.json();
+
+        tbody.innerHTML = data.logs.map(l => `
+          <tr>
+            <td class="mono">${l.created_at.slice(0, 19)}</td>
+            <td class="mono" style="color: #fff;">${l.actor_email || 'anonymous'}</td>
+            <td><strong style="color: var(--adm-teal);">${l.action}</strong></td>
+            <td><span class="badge badge-info">${l.entity_type}</span></td>
+            <td><span class="badge badge-success">SUCCESS</span></td>
+            <td class="mono">${l.ip_address || '127.0.0.1'}</td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem;" title="${encodeURIComponent(l.details_json || '')}">
+              ${l.details_json || '-'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

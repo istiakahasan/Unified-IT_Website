@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "start": "node scripts/serve.js",
     "test": "node --test tests/partner-system.test.mjs",
+    "test:admin": "node --test tests/admin-portal.test.mjs",
+    "test:all": "node --test tests/*.test.mjs",
     "update:prices": "node scripts/update-digicert-prices.mjs && node scripts/update-comodo-prices.mjs",
     "update:digicert": "node scripts/update-digicert-prices.mjs",
     "update:comodo": "node scripts/update-comodo-prices.mjs"
@@ -24,6 +26,7 @@
   "author": "Unified IT",
   "license": "UNLICENSED",
   "devDependencies": {
+    "agentation": "^3.1.2",
     "vite": "^5.4.0"
   }
 }

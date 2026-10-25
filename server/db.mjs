@@ -34,8 +34,13 @@ export function initDatabase(dbPath = DB_FILE) {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       salt TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('ADMIN', 'PARTNER')),
+      role TEXT NOT NULL CHECK(role IN ('ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN', 'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR', 'PARTNER', 'CUSTOMER')),
       partner_id TEXT,
+      name TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'ACTIVE',
+      last_login_at TEXT,
+      failed_login_attempts INTEGER DEFAULT 0,
+      locked_until TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -332,6 +337,220 @@ export function initDatabase(dbPath = DB_FILE) {
     CREATE INDEX IF NOT EXISTS idx_reward_tx_status ON partner_reward_transactions(status);
     CREATE INDEX IF NOT EXISTS idx_partner_sales_partner ON partner_sales(partner_id);
     CREATE INDEX IF NOT EXISTS idx_partner_sales_order ON partner_sales(order_number);
+
+    -- =========================================================================
+    -- CENTRALIZED ADMIN PORTAL SCHEMA (Customers, Billing, Support, CMS, Security)
+    -- =========================================================================
+
+    CREATE TABLE IF NOT EXISTS customers (
+      id TEXT PRIMARY KEY,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      company_name TEXT,
+      email TEXT UNIQUE NOT NULL,
+      phone TEXT,
+      country TEXT NOT NULL DEFAULT 'Bangladesh',
+      city TEXT NOT NULL DEFAULT 'Dhaka',
+      address TEXT,
+      status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'SUSPENDED', 'PENDING')),
+      suspension_reason TEXT,
+      suspended_by TEXT,
+      suspended_at TEXT,
+      whmcs_client_id INTEGER,
+      partner_id TEXT,
+      password_reset_token TEXT,
+      password_reset_expires TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(partner_id) REFERENCES partners(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_services (
+      id TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL,
+      partner_id TEXT,
+      service_type TEXT NOT NULL CHECK(service_type IN ('VPS', 'VDS', 'STORAGE', 'HOSTING', 'SSL', 'DOMAIN')),
+      service_name TEXT NOT NULL,
+      plan_code TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'RUNNING' CHECK(status IN ('RUNNING', 'STOPPED', 'PROVISIONING', 'SUSPENDED', 'TERMINATED')),
+      cloudstack_vm_id TEXT,
+      zone TEXT NOT NULL DEFAULT 'Dhaka DC-01',
+      ip_address TEXT,
+      vcpu INTEGER NOT NULL DEFAULT 2,
+      ram_mb INTEGER NOT NULL DEFAULT 4096,
+      disk_gb INTEGER NOT NULL DEFAULT 80,
+      monthly_price REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'BDT',
+      billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+      next_due_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+      FOREIGN KEY(partner_id) REFERENCES partners(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS invoices (
+      id TEXT PRIMARY KEY,
+      invoice_number TEXT UNIQUE NOT NULL,
+      customer_id TEXT NOT NULL,
+      partner_id TEXT,
+      subtotal REAL NOT NULL,
+      tax REAL NOT NULL DEFAULT 0,
+      total REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'BDT',
+      status TEXT NOT NULL DEFAULT 'PAID' CHECK(status IN ('PAID', 'UNPAID', 'REFUNDED', 'CANCELLED', 'OVERDUE')),
+      due_date TEXT NOT NULL,
+      paid_at TEXT,
+      payment_method TEXT,
+      transaction_ref TEXT,
+      refund_reason TEXT,
+      refunded_by TEXT,
+      refunded_at TEXT,
+      items_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      order_number TEXT UNIQUE NOT NULL,
+      customer_id TEXT NOT NULL,
+      partner_id TEXT,
+      status TEXT NOT NULL DEFAULT 'COMPLETED' CHECK(status IN ('PENDING', 'COMPLETED', 'CANCELLED', 'REFUNDED')),
+      total_amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'BDT',
+      items_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS support_tickets (
+      id TEXT PRIMARY KEY,
+      ticket_number TEXT UNIQUE NOT NULL,
+      customer_id TEXT,
+      partner_id TEXT,
+      requester_email TEXT NOT NULL,
+      requester_name TEXT NOT NULL,
+      department TEXT NOT NULL CHECK(department IN ('TECHNICAL', 'BILLING', 'SALES', 'INFRASTRUCTURE')),
+      priority TEXT NOT NULL CHECK(priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+      status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN', 'IN_PROGRESS', 'ANSWERED', 'RESOLVED', 'CLOSED')),
+      subject TEXT NOT NULL,
+      message TEXT NOT NULL,
+      assigned_to TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_replies (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT NOT NULL,
+      author_type TEXT NOT NULL CHECK(author_type IN ('CUSTOMER', 'PARTNER', 'STAFF')),
+      author_name TEXT NOT NULL,
+      author_email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS security_events (
+      id TEXT PRIMARY KEY,
+      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      event_type TEXT NOT NULL,
+      actor_id TEXT,
+      actor_email TEXT,
+      actor_role TEXT,
+      target_resource TEXT,
+      target_id TEXT,
+      action TEXT NOT NULL,
+      outcome TEXT NOT NULL DEFAULT 'SUCCESS' CHECK(outcome IN ('SUCCESS', 'FAILURE', 'BLOCKED')),
+      ip_address TEXT,
+      user_agent TEXT,
+      details_json TEXT,
+      correlation_id TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS website_announcements (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('BANNER', 'MAINTENANCE', 'NEWS', 'PROMOTION')),
+      message TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      starts_at TEXT,
+      ends_at TEXT,
+      created_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS website_plans (
+      id TEXT PRIMARY KEY,
+      category TEXT NOT NULL CHECK(category IN ('VPS', 'VDS', 'STORAGE', 'HOSTING', 'EMAIL', 'SSL')),
+      name TEXT NOT NULL,
+      code TEXT UNIQUE NOT NULL,
+      price_bdt REAL NOT NULL,
+      price_usd REAL NOT NULL,
+      vcpu INTEGER,
+      ram_gb INTEGER,
+      storage_gb INTEGER,
+      bandwidth_tb REAL,
+      features_json TEXT,
+      is_popular INTEGER DEFAULT 0,
+      is_available INTEGER DEFAULT 1,
+      updated_by TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS website_seo (
+      page_key TEXT PRIMARY KEY,
+      meta_title TEXT NOT NULL,
+      meta_description TEXT NOT NULL,
+      canonical_url TEXT NOT NULL,
+      og_title TEXT,
+      og_description TEXT,
+      updated_by TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS website_coupons (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      discount_type TEXT NOT NULL CHECK(discount_type IN ('PERCENTAGE', 'FIXED')),
+      discount_value REAL NOT NULL,
+      max_uses INTEGER DEFAULT 100,
+      used_count INTEGER DEFAULT 0,
+      valid_from TEXT,
+      valid_until TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS infrastructure_incidents (
+      id TEXT PRIMARY KEY,
+      zone TEXT NOT NULL,
+      cluster TEXT NOT NULL,
+      component TEXT NOT NULL,
+      severity TEXT NOT NULL CHECK(severity IN ('INFO', 'WARNING', 'CRITICAL')),
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'INVESTIGATING' CHECK(status IN ('INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT,
+      created_by TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+    CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+    CREATE INDEX IF NOT EXISTS idx_customers_partner ON customers(partner_id);
+    CREATE INDEX IF NOT EXISTS idx_cust_services_cust ON customer_services(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_cust_services_status ON customer_services(status);
+    CREATE INDEX IF NOT EXISTS idx_invoices_cust ON invoices(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+    CREATE INDEX IF NOT EXISTS idx_orders_cust ON orders(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+    CREATE INDEX IF NOT EXISTS idx_security_events_time ON security_events(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_security_events_actor ON security_events(actor_email);
+    CREATE INDEX IF NOT EXISTS idx_security_events_type ON security_events(event_type);
   `);
 
   // Migration: Ensure trade_license and nid_document columns exist in existing databases
@@ -354,8 +573,38 @@ export function initDatabase(dbPath = DB_FILE) {
     console.warn('[DB Migration Warning for partner_applications]', migErr.message);
   }
 
+  // Migration: Ensure users table check constraint supports granular admin roles
+  try {
+    const tableSqlRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get();
+    if (tableSqlRow && tableSqlRow.sql && !tableSqlRow.sql.includes('SUPER_ADMIN')) {
+      db.exec(`
+        CREATE TABLE users_migrated (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          salt TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN', 'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR', 'PARTNER', 'CUSTOMER')),
+          partner_id TEXT,
+          name TEXT DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'ACTIVE',
+          last_login_at TEXT,
+          failed_login_attempts INTEGER DEFAULT 0,
+          locked_until TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO users_migrated (id, email, password_hash, salt, role, partner_id, created_at)
+          SELECT id, email, password_hash, salt, role, partner_id, created_at FROM users;
+        DROP TABLE users;
+        ALTER TABLE users_migrated RENAME TO users;
+      `);
+    }
+  } catch (userMigErr) {
+    console.warn('[DB User Migration Warning]', userMigErr.message);
+  }
+
   seedDefaultData(db);
   seedRewardSystemData(db);
+  seedAdminPortalData(db);
   return db;
 }
 
@@ -901,6 +1150,246 @@ function seedRewardSystemData(db) {
       Math.round(pendingPoints * 100) / 100,
       demoPartnerId
     );
+  }
+}
+
+/**
+ * Seeds Centralized Admin Portal with real data:
+ * - Granular Administrator Roles (Super Admin, Security, Infrastructure, Finance, Partner, Support, Content, Auditor)
+ * - Customer Accounts (Directory, contacts, statuses, linked WHMCS IDs)
+ * - Customer Cloud Instances & Services (IPs, resource limits, statuses)
+ * - Billing Invoices & Orders (Paid, unpaid, overdue, refund workflows)
+ * - Support Tickets & Discussion Threads
+ * - Public Website CMS (Announcements, Cloud Plans, SEO Meta, Coupons)
+ * - Infrastructure Incidents & Security Event Telemetry
+ */
+export function seedAdminPortalData(db) {
+  // 1. Seed Granular Admin Users
+  const adminUsers = [
+    { id: 'usr-adm-super', email: 'superadmin@unified.cloud', role: 'SUPER_ADMIN', name: 'Zahirul Islam', pass: 'SuperAdmin2026!' },
+    { id: 'usr-adm-sec', email: 'security@unified.cloud', role: 'SECURITY_ADMIN', name: 'Nadia Sharmin', pass: 'SecurityAdmin2026!' },
+    { id: 'usr-adm-infra', email: 'infra@unified.cloud', role: 'INFRASTRUCTURE_ADMIN', name: 'Fahim Chowdhury', pass: 'InfraAdmin2026!' },
+    { id: 'usr-adm-fin', email: 'finance@unified.cloud', role: 'FINANCE_ADMIN', name: 'Tahmina Akhter', pass: 'FinanceAdmin2026!' },
+    { id: 'usr-adm-ptn', email: 'partners@unified.cloud', role: 'PARTNER_MANAGER', name: 'Mahbubur Rahman', pass: 'PartnerAdmin2026!' },
+    { id: 'usr-adm-sup', email: 'support@unified.cloud', role: 'SUPPORT_ADMIN', name: 'Saiful Karim', pass: 'SupportAdmin2026!' },
+    { id: 'usr-adm-cnt', email: 'content@unified.cloud', role: 'CONTENT_ADMIN', name: 'Anika Tabassum', pass: 'ContentAdmin2026!' },
+    { id: 'usr-adm-aud', email: 'auditor@unified.cloud', role: 'AUDITOR', name: 'Rezaul Karim, CISA', pass: 'AuditorAdmin2026!' }
+  ];
+
+  const insertUser = db.prepare(`
+    INSERT OR IGNORE INTO users (id, email, password_hash, salt, role, partner_id, name, status)
+    VALUES (?, ?, ?, ?, ?, NULL, ?, 'ACTIVE')
+  `);
+
+  for (const adm of adminUsers) {
+    const auth = hashPassword(adm.pass);
+    insertUser.run(adm.id, adm.email, auth.hash, auth.salt, adm.role, adm.name);
+  }
+
+  // 2. Seed Customers (if empty)
+  const custCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
+  if (!custCount || custCount.count === 0) {
+    const customers = [
+      { id: 'cust-101', first_name: 'Tanvir', last_name: 'Rahman', company_name: 'Apex FinTech Global', email: 'tanvir@apexfintech.io', phone: '+8801711001122', country: 'Bangladesh', city: 'Dhaka', address: 'Plot 4, Road 11, Banani C/A', status: 'ACTIVE', whmcs_client_id: 10420, partner_id: null },
+      { id: 'cust-102', first_name: 'Shahidul', last_name: 'Islam', company_name: 'Bengal Textile Mills Ltd', email: 'it@bengaltextiles.com', phone: '+8801819223344', country: 'Bangladesh', city: 'Gazipur', address: 'Kashimpur Industrial Zone', status: 'ACTIVE', whmcs_client_id: 10421, partner_id: null },
+      { id: 'cust-103', first_name: 'Kamrul', last_name: 'Hasan', company_name: 'Prime Logistics Hub', email: 'ops@primelogistics.bd', phone: '+8801911334455', country: 'Bangladesh', city: 'Chittagong', address: 'Agrabad Commercial Area', status: 'ACTIVE', whmcs_client_id: 10422, partner_id: 'ptn-apex-101' },
+      { id: 'cust-104', first_name: 'Farhana', last_name: 'Ahmed', company_name: 'Nordic Data Systems', email: 'dev@nordicdata.xyz', phone: '+8801722445566', country: 'Bangladesh', city: 'Dhaka', address: 'Gulshan-2 Tower 3', status: 'ACTIVE', whmcs_client_id: 10423, partner_id: null },
+      { id: 'cust-105', first_name: 'Rashed', last_name: 'Chowdhury', company_name: 'CloudSync Technologies', email: 'admin@cloudsync.io', phone: '+8801833556677', country: 'Bangladesh', city: 'Sylhet', address: 'Zindabazar Tech Park', status: 'ACTIVE', whmcs_client_id: 10424, partner_id: 'ptn-apex-101' },
+      { id: 'cust-106', first_name: 'Nazmul', last_name: 'Huda', company_name: 'Meghna Health Diagnostics', email: 'sysadmin@meghnahealth.org', phone: '+8801744667788', country: 'Bangladesh', city: 'Dhaka', address: 'Dhanmondi Road 27', status: 'ACTIVE', whmcs_client_id: 10425, partner_id: null },
+      { id: 'cust-107', first_name: 'Tariq', last_name: 'Mehmood', company_name: 'Eastern Mercantile Bank Ltd', email: 'infosec@easternbank.test', phone: '+8801855778899', country: 'Bangladesh', city: 'Dhaka', address: 'Motijheel C/A', status: 'SUSPENDED', whmcs_client_id: 10426, partner_id: null, suspension_reason: 'Compliance audit hold pending updated corporate trade license', suspended_by: 'security@unified.cloud', suspended_at: '2026-10-15 14:30:00' },
+      { id: 'cust-108', first_name: 'Anisur', last_name: 'Rahman', company_name: 'Sonar E-Commerce BD', email: 'billing@sonarecom.com.bd', phone: '+8801966889900', country: 'Bangladesh', city: 'Dhaka', address: 'Uttara Sector 7', status: 'ACTIVE', whmcs_client_id: 10427, partner_id: 'ptn-apex-101' },
+      { id: 'cust-109', first_name: 'Sultana', last_name: 'Razia', company_name: 'Green Delta Software', email: 'hello@greendelta.io', phone: '+8801777990011', country: 'Bangladesh', city: 'Dhaka', address: 'Mirpur DOHS', status: 'PENDING', whmcs_client_id: 10428, partner_id: null }
+    ];
+
+    const insertCust = db.prepare(`
+      INSERT INTO customers (id, first_name, last_name, company_name, email, phone, country, city, address, status, whmcs_client_id, partner_id, suspension_reason, suspended_by, suspended_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const c of customers) {
+      insertCust.run(
+        c.id, c.first_name, c.last_name, c.company_name, c.email, c.phone, c.country, c.city, c.address,
+        c.status, c.whmcs_client_id, c.partner_id, c.suspension_reason || null, c.suspended_by || null, c.suspended_at || null
+      );
+    }
+  }
+
+  // 3. Seed Customer Services / CloudStack Instances (if empty)
+  const srvCount = db.prepare('SELECT COUNT(*) as count FROM customer_services').get();
+  if (!srvCount || srvCount.count === 0) {
+    const services = [
+      { id: 'csrv-101', customer_id: 'cust-101', partner_id: null, service_type: 'VPS', service_name: 'FinTech Core Payment Gateway', plan_code: 'VPS-ENTERPRISE', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-fintech-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.10', vcpu: 8, ram_mb: 16384, disk_gb: 300, monthly_price: 11712.00, billing_cycle: 'monthly', next_due_date: '2026-11-01' },
+      { id: 'csrv-102', customer_id: 'cust-101', partner_id: null, service_type: 'VDS', service_name: 'FinTech Bare Metal DB Replica', plan_code: 'VDS-BUSINESS', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-fintech-02', zone: 'Dhaka DC-01', ip_address: '103.145.22.11', vcpu: 16, ram_mb: 65536, disk_gb: 2000, monthly_price: 25620.00, billing_cycle: 'monthly', next_due_date: '2026-11-01' },
+      { id: 'csrv-103', customer_id: 'cust-102', partner_id: null, service_type: 'VPS', service_name: 'Supply Chain & Inventory ERP', plan_code: 'VPS-PRO', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-textile-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.25', vcpu: 4, ram_mb: 8192, disk_gb: 160, monthly_price: 5856.00, billing_cycle: 'monthly', next_due_date: '2026-11-05' },
+      { id: 'csrv-104', customer_id: 'cust-103', partner_id: 'ptn-apex-101', service_type: 'VPS', service_name: 'Fleet Telematics GPS Hub', plan_code: 'VPS-BUSINESS', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-logistics-01', zone: 'Singapore SG-01', ip_address: '103.145.22.33', vcpu: 2, ram_mb: 4096, disk_gb: 80, monthly_price: 2928.00, billing_cycle: 'monthly', next_due_date: '2026-11-12' },
+      { id: 'csrv-105', customer_id: 'cust-104', partner_id: null, service_type: 'STORAGE', service_name: 'Enterprise S3 Object Storage', plan_code: 'STORAGE-OBJ', status: 'RUNNING', cloudstack_vm_id: 'cs-stor-nordic-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.50', vcpu: 2, ram_mb: 4096, disk_gb: 10000, monthly_price: 18300.00, billing_cycle: 'monthly', next_due_date: '2026-11-15' },
+      { id: 'csrv-106', customer_id: 'cust-105', partner_id: 'ptn-apex-101', service_type: 'VPS', service_name: 'Kubernetes Worker Node #1', plan_code: 'VPS-PRO', status: 'STOPPED', cloudstack_vm_id: 'cs-vm-cloudsync-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.75', vcpu: 4, ram_mb: 8192, disk_gb: 160, monthly_price: 5856.00, billing_cycle: 'monthly', next_due_date: '2026-11-18' },
+      { id: 'csrv-107', customer_id: 'cust-106', partner_id: null, service_type: 'VPS', service_name: 'PACS Radiology Archive Node', plan_code: 'VPS-BUSINESS', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-meghna-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.90', vcpu: 2, ram_mb: 4096, disk_gb: 120, monthly_price: 3450.00, billing_cycle: 'monthly', next_due_date: '2026-11-20' },
+      { id: 'csrv-108', customer_id: 'cust-108', partner_id: 'ptn-apex-101', service_type: 'VPS', service_name: 'High-Traffic Magento Production', plan_code: 'VPS-ENTERPRISE', status: 'RUNNING', cloudstack_vm_id: 'cs-vm-sonar-01', zone: 'Dhaka DC-01', ip_address: '103.145.22.120', vcpu: 8, ram_mb: 16384, disk_gb: 320, monthly_price: 11712.00, billing_cycle: 'monthly', next_due_date: '2026-11-25' }
+    ];
+
+    const insertService = db.prepare(`
+      INSERT INTO customer_services (id, customer_id, partner_id, service_type, service_name, plan_code, status, cloudstack_vm_id, zone, ip_address, vcpu, ram_mb, disk_gb, monthly_price, billing_cycle, next_due_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const s of services) {
+      insertService.run(
+        s.id, s.customer_id, s.partner_id, s.service_type, s.service_name, s.plan_code, s.status,
+        s.cloudstack_vm_id, s.zone, s.ip_address, s.vcpu, s.ram_mb, s.disk_gb, s.monthly_price, s.billing_cycle, s.next_due_date
+      );
+    }
+  }
+
+  // 4. Seed Invoices & Orders (if empty)
+  const invCount = db.prepare('SELECT COUNT(*) as count FROM invoices').get();
+  if (!invCount || invCount.count === 0) {
+    const invoices = [
+      { id: 'inv-101', invoice_number: 'INV-2026-8801', customer_id: 'cust-101', subtotal: 37332.00, tax: 0, total: 37332.00, status: 'PAID', due_date: '2026-10-15', paid_at: '2026-10-12 11:20:00', payment_method: 'Bank Wire / BEFTN', transaction_ref: 'TXN-EBL-89214', items: 'FinTech Core Payment Gateway (VPS) + Bare Metal DB Replica (VDS)' },
+      { id: 'inv-102', invoice_number: 'INV-2026-8802', customer_id: 'cust-102', subtotal: 5856.00, tax: 0, total: 5856.00, status: 'PAID', due_date: '2026-10-18', paid_at: '2026-10-16 16:40:00', payment_method: 'bKash Merchant', transaction_ref: 'BK-9912401', items: 'Supply Chain & Inventory ERP (VPS-PRO)' },
+      { id: 'inv-103', invoice_number: 'INV-2026-8803', customer_id: 'cust-103', subtotal: 2928.00, tax: 0, total: 2928.00, status: 'PAID', due_date: '2026-10-20', paid_at: '2026-10-19 09:15:00', payment_method: 'Nagad Corporate', transaction_ref: 'NG-441209', items: 'Fleet Telematics GPS Hub (VPS-BUSINESS)' },
+      { id: 'inv-104', invoice_number: 'INV-2026-8804', customer_id: 'cust-104', subtotal: 18300.00, tax: 0, total: 18300.00, status: 'PAID', due_date: '2026-10-22', paid_at: '2026-10-21 14:00:00', payment_method: 'City Bank CityTouch', transaction_ref: 'CBL-901844', items: 'Enterprise S3 Object Storage 10TB' },
+      { id: 'inv-105', invoice_number: 'INV-2026-8805', customer_id: 'cust-105', subtotal: 5856.00, tax: 0, total: 5856.00, status: 'UNPAID', due_date: '2026-11-05', paid_at: null, payment_method: null, transaction_ref: null, items: 'Kubernetes Worker Node #1 (VPS-PRO)' },
+      { id: 'inv-106', invoice_number: 'INV-2026-8806', customer_id: 'cust-106', subtotal: 3450.00, tax: 0, total: 3450.00, status: 'UNPAID', due_date: '2026-11-08', paid_at: null, payment_method: null, transaction_ref: null, items: 'PACS Radiology Archive Node' },
+      { id: 'inv-107', invoice_number: 'INV-2026-8807', customer_id: 'cust-108', subtotal: 11712.00, tax: 0, total: 11712.00, status: 'PAID', due_date: '2026-10-24', paid_at: '2026-10-23 18:30:00', payment_method: 'bKash Merchant', transaction_ref: 'BK-9988112', items: 'High-Traffic Magento Production (VPS-ENTERPRISE)' },
+      { id: 'inv-108', invoice_number: 'INV-2026-8808', customer_id: 'cust-104', subtotal: 4880.00, tax: 0, total: 4880.00, status: 'REFUNDED', due_date: '2026-09-30', paid_at: '2026-09-29 10:00:00', payment_method: 'bKash Merchant', transaction_ref: 'BK-REF-7721', refund_reason: 'Client downsizing compute instance per SLA guarantee', refunded_by: 'finance@unified.cloud', refunded_at: '2026-10-02 12:00:00', items: 'Staging Compute Node (Prorated refund)' }
+    ];
+
+    const insertInv = db.prepare(`
+      INSERT INTO invoices (id, invoice_number, customer_id, subtotal, tax, total, currency, status, due_date, paid_at, payment_method, transaction_ref, refund_reason, refunded_by, refunded_at, items_json)
+      VALUES (?, ?, ?, ?, ?, ?, 'BDT', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const inv of invoices) {
+      insertInv.run(
+        inv.id, inv.invoice_number, inv.customer_id, inv.subtotal, inv.tax, inv.total,
+        inv.status, inv.due_date, inv.paid_at, inv.payment_method, inv.transaction_ref,
+        inv.refund_reason || null, inv.refunded_by || null, inv.refunded_at || null,
+        JSON.stringify([{ item: inv.items, amount: inv.total }])
+      );
+    }
+
+    // Seed corresponding orders
+    const insertOrd = db.prepare(`
+      INSERT INTO orders (id, order_number, customer_id, status, total_amount, currency, items_json)
+      VALUES (?, ?, ?, ?, ?, 'BDT', ?)
+    `);
+
+    for (const inv of invoices) {
+      insertOrd.run(
+        'ord-' + inv.invoice_number.replace('INV-', ''),
+        'ORD-' + inv.invoice_number.replace('INV-', ''),
+        inv.customer_id,
+        inv.status === 'REFUNDED' ? 'REFUNDED' : 'COMPLETED',
+        inv.total,
+        JSON.stringify([{ item: inv.items, amount: inv.total }])
+      );
+    }
+  }
+
+  // 5. Seed Support Tickets & Replies (if empty)
+  const ticketCount = db.prepare('SELECT COUNT(*) as count FROM support_tickets').get();
+  if (!ticketCount || ticketCount.count === 0) {
+    const tickets = [
+      { id: 'tck-101', ticket_number: 'TCK-2026-901', customer_id: 'cust-101', requester_email: 'tanvir@apexfintech.io', requester_name: 'Tanvir Rahman', department: 'TECHNICAL', priority: 'HIGH', status: 'IN_PROGRESS', subject: 'rDNS / PTR Record Configuration for FinTech Outbound Mail', message: 'Please delegate rDNS for our IP address 103.145.22.10 to mail.apexfintech.io to satisfy DKIM/DMARC mail delivery compliance.', assigned_to: 'support@unified.cloud' },
+      { id: 'tck-102', ticket_number: 'TCK-2026-902', customer_id: 'cust-104', requester_email: 'dev@nordicdata.xyz', requester_name: 'Farhana Ahmed', department: 'INFRASTRUCTURE', priority: 'MEDIUM', status: 'OPEN', subject: 'S3 Object Storage Bucket Quota Expansion to 25TB', message: 'Our current 10TB S3 bucket is at 82% capacity. We require expansion to 25TB before month-end automated database snapshot ingestion.', assigned_to: null },
+      { id: 'tck-103', ticket_number: 'TCK-2026-903', customer_id: 'cust-102', requester_email: 'it@bengaltextiles.com', requester_name: 'Shahidul Islam', department: 'BILLING', priority: 'LOW', status: 'RESOLVED', subject: 'Official VAT Challan (Mushak-6.3) for Q3 Invoices', message: 'Kindly provide the signed and stamped VAT Mushak 6.3 challan for Invoice INV-2026-8802 for our auditor clearance.', assigned_to: 'finance@unified.cloud' },
+      { id: 'tck-104', ticket_number: 'TCK-2026-904', customer_id: 'cust-103', requester_email: 'ops@primelogistics.bd', requester_name: 'Kamrul Hasan', department: 'INFRASTRUCTURE', priority: 'CRITICAL', status: 'IN_PROGRESS', subject: 'BGP Routing Optimization via Singapore Edge Gateway', message: 'We noticed an 18ms latency spike on traffic originating from Chittagong port terminals to the Singapore cluster. Requesting immediate route telemetry verification.', assigned_to: 'infra@unified.cloud' }
+    ];
+
+    const insertTck = db.prepare(`
+      INSERT INTO support_tickets (id, ticket_number, customer_id, requester_email, requester_name, department, priority, status, subject, message, assigned_to)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const t of tickets) {
+      insertTck.run(t.id, t.ticket_number, t.customer_id, t.requester_email, t.requester_name, t.department, t.priority, t.status, t.subject, t.message, t.assigned_to);
+    }
+
+    // Seed reply for TCK-2026-901
+    db.prepare(`
+      INSERT INTO ticket_replies (id, ticket_id, author_type, author_name, author_email, message)
+      VALUES (?, 'tck-101', 'STAFF', 'Saiful Karim (Support Lead)', 'support@unified.cloud', ?)
+    `).run('rep-101', 'Hello Tanvir, our DNS engineering team has validated your zone records and updated PTR 10.22.145.103.in-addr.arpa to mail.apexfintech.io. TTL is 3600s. Propagation is now active across all BDIX and global authoritative nameservers.');
+  }
+
+  // 6. Seed Public Website CMS Data (if empty)
+  const annCount = db.prepare('SELECT COUNT(*) as count FROM website_announcements').get();
+  if (!annCount || annCount.count === 0) {
+    db.prepare(`
+      INSERT INTO website_announcements (id, title, type, message, is_active, starts_at, ends_at, created_by)
+      VALUES
+        ('ann-01', 'Scheduled Datacenter Switch Firmware Upgrade', 'MAINTENANCE', 'Core redundant switch firmware upgrade scheduled for Sunday, November 1st at 02:00 AM BST. Redundant paths will maintain 100% traffic continuity without expected disruption.', 1, '2026-10-20', '2026-11-02', 'infra@unified.cloud'),
+        ('ann-02', 'Singapore Ultra-Low Latency Cloud VPS Launched', 'PROMOTION', 'Deploy Singapore VPS instances with direct sub-35ms routing across Southeast Asia. Enjoy 20% off annual commitments with coupon SGLAUNCH20.', 1, '2026-10-15', '2026-12-31', 'content@unified.cloud')
+    `).run();
+  }
+
+  const plansCount = db.prepare('SELECT COUNT(*) as count FROM website_plans').get();
+  if (!plansCount || plansCount.count === 0) {
+    const plans = [
+      { id: 'plan-vps-1', category: 'VPS', name: 'Starter Cloud VPS', code: 'VPS-STARTER', price_bdt: 1464, price_usd: 12, vcpu: 1, ram_gb: 2, storage_gb: 40, bandwidth_tb: 2.0, features: '["1 Dedicated vCPU (AMD EPYC)", "2 GB DDR5 ECC RAM", "40 GB NVMe Storage", "1 Gbps Port with 2TB Transfer", "Dedicated IPv4 + /64 IPv6", "Automated Daily Snapshots"]', popular: 0 },
+      { id: 'plan-vps-2', category: 'VPS', name: 'Business Cloud VPS', code: 'VPS-BUSINESS', price_bdt: 2928, price_usd: 24, vcpu: 2, ram_gb: 4, storage_gb: 80, bandwidth_tb: 4.0, features: '["2 Dedicated vCPUs", "4 GB DDR5 ECC RAM", "80 GB NVMe Storage", "1 Gbps Port with 4TB Transfer", "BDIX Ultra-Low Latency Peering", "Free DDoS Shield Up to 100 Gbps"]', popular: 1 },
+      { id: 'plan-vps-3', category: 'VPS', name: 'Professional Cloud VPS', code: 'VPS-PRO', price_bdt: 5856, price_usd: 48, vcpu: 4, ram_gb: 8, storage_gb: 160, bandwidth_tb: 8.0, features: '["4 Dedicated vCPUs", "8 GB DDR5 ECC RAM", "160 GB Enterprise NVMe", "8TB High-Speed Transit", "Direct CloudStack Orchestration API", "99.99% High Availability SLA"]', popular: 0 },
+      { id: 'plan-vps-4', category: 'VPS', name: 'Enterprise Cloud VPS', code: 'VPS-ENTERPRISE', price_bdt: 11712, price_usd: 96, vcpu: 8, ram_gb: 16, storage_gb: 320, bandwidth_tb: 16.0, features: '["8 Dedicated vCPUs", "16 GB DDR5 ECC RAM", "320 GB Enterprise NVMe", "16TB High-Speed Transit", "24/7 Priority Support Escalation", "Custom Private VLAN & BGP Peering"]', popular: 0 },
+      { id: 'plan-vds-1', category: 'VDS', name: 'Essential Dedicated Server', code: 'VDS-ESSENTIAL', price_bdt: 14640, price_usd: 120, vcpu: 8, ram_gb: 32, storage_gb: 1000, bandwidth_tb: 20.0, features: '["Intel Xeon E-2388G (8 Cores / 16 Threads)", "32 GB DDR4 ECC RAM", "2x 500GB NVMe RAID-1", "Full IPMI/KVM Remote Console", "BDIX Direct Datacenter Peering"]', popular: 0 },
+      { id: 'plan-vds-2', category: 'VDS', name: 'Business Dedicated Server', code: 'VDS-BUSINESS', price_bdt: 25620, price_usd: 210, vcpu: 16, ram_gb: 64, storage_gb: 2000, bandwidth_tb: 30.0, features: '["AMD EPYC 7302P (16 Cores / 32 Threads)", "64 GB DDR4 ECC RAM", "2x 1TB Enterprise NVMe", "Redundant 10Gbps Uplinks", "Dedicated Hardware Firewall Option"]', popular: 1 },
+      { id: 'plan-stor-1', category: 'STORAGE', name: 'Enterprise S3 Object Storage', code: 'STORAGE-OBJ', price_bdt: 1830, price_usd: 15, vcpu: 2, ram_gb: 4, storage_gb: 1000, bandwidth_tb: 5.0, features: '["100% S3-Compatible API", "11 Nines (99.999999999%) Durability", "Zero Egress Fees inside Unified DC", "Server-Side AES-256 Encryption", "Multi-AZ Erasure Coding"]', popular: 0 }
+    ];
+
+    const insertPlan = db.prepare(`
+      INSERT INTO website_plans (id, category, name, code, price_bdt, price_usd, vcpu, ram_gb, storage_gb, bandwidth_tb, features_json, is_popular, is_available)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+
+    for (const p of plans) {
+      insertPlan.run(p.id, p.category, p.name, p.code, p.price_bdt, p.price_usd, p.vcpu, p.ram_gb, p.storage_gb, p.bandwidth_tb, p.features, p.popular);
+    }
+  }
+
+  const seoCount = db.prepare('SELECT COUNT(*) as count FROM website_seo').get();
+  if (!seoCount || seoCount.count === 0) {
+    db.prepare(`
+      INSERT INTO website_seo (page_key, meta_title, meta_description, canonical_url)
+      VALUES
+        ('home', 'Unified Cloud - Next-Gen Enterprise Cloud Infrastructure & Datacenter', 'Ultra-low latency Cloud VPS, Bare-Metal Dedicated Servers, S3 Storage, and BDIX Peering for high-scale enterprise workloads.', 'https://unifiedit.xyz/'),
+        ('vps', 'High Performance Cloud VPS | Unified Cloud', 'Blazing fast AMD EPYC & Intel NVMe VPS with instant CloudStack provisioning, 1Gbps unmetered connectivity, and DDoS protection.', 'https://unifiedit.xyz/#cloud'),
+        ('vds', 'Dedicated Bare Metal Servers | Unified Cloud', 'Single-tenant enterprise dedicated servers with full IPMI control, hardware RAID, and 99.99% uptime guarantee.', 'https://unifiedit.xyz/#vds'),
+        ('partner', 'Cloud Partner Program | Reseller & Affiliate Margins', 'Earn up to 25% recurring margin and sales reward points reselling enterprise cloud compute, hosting, and storage.', 'https://unifiedit.xyz/partners')
+    `).run();
+  }
+
+  const cpnCount = db.prepare('SELECT COUNT(*) as count FROM website_coupons').get();
+  if (!cpnCount || cpnCount.count === 0) {
+    db.prepare(`
+      INSERT INTO website_coupons (id, code, discount_type, discount_value, max_uses, used_count, is_active, created_by)
+      VALUES
+        ('cpn-1', 'WELCOME2026', 'PERCENTAGE', 0.15, 500, 42, 1, 'finance@unified.cloud'),
+        ('cpn-2', 'SGLAUNCH20', 'PERCENTAGE', 0.20, 200, 18, 1, 'content@unified.cloud'),
+        ('cpn-3', 'ENTERPRISE10', 'PERCENTAGE', 0.10, 100, 9, 1, 'partners@unified.cloud')
+    `).run();
+  }
+
+  const incCount = db.prepare('SELECT COUNT(*) as count FROM infrastructure_incidents').get();
+  if (!incCount || incCount.count === 0) {
+    db.prepare(`
+      INSERT INTO infrastructure_incidents (id, zone, cluster, component, severity, title, description, status, created_by, resolved_at)
+      VALUES
+        ('inc-01', 'Singapore SG-01', 'Edge BGP Cluster', 'Upstream Transit Router', 'INFO', 'Upstream Transit Latency Optimization Completed', 'Re-routed transit routing across subsea cable path to reduce Dhaka-Singapore latency from 44ms to 32ms.', 'RESOLVED', 'infra@unified.cloud', '2026-10-24 16:00:00'),
+        ('inc-02', 'Dhaka DC-01', 'Core Compute Cluster A', 'CRAC Cooling Units', 'INFO', 'Quarterly Redundancy Maintenance Test Passed', 'Dual CRAC cooling units and automatic transfer switches verified under 100% compute load with zero thermal deviation.', 'RESOLVED', 'infra@unified.cloud', '2026-10-22 03:00:00')
+    `).run();
+  }
+
+  // 7. Seed Initial Security Events (if empty)
+  const secCount = db.prepare('SELECT COUNT(*) as count FROM security_events').get();
+  if (!secCount || secCount.count === 0) {
+    db.prepare(`
+      INSERT INTO security_events (id, timestamp, event_type, actor_id, actor_email, actor_role, target_resource, target_id, action, outcome, ip_address, details_json, correlation_id)
+      VALUES
+        ('sec-01', datetime('now', '-2 hours'), 'LOGIN_SUCCESS', 'usr-adm-super', 'superadmin@unified.cloud', 'SUPER_ADMIN', 'admin_portal', 'dashboard', 'AUTHENTICATE', 'SUCCESS', '103.145.22.5', '{"mfa":true,"device":"Firefox macOS"}', 'corr-init-01'),
+        ('sec-02', datetime('now', '-1 hour'), 'LOGIN_SUCCESS', 'usr-adm-infra', 'infra@unified.cloud', 'INFRASTRUCTURE_ADMIN', 'admin_portal', 'cloud_instances', 'AUTHENTICATE', 'SUCCESS', '103.145.22.6', '{"mfa":true,"device":"Chrome Windows"}', 'corr-init-02'),
+        ('sec-03', datetime('now', '-35 minutes'), 'ACCOUNT_SUSPENDED', 'usr-adm-sec', 'security@unified.cloud', 'SECURITY_ADMIN', 'customers', 'cust-107', 'SUSPEND_ACCOUNT', 'SUCCESS', '103.145.22.7', '{"reason":"Compliance audit hold pending updated corporate trade license"}', 'corr-init-03'),
+        ('sec-04', datetime('now', '-12 minutes'), 'LOGIN_FAILURE', 'unknown', 'hacker@malicious.xyz', 'ANONYMOUS', 'auth', 'login', 'AUTHENTICATE', 'FAILURE', '185.220.101.4', '{"reason":"Invalid email or password"}', 'corr-init-04')
+    `).run();
   }
 }
 

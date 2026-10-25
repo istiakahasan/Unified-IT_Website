@@ -9,7 +9,8 @@ import('../server/server.mjs').then(({ createServer }) => {
     console.log(`Unified Cloud Platform running at http://localhost:${PORT}`);
     console.log(`- Partner Program: http://localhost:${PORT}/partners`);
     console.log(`- Partner Dashboard: http://localhost:${PORT}/partner/dashboard`);
-    console.log(`- Admin Portal: http://localhost:${PORT}/admin/partners`);
+    console.log(`- Centralized Admin Portal: http://localhost:${PORT}/admin`);
+    console.log(`- Partner Desk & Agreements: http://localhost:${PORT}/admin/partners`);
   });
 }).catch(err => {
   console.error('[Server Boot Error]', err);
