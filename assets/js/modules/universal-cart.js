@@ -150,8 +150,8 @@
               '</div>' +
               '<div class="hcd-item-right">' +
                 '<span class="hcd-item-price">' + (lineTotal ? formatMoney(lineTotal) : 'Quote') + '</span>' +
-                '<button class="hcd-item-del" type="button" data-del="' + idx + '" title="Remove item" aria-label="Remove">' +
-                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+                '<button class="hcd-item-del" type="button" data-del="' + idx + '" title="Remove item" aria-label="Remove item">' +
+                  '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>' +
                 '</button>' +
               '</div>' +
             '</div>'
@@ -268,9 +268,11 @@
 
   function remove(index) {
     if (index >= 0 && index < cart.length) {
+      var item = cart[index];
       cart.splice(index, 1);
       save();
       renderAll();
+      showToast('Removed ' + (item && item.name ? item.name : 'item') + ' from cart', 'Total: ' + formatMoney(getTotal()));
     }
   }
 
@@ -360,7 +362,7 @@
     }
 
     // Delete item inside dropdown
-    var delBtn = t.closest('[data-del]');
+    var delBtn = t.closest('.hcd-item-del') || t.closest('[data-del]');
     if (delBtn) {
       e.preventDefault();
       e.stopPropagation();

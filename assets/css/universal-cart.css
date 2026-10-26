@@ -229,23 +229,26 @@
   background: transparent;
   color: #ef4444;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 5px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: .75;
-  transition: opacity .2s, transform .2s;
+  opacity: .8;
+  transition: opacity .2s, transform .2s, background-color .2s, color .2s;
 }
 
 .hcd-item-del:hover {
   opacity: 1;
-  transform: scale(1.15);
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.16);
+  transform: scale(1.12);
 }
 
 .hcd-item-del svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
 }
 
 .hcd-empty {
