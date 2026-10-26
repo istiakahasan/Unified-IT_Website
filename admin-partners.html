@@ -533,6 +533,194 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
     }
+
+    /* ==========================================================================
+       Admin Login Portal Component & Enterprise Form Aesthetics
+       ========================================================================== */
+    .ptn-login-card {
+      max-width: 480px;
+      margin: 54px auto 90px;
+      padding: 38px 40px 34px;
+      background: radial-gradient(130% 120% at 50% 0%, rgba(22, 32, 54, 0.78) 0%, rgba(9, 13, 26, 0.90) 100%);
+      border: 1px solid rgba(250, 204, 21, 0.28);
+      border-radius: 22px;
+      -webkit-backdrop-filter: blur(28px);
+      backdrop-filter: blur(28px);
+      box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.8),
+                  0 0 50px rgba(250, 204, 21, 0.08),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ptn-login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #facc15 35%, #5de0c4 70%, transparent);
+      opacity: 0.95;
+    }
+    .ptn-login-shield-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(250, 204, 21, 0.18), rgba(93, 224, 196, 0.1));
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      box-shadow: 0 8px 24px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      color: #facc15;
+      margin-bottom: 16px;
+    }
+    .ptn-pill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      background: rgba(250, 204, 21, 0.12);
+      color: #facc15;
+    }
+    .ptn-field {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .ptn-field label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+    .ptn-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .ptn-input-icon {
+      position: absolute;
+      left: 14px;
+      color: #64748b;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+    .ptn-input {
+      width: 100%;
+      background: rgba(4, 7, 16, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 12px 14px 12px 42px;
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+    }
+    .ptn-input:hover {
+      border-color: rgba(250, 204, 21, 0.32);
+    }
+    .ptn-input:focus {
+      border-color: #facc15;
+      background: rgba(6, 11, 24, 0.88);
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.18), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .ptn-toggle-pass-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .ptn-toggle-pass-btn:hover {
+      color: #facc15;
+    }
+    .ptn-form-status {
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+    .ptn-form-status.error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    .ptn-form-status.success {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+    }
+    .admin-submit-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 20px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #050814;
+      background: linear-gradient(135deg, #f59e0b 0%, #eab308 35%, #06b6d4 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .admin-submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(245, 158, 11, 0.5);
+      filter: brightness(1.08);
+    }
+    .admin-submit-btn:active {
+      transform: translateY(0);
+    }
+    .admin-quick-creds-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+    }
+    .admin-cred-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-top: 8px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .admin-cred-chip:hover {
+      background: rgba(250, 204, 21, 0.08);
+      border-color: rgba(250, 204, 21, 0.3);
+      transform: translateX(2px);
+    }
   </style>
 </head>
 <body class="ptn-portal-body">
@@ -627,35 +815,86 @@
 
   <main class="ptn-container">
     <!-- Unauthenticated Administrator Login View -->
-    <div id="admin-login-view" class="ptn-login-card" style="border-color: rgba(250, 204, 21, 0.35);">
-      <div class="ptn-pill-tag" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
-        Administrator Authentication Required
+    <div id="admin-login-view" class="ptn-login-card">
+      <div class="ptn-login-shield-badge">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
       </div>
-      <h2 style="margin: 14px 0 8px; font-size: 24px;">Admin Management Console</h2>
-      <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin-bottom: 24px; line-height: 1.5;">
-        Session-backed RBAC authentication is enforced. Enter your administrator credentials to manage partner tiers, review onboarding requests, and audit payouts.
+
+      <div class="ptn-pill-tag" style="margin-bottom: 12px;">
+        <span class="status-dot-pulse"></span>
+        Enterprise RBAC Authentication
+      </div>
+
+      <h2 style="margin: 0 0 8px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 40%, #facc15 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Admin Management Console
+      </h2>
+      <p style="color: var(--ptn-text-muted); font-size: 13.5px; margin: 0 0 24px; line-height: 1.55;">
+        Multi-tenant partner governance, commercial contract agreements, and automated revenue reconciliation.
       </p>
 
-      <div id="admin-login-error" class="ptn-form-status error" style="margin-bottom: 16px;"></div>
+      <div id="admin-login-error" class="ptn-form-status error" style="display: none; margin-bottom: 18px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="admin-login-error-text"></span>
+      </div>
 
-      <form id="admin-login-form" style="text-align: left;">
-        <div class="ptn-field" style="margin-bottom: 16px;">
+      <form id="admin-login-form">
+        <div class="ptn-field">
           <label for="admin-email">Administrator Email</label>
-          <input type="email" id="admin-email" class="ptn-input" value="admin@unified.test" required>
+          <div class="ptn-input-wrap">
+            <span class="ptn-input-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <input type="email" id="admin-email" class="ptn-input" value="admin@unified.test" required autocomplete="username" placeholder="admin@unified.cloud">
+          </div>
         </div>
 
         <div class="ptn-field" style="margin-bottom: 24px;">
-          <label for="admin-password">Password</label>
-          <input type="password" id="admin-password" class="ptn-input" value="AdminSecure2026!" required>
+          <label for="admin-password">Secure Password</label>
+          <div class="ptn-input-wrap">
+            <span class="ptn-input-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input type="password" id="admin-password" class="ptn-input" value="AdminSecure2026!" required autocomplete="current-password" placeholder="••••••••••••">
+            <button type="button" id="toggle-password-btn" class="ptn-toggle-pass-btn" aria-label="Toggle password visibility">
+              <svg id="eye-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
 
-        <button type="submit" id="admin-login-submit" class="ptn-btn ptn-btn-primary" style="width: 100%; background: linear-gradient(120deg, #d97706, #2563eb);">
-          Sign In to Administrator Console
+        <button type="submit" id="admin-login-submit" class="admin-submit-btn">
+          <span>Sign In to Administrator Console</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </form>
 
-      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12.5px; color: var(--ptn-text-muted);">
-        <strong>Demo Admin:</strong> <code>admin@unified.test</code> / <code>AdminSecure2026!</code>
+      <div class="admin-quick-creds-box">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ptn-text-subtle); font-weight: 700; margin-bottom: 6px;">
+          Quick-Fill Admin Credentials (Click to Autofill)
+        </div>
+        
+        <div class="admin-cred-chip" onclick="fillAdminCreds('admin@unified.test', 'AdminSecure2026!')" title="Click to fill default admin credentials">
+          <div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #fff;">👑 Primary Administrator</div>
+            <div style="font-size: 11px; color: var(--ptn-cyan); font-family: 'JetBrains Mono', monospace;">admin@unified.test</div>
+          </div>
+          <span style="font-size: 11px; color: var(--ptn-text-muted); background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 4px;">Click to load</span>
+        </div>
+
+        <div class="admin-cred-chip" onclick="fillAdminCreds('superadmin@unified.cloud', 'SuperAdmin2026!')" title="Click to fill Super Admin credentials">
+          <div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #fff;">⚡ Super Admin</div>
+            <div style="font-size: 11px; color: var(--ptn-gold); font-family: 'JetBrains Mono', monospace;">superadmin@unified.cloud</div>
+          </div>
+          <span style="font-size: 11px; color: var(--ptn-text-muted); background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 4px;">Click to load</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; font-size: 11px; color: var(--ptn-text-subtle); display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>256-bit Encrypted Session &bull; ISO/IEC 27001 Compliant</span>
       </div>
     </div>
 
@@ -1710,11 +1949,13 @@
     let cachedAdminPolicy = null;
     let cachedAdminRewardTx = [];
 
+    const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'SECURITY_ADMIN', 'INFRASTRUCTURE_ADMIN', 'FINANCE_ADMIN', 'PARTNER_MANAGER', 'SUPPORT_ADMIN', 'CONTENT_ADMIN', 'AUDITOR'];
+
     async function checkAdminAuth() {
       try {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
-        if (data.authenticated && data.user.role === 'ADMIN') {
+        if (data.authenticated && ADMIN_ROLES.includes(data.user.role)) {
           showAdminDashboard(data.user);
         } else {
           showAdminLogin();
@@ -1791,10 +2032,43 @@
       document.getElementById('badge-audit-count').textContent = cachedAudit.length;
     }
 
+    // Password visibility toggle
+    const togglePassBtn = document.getElementById('toggle-password-btn');
+    if (togglePassBtn) {
+      togglePassBtn.addEventListener('click', () => {
+        const passInput = document.getElementById('admin-password');
+        const eyeIcon = document.getElementById('eye-icon');
+        if (passInput.type === 'password') {
+          passInput.type = 'text';
+          eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        } else {
+          passInput.type = 'password';
+          eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        }
+      });
+    }
+
+    // Quick-fill credentials helper
+    window.fillAdminCreds = function(email, pass) {
+      const emailInput = document.getElementById('admin-email');
+      const passInput = document.getElementById('admin-password');
+      if (emailInput && passInput) {
+        emailInput.value = email;
+        passInput.value = pass;
+        emailInput.style.borderColor = '#facc15';
+        passInput.style.borderColor = '#facc15';
+        setTimeout(() => {
+          emailInput.style.borderColor = '';
+          passInput.style.borderColor = '';
+        }, 1000);
+      }
+    };
+
     // Admin Login
     document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errBox = document.getElementById('admin-login-error');
+      const errText = document.getElementById('admin-login-error-text');
       errBox.style.display = 'none';
 
       const email = document.getElementById('admin-email').value;
@@ -1808,11 +2082,12 @@
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.message || 'Login failed');
-        if (data.user.role !== 'ADMIN') throw new Error('Account does not possess administrator privileges.');
+        if (!ADMIN_ROLES.includes(data.user.role)) throw new Error('Account does not possess administrator privileges.');
         showAdminDashboard(data.user);
       } catch (err) {
-        errBox.textContent = err.message;
-        errBox.style.display = 'block';
+        if (errText) errText.textContent = err.message;
+        else errBox.textContent = err.message;
+        errBox.style.display = 'flex';
       }
     });
 
@@ -2260,9 +2535,14 @@
       const data = await res.json();
       document.getElementById('agreement-modal').style.display = 'none';
       if (!res.ok || data.error) {
-        alert(data.message || 'Failed to issue discount');
+        if (res.status === 401) {
+          alert('Administrative authentication required. Please sign in with your admin account.');
+          showAdminLogin();
+          return;
+        }
+        alert(data.message || data.error || 'Failed to issue discount');
       } else {
-        showBanner(data.message);
+        showBanner(data.message || 'Custom commercial discount agreement applied successfully.');
         refreshAllData();
       }
     });

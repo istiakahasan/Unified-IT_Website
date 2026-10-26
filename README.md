@@ -1,6 +1,6 @@
 # Unified Cloud: Fly into the Future 🚀
 
-An enterprise cloud infrastructure platform featuring an interactive 3D WebGL flight journey, real-time latency telemetry, modular service catalogues and calculators, a Dhaka Anycast domain search engine, a complete **Cloud Partner Program Platform**, and a dedicated **Centralized Admin Portal** on an isolated subdomain architecture.
+An enterprise cloud infrastructure platform featuring an interactive 3D WebGL flight journey, real-time latency telemetry, modular service catalogues and calculators, a Dhaka Anycast domain search engine, a complete **Cloud Partner Program Platform**, a production **Role-Based Support Ticketing System**, and a dedicated **Centralized Admin Portal** on an isolated subdomain architecture.
 
 ---
 
@@ -10,10 +10,11 @@ An enterprise cloud infrastructure platform featuring an interactive 3D WebGL fl
 unified-it/
 ├── index.html                          # Public Cloud Website: 3D hero journey, domain search & cloud catalog
 ├── Fly into the future.html            # Legacy alias redirecting to index.html
-├── admin.html                          # Standalone Centralized Admin Portal SPA (RBAC, NOC, CMS, Billing)
+├── admin.html                          # Standalone Centralized Admin Portal SPA (RBAC, NOC, CMS, Billing, Support)
 ├── partners.html                       # Public Cloud Partner Program landing & application portal
-├── partner-dashboard.html              # Authenticated Partner Portal (margins, tier roadmap, client isolation)
+├── partner-dashboard.html              # Authenticated Partner Portal (margins, tier roadmap, client ticket desk)
 ├── admin-partners.html                 # Partner Desk Control Center (apps, automated directory, rewards)
+├── architecture.md                     # System architecture, load order, schema relations & test coverage
 ├── package.json                        # Scripts: start, test, test:admin, test:all, dev, build
 ├── vite.config.mjs                     # Vite build configuration (asset pipeline)
 ├── docker-compose.yml                  # Turnkey containerized stack (Node app + Nginx proxy)
@@ -25,15 +26,17 @@ unified-it/
 ├── server/                             # Node.js backend platform & API microservices
 │   ├── server.mjs                      # Main HTTP server: Vhost routing, static server, API dispatch
 │   ├── db.mjs                          # SQLite database: multi-tenant schemas, indexes, migrations, seeds
-│   ├── api.mjs                         # REST API router: authentication, RBAC guards, cloud, billing, CMS
+│   ├── api.mjs                         # REST API router: authentication, RBAC guards, cloud, billing, ticketing
 │   ├── auth.mjs                        # SessionStore with revocation, brute-force lockout, RBAC matrix
+│   ├── tickets-service.mjs             # Ticketing domain engine: SLA timer, multi-tenant isolation, audit log
 │   ├── pricing-engine.mjs              # Multi-tier wholesale pricing engine & automated tier progression
 │   ├── reward-service.mjs              # Sales-based reward points engine, ledger & refund handling
 │   ├── whmcs-adapter.mjs               # WHMCS enterprise billing, invoice lifecycle & refund approvals
 │   └── cloudstack-adapter.mjs          # Apache CloudStack multi-zone VM provisioning & NOC incident engine
 ├── tests/
 │   ├── admin-portal.test.mjs           # Enterprise Admin Portal automated test suite (33 tests)
-│   └── partner-system.test.mjs         # Production Partner Program test suite (33 tests)
+│   ├── partner-system.test.mjs         # Production Partner Program test suite (33 tests)
+│   └── support-ticketing.test.mjs      # Role-Based Support Ticketing System test suite (26 tests)
 ├── scripts/
 │   ├── serve.js                        # `npm start` entrypoint (port 3000)
 │   ├── update-digicert-prices.mjs      # Digicert list price scraper & currency converter
@@ -43,7 +46,9 @@ unified-it/
 │   └── ARCHITECTURE.md                 # System load order, data flow, globals, and design patterns
 └── assets/
     ├── css/                            # Modular CSS architecture imported by main.css
+    │   └── support-ticket.css          # Support ticket modal, badges, conversation threads & SLA timers
     ├── js/                             # Interactive controllers, catalog engines, WebGL shaders
+    │   └── modules/support-ticket.js   # Client ticket controller: submission, lookup, validation & upload
     ├── models/                         # 3D Datacenter server rack model (meshopt glTF)
     └── images/                         # Brand logos, icons, and textures
 ```
@@ -66,33 +71,55 @@ The platform supports a production multi-subdomain topology configured via envir
 
 ## 🛡️ Role-Based Access Control (RBAC) Matrix
 
-Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mjs) and enforced by default across all administrative endpoints:
+Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mjs) and [`server/tickets-service.mjs`](file:///e:/Projects/unified-it/server/tickets-service.mjs), enforced by default across all administrative and portal endpoints:
 
 | Role | Operational Scope | Permitted Endpoints & Actions | Denied Actions |
 | :--- | :--- | :--- | :--- |
-| **`SUPER_ADMIN`** | Full Platform Authorization | Unrestricted access to all modules (`*`), role assignment, system configurations. | None |
+| **`SUPER_ADMIN`** | Full Platform Authorization | Unrestricted access to all modules (`*`), role assignment, system configurations, and support workspace. | None |
 | **`SECURITY_ADMIN`** | Security, Telemetry & Access | View security audit stream, inspect active sessions, revoke session tokens, manage admin roles. | Cloud VM lifecycle, financial refunds |
 | **`INFRASTRUCTURE_ADMIN`** | CloudStack & Datacenter Ops | Inspect Dhaka & Singapore zones, VM lifecycle (start/stop/terminate), log & resolve NOC incidents. | Financial refunds, partner commissions |
 | **`FINANCE_ADMIN`** | Billing, Invoices & Payouts | Review gross revenue, MRR, invoices, approve refunds with justification, payment gateways. | Modifying cloud VM state, user role changes |
 | **`PARTNER_MANAGER`** | Partner Desk & Agreements | Approve/reject partner applications, manage partner tiers, custom discount agreements, sales rewards. | Modifying customer accounts, VM termination |
-| **`SUPPORT_ADMIN`** | Customer Support Helpdesk | View support queue, reply to tickets, change ticket priority, trigger customer password resets. | Approving refunds, modifying infrastructure |
+| **`SUPPORT_ADMIN`** | Customer Support Helpdesk | View support queue, triage tickets, assign staff, post internal notes, adjust priority/SLA, resolve issues. | Approving refunds, modifying infrastructure |
 | **`CONTENT_ADMIN`** | Public Website CMS | Manage announcements/banners, cloud service plans & pricing, SEO metadata, promo coupons. | Access to customer/partner accounts, security logs |
-| **`AUDITOR`** | Compliance & Audit | Read-only compliance access to audit logs, security events, customer records, billing, and telemetry. | **All state-changing actions** (write/delete/refund) |
+| **`AUDITOR`** | Compliance & Audit | Read-only compliance access to audit logs, security events, customer records, billing, telemetry, and tickets. | **All state-changing actions** (write/delete/refund) |
+| **`PARTNER`** (Reseller) | Partner Tenant Scope | View/manage own buyer customer relationships, submit tickets for buyers, reply, resolve, or escalate to Platform NOC. | Access to other resellers' data, internal staff notes |
+| **`CUSTOMER` / Guest** | Own Ticket Scope | Submit tickets, verify ownership by ticket reference + email, view public replies, post follow-ups. | Administrative actions, internal notes, other buyers |
 
 ---
 
 ## 🌟 Key Highlights & Modern Capabilities
 
-### 1. Centralized Admin Portal (`admin.html`)
+### 1. Production Role-Based Support Ticketing System
+- **Universal Public Entry Point**:
+  - Accessible via header navigation and footer across all applicable public pages (`partners.html`, and dynamic service pages via `dynamic-services.js`).
+  - Strict exclusion rule: Not rendered on the 3D WebGL homepage root layers (`#`, `#a`, `#b`, `#c`) or the introductory page (`Fly into the future.html`).
+- **Interactive Ticket Submission Experience**:
+  - Validates subject, category, priority, related services/orders, contact preferences, and detailed descriptions.
+  - Generates unique human-readable ticket numbers (`TCK-YYYY-XXXXX`).
+  - Dynamic SLA computation: Critical (2h), High (4h), Normal (12h), Low (24h).
+  - Secure file attachment handling: Max 10MB, extension whitelist (`png`, `jpg`, `pdf`, `txt`, `log`, `zip`), blocking dangerous executables.
+  - Secure guest lookup requiring both `ticket_number` and verified `buyer_email` to eliminate Insecure Direct Object References (IDOR).
+- **Reseller-to-Buyer Support Desk (`partner-dashboard.html`)**:
+  - Resellers can view their associated buyers, submit tickets on behalf of buyers, reply, request details, and resolve issues.
+  - Built-in **Platform NOC Escalation**: Resellers can escalate complex underlying infrastructure issues directly to administrative engineers.
+  - Strict tenant isolation: Resellers are blocked with `403 Forbidden` if attempting to view or modify tickets owned by other partners.
+- **Centralized Admin Support Workspace (`admin.html`)**:
+  - 8 real database-backed KPI counters (Total, Unassigned, In-Progress, High/Critical, Waiting Buyer, Waiting Reseller, Escalated, Resolved).
+  - Searchable, filterable, and paginated ticket queue with live status badges.
+  - Complete ticket detail workspace: Staff dispatch/reassignment, priority modification, status transitions, NOC escalation toggling, and customer/service context.
+  - **Private Internal Notes**: Platform engineers and support agents can post internal notes completely hidden from buyers and resellers.
+  - Full audit event stream tracking actor, previous state, new state, and reason.
+
+### 2. Centralized Admin Portal (`admin.html`)
 - **Live Telemetry Dashboard**: Real-time stats calculated from SQLite (customers by status, active VMs across zones, MRR, invoices, open tickets, active sessions). Zero fabricated metrics.
 - **Customer Account Management**: Search, filter, inspect details, linked compute instances, and billing history. Account suspension requires documented justification. Secure one-time password reset workflow without exposing passwords or hashes.
 - **Cloud Infrastructure Management**: Multi-zone visibility across **Dhaka DC-01** (AMD EPYC & Intel Xeon KVM nodes, BDIX peering) and **Singapore SG-01** (Equinix SG1 peering). VM lifecycle operations (`START`, `STOP` with reason, `TERMINATE` with justification). NOC incident reporting and resolution workflow.
 - **Billing & Financial Administration**: Live MRR, revenue totals, and unpaid balance calculations. Invoice listing and search. Refund approval requiring justification reason with immutable audit records.
-- **Support Ticket Queue**: Threaded discussion triage, priority management (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), and staff reply dispatching.
 - **Public Website CMS**: Manage homepage announcements/maintenance banners, configure cloud service plan specifications (vCPU, RAM, NVMe, BDT/USD pricing), and update page SEO metadata and promo coupons.
 - **Security Monitoring & Session Revocation**: Append-only security event audit stream, 5-attempt brute-force protection with 15-minute lockouts, active session inspection with IP and client metadata, and immediate session token revocation.
 
-### 2. Cloud Partner Program Platform
+### 3. Cloud Partner Program Platform
 - **Automatic Spend-Based Tier Progression**:
   - **Registered Partner**: 5% wholesale margin (৳0 minimum spend)
   - **Silver Partner**: 10% wholesale margin (৳30,000 monthly spend)
@@ -103,13 +130,13 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
 - **Custom Commercial Discounts**: Bespoke agreements granted by administrators synchronize instantly to partner dashboards.
 - **Sales Reward Points Ledger**: 10% reward points earned on eligible cloud sales, with anti-abuse self-referral prevention and refund reversal safety.
 
-### 3. Domain Registration & Search Engine
+### 4. Domain Registration & Search Engine
 - High-performance domain search located in [domain-search.js](file:///e:/Projects/unified-it/assets/js/modules/domain-search.js):
   - Provides real-time pricing and availability for top-level domains (`.com`, `.org`, `.ai`, `.to`, `.net`, `.io`, `.xyz`, `.tech`, `.online`, `.com.bd`).
   - Instant Dhaka Anycast DNS routing quotes and favorite bookmarking.
   - Direct integration with `window.UnifiedCart` for instant checkout.
 
-### 4. 3D WebGL Flight Experience & Adaptive Performance
+### 5. 3D WebGL Flight Experience & Adaptive Performance
 - **Cinematic 3D Hero Scene**: Volumetric raymarched cloud dive, server rack swoop, animated laptop, pulsating rack LEDs, and interactive cursor damping using Three.js r128 and Meshopt compression.
 - **Hardware-Adaptive Tiers**: Automatically balances PCF soft shadows, draw calls, and particle density across Discrete, Integrated, and Low-End GPUs.
 - **Battery-Saving Throttling**: Pauses frame rendering immediately when the browser tab is hidden (`document.hidden`).
@@ -139,15 +166,18 @@ Starts the Node.js server and SQLite backend on `http://localhost:3000`.
 | **Security Administrator** | `security@unified.cloud` | `SecurityAdmin2026!` | Security telemetry & session revocation |
 | **Infrastructure Administrator** | `infra@unified.cloud` | `InfraAdmin2026!` | CloudStack VMs & NOC incidents |
 | **Finance Administrator** | `finance@unified.cloud` | `FinanceAdmin2026!` | Billing, invoices & refund approvals |
-| **Support Administrator** | `support@unified.cloud` | `SupportAdmin2026!` | Support ticket desk & password resets |
+| **Support Administrator** | `support@unified.cloud` | `SupportAdmin2026!` | Support ticket desk, triage & internal notes |
 | **Compliance Auditor** | `auditor@unified.cloud` | `AuditorAdmin2026!` | Read-only compliance access |
 
 *(You can also click any of the 1-click **Fast-Fill Role** buttons on the admin login card to authenticate instantly).*
 
 ### 3. Run Automated Test Suites
 ```bash
-# Run all test suites (66 tests across 17 suites)
+# Run all test suites (92 tests across 23 suites)
 npm run test:all
+
+# Run Support Ticketing System test suite only (26 tests)
+node --test tests/support-ticketing.test.mjs
 
 # Run Admin Portal test suite only (33 tests)
 npm run test:admin

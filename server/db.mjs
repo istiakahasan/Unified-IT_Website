@@ -138,7 +138,7 @@ export function initDatabase(dbPath = DB_FILE) {
       effective_from TEXT NOT NULL,
       effective_until TEXT NOT NULL,
       credit_limit REAL DEFAULT 5000,
-      status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'EXPIRED', 'REVOKED')),
+      status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'EXPIRED', 'REVOKED', 'SUPERSEDED')),
       approved_by TEXT NOT NULL,
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -431,12 +431,29 @@ export function initDatabase(dbPath = DB_FILE) {
       partner_id TEXT,
       requester_email TEXT NOT NULL,
       requester_name TEXT NOT NULL,
-      department TEXT NOT NULL CHECK(department IN ('TECHNICAL', 'BILLING', 'SALES', 'INFRASTRUCTURE')),
-      priority TEXT NOT NULL CHECK(priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
-      status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN', 'IN_PROGRESS', 'ANSWERED', 'RESOLVED', 'CLOSED')),
+      buyer_name TEXT,
+      buyer_email TEXT,
+      buyer_phone TEXT,
+      department TEXT NOT NULL DEFAULT 'TECHNICAL',
+      category TEXT NOT NULL DEFAULT 'TECHNICAL',
+      priority TEXT NOT NULL DEFAULT 'NORMAL' CHECK(priority IN ('LOW', 'NORMAL', 'MEDIUM', 'HIGH', 'CRITICAL', 'STANDARD', 'CRITICAL_24_7')),
+      status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_BUYER', 'WAITING_RESELLER', 'ESCALATED', 'RESOLVED', 'CLOSED', 'ANSWERED')),
       subject TEXT NOT NULL,
       message TEXT NOT NULL,
       assigned_to TEXT,
+      related_service_id TEXT,
+      related_order_id TEXT,
+      related_product_code TEXT,
+      preferred_contact TEXT DEFAULT 'EMAIL',
+      created_by_user_id TEXT,
+      created_by_role TEXT DEFAULT 'CUSTOMER',
+      is_escalated INTEGER NOT NULL DEFAULT 0,
+      escalated_at TEXT,
+      escalated_by TEXT,
+      escalation_reason TEXT,
+      sla_due_at TEXT,
+      resolved_at TEXT,
+      closed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -444,10 +461,51 @@ export function initDatabase(dbPath = DB_FILE) {
     CREATE TABLE IF NOT EXISTS ticket_replies (
       id TEXT PRIMARY KEY,
       ticket_id TEXT NOT NULL,
-      author_type TEXT NOT NULL CHECK(author_type IN ('CUSTOMER', 'PARTNER', 'STAFF')),
+      author_type TEXT NOT NULL,
       author_name TEXT NOT NULL,
       author_email TEXT NOT NULL,
       message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_messages (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT NOT NULL,
+      author_type TEXT NOT NULL CHECK(author_type IN ('CUSTOMER', 'BUYER', 'PARTNER', 'RESELLER', 'STAFF', 'ADMIN', 'SYSTEM')),
+      author_id TEXT,
+      author_name TEXT NOT NULL,
+      author_email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      is_internal INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_attachments (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT NOT NULL,
+      message_id TEXT,
+      file_name TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      mime_type TEXT NOT NULL,
+      uploaded_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_audit_events (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT NOT NULL,
+      actor_id TEXT,
+      actor_email TEXT,
+      actor_role TEXT,
+      action TEXT NOT NULL,
+      event_type TEXT,
+      previous_status TEXT,
+      new_status TEXT,
+      details_json TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY(ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
     );
@@ -600,6 +658,91 @@ export function initDatabase(dbPath = DB_FILE) {
     }
   } catch (userMigErr) {
     console.warn('[DB User Migration Warning]', userMigErr.message);
+  }
+
+  // Migration: Ensure support_tickets supports extended statuses and columns
+  try {
+    const ticketSqlRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='support_tickets'").get();
+    if (ticketSqlRow && ticketSqlRow.sql && !ticketSqlRow.sql.includes('WAITING_BUYER')) {
+      db.exec(`
+        CREATE TABLE support_tickets_migrated (
+          id TEXT PRIMARY KEY,
+          ticket_number TEXT UNIQUE NOT NULL,
+          customer_id TEXT,
+          partner_id TEXT,
+          requester_email TEXT NOT NULL,
+          requester_name TEXT NOT NULL,
+          buyer_name TEXT,
+          buyer_email TEXT,
+          buyer_phone TEXT,
+          department TEXT NOT NULL DEFAULT 'TECHNICAL',
+          category TEXT NOT NULL DEFAULT 'TECHNICAL',
+          priority TEXT NOT NULL DEFAULT 'NORMAL' CHECK(priority IN ('LOW', 'NORMAL', 'MEDIUM', 'HIGH', 'CRITICAL', 'STANDARD', 'CRITICAL_24_7')),
+          status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_BUYER', 'WAITING_RESELLER', 'ESCALATED', 'RESOLVED', 'CLOSED', 'ANSWERED')),
+          subject TEXT NOT NULL,
+          message TEXT NOT NULL,
+          assigned_to TEXT,
+          related_service_id TEXT,
+          related_order_id TEXT,
+          related_product_code TEXT,
+          preferred_contact TEXT DEFAULT 'EMAIL',
+          created_by_user_id TEXT,
+          created_by_role TEXT DEFAULT 'CUSTOMER',
+          is_escalated INTEGER NOT NULL DEFAULT 0,
+          escalated_at TEXT,
+          escalated_by TEXT,
+          escalation_reason TEXT,
+          sla_due_at TEXT,
+          resolved_at TEXT,
+          closed_at TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO support_tickets_migrated (
+          id, ticket_number, customer_id, partner_id, requester_email, requester_name,
+          department, category, priority, status, subject, message, assigned_to, created_at, updated_at
+        )
+        SELECT 
+          id, ticket_number, customer_id, partner_id, requester_email, requester_name,
+          department, department, priority, status, subject, message, assigned_to, created_at, updated_at
+        FROM support_tickets;
+        DROP TABLE support_tickets;
+        ALTER TABLE support_tickets_migrated RENAME TO support_tickets;
+        CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+        CREATE INDEX IF NOT EXISTS idx_support_tickets_partner ON support_tickets(partner_id);
+        CREATE INDEX IF NOT EXISTS idx_support_tickets_customer ON support_tickets(customer_id);
+        CREATE INDEX IF NOT EXISTS idx_support_tickets_num ON support_tickets(ticket_number);
+      `);
+    }
+  } catch (ticketMigErr) {
+    console.warn('[DB Ticket Migration Warning]', ticketMigErr.message);
+  }
+
+  // Ensure attachments directory exists
+  try {
+    const attachDir = path.join(DATA_DIR, 'attachments');
+    if (!fs.existsSync(attachDir)) {
+      fs.mkdirSync(attachDir, { recursive: true });
+    }
+  } catch (attachDirErr) {
+    console.warn('[DB Attachments Dir Warning]', attachDirErr.message);
+  }
+
+  // Sync any existing ticket_replies into ticket_messages
+  try {
+    const msgCount = db.prepare("SELECT COUNT(*) as count FROM ticket_messages").get();
+    if (msgCount && msgCount.count === 0) {
+      const replies = db.prepare("SELECT * FROM ticket_replies").all();
+      const insertMsg = db.prepare(`
+        INSERT INTO ticket_messages (id, ticket_id, author_type, author_name, author_email, message, is_internal, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+      `);
+      for (const r of replies) {
+        insertMsg.run(r.id, r.ticket_id, r.author_type, r.author_name, r.author_email, r.message, r.created_at);
+      }
+    }
+  } catch (syncErr) {
+    // ignore
   }
 
   seedDefaultData(db);

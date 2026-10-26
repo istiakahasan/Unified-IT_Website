@@ -1632,44 +1632,177 @@
         <!-- ===================================================================
              VIEW 6: SUPPORT TICKETS
              =================================================================== -->
+        <!-- ===================================================================
+             VIEW 6: SUPPORT TICKETS (CENTRALIZED ADMIN NOC & HELPDESK)
+             =================================================================== -->
         <section id="view-support" class="admin-view">
           <div class="section-header">
             <div class="section-title-group">
-              <h1>Helpdesk & Incident Response</h1>
-              <p>Respond to customer and partner operational support requests with SLA priority escalation.</p>
+              <h1>Enterprise Helpdesk &amp; NOC Incident Workspace</h1>
+              <p>Real-time database-backed ticket queue, SLA response enforcement, reseller escalation triage, and private internal notes.</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn-admin btn-secondary" onclick="loadSupportTickets()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Refresh Queue
+              </button>
             </div>
           </div>
 
-          <div class="data-panel">
-            <div class="data-panel-header">
-              <div class="panel-title">Support Tickets Queue</div>
-              <div class="panel-filters">
-                <select id="ticketStatusFilter" class="select-filter" onchange="loadSupportTickets()">
+          <!-- Overview Dashboard: Real DB-backed Metrics -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 2rem;">
+            <div class="kpi-card teal">
+              <div class="kpi-header">
+                <span class="kpi-label">Total Tickets</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10M7 12h10M7 17h10"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-total">0</div>
+              <div class="kpi-footer"><span>All-time platform tickets</span></div>
+            </div>
+
+            <div class="kpi-card blue">
+              <div class="kpi-header">
+                <span class="kpi-label">Unassigned</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-unassigned" style="color: #38bdf8;">0</div>
+              <div class="kpi-footer"><span>Awaiting agent allocation</span></div>
+            </div>
+
+            <div class="kpi-card amber">
+              <div class="kpi-header">
+                <span class="kpi-label">Open / In Progress</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-open" style="color: #fbbf24;">0</div>
+              <div class="kpi-footer"><span>Active engineering investigations</span></div>
+            </div>
+
+            <div class="kpi-card rose" style="--card-accent: var(--adm-rose);">
+              <div class="kpi-header">
+                <span class="kpi-label">High / Critical</span>
+                <div class="kpi-icon-wrap" style="color: #fb7185;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-critical" style="color: #fb7185;">0</div>
+              <div class="kpi-footer"><span>Expedited priority incidents</span></div>
+            </div>
+
+            <div class="kpi-card purple">
+              <div class="kpi-header">
+                <span class="kpi-label">Awaiting Response</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-waiting" style="color: #c084fc;">0</div>
+              <div class="kpi-footer"><span>Waiting for buyer / reseller</span></div>
+            </div>
+
+            <div class="kpi-card rose" style="--card-accent: #e11d48;">
+              <div class="kpi-header">
+                <span class="kpi-label">Escalated to NOC</span>
+                <div class="kpi-icon-wrap" style="color: #f43f5e;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-escalated" style="color: #f43f5e;">0</div>
+              <div class="kpi-footer"><span>Partner escalations</span></div>
+            </div>
+
+            <div class="kpi-card teal">
+              <div class="kpi-header">
+                <span class="kpi-label">Resolved / Closed</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-resolved" style="color: #34d399;">0</div>
+              <div class="kpi-footer"><span>Completed tickets</span></div>
+            </div>
+
+            <div class="kpi-card amber">
+              <div class="kpi-header">
+                <span class="kpi-label">SLA Target Alert</span>
+                <div class="kpi-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 10"/></svg></div>
+              </div>
+              <div class="kpi-value" id="kpi-spt-sla" style="color: #f59e0b;">0</div>
+              <div class="kpi-footer"><span>Within 2h of SLA breach</span></div>
+            </div>
+          </div>
+
+          <!-- Advanced Filtering Toolbar -->
+          <div class="data-panel" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+              <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex: 1;">
+                <input type="text" id="adminTicketSearchInput" class="form-control" placeholder="Search ticket #, subject, customer, reseller..." style="max-width: 280px; padding: 0.55rem 0.85rem;">
+                
+                <select id="adminTicketStatusFilter" class="select-filter form-control" style="width: auto;" onchange="loadSupportTickets(1)">
                   <option value="ALL">All Statuses</option>
                   <option value="OPEN">Open</option>
+                  <option value="ASSIGNED">Assigned</option>
                   <option value="IN_PROGRESS">In Progress</option>
-                  <option value="ANSWERED">Answered</option>
+                  <option value="WAITING_BUYER">Waiting for Buyer</option>
+                  <option value="WAITING_RESELLER">Waiting for Reseller</option>
+                  <option value="ESCALATED">Escalated</option>
                   <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
                 </select>
+
+                <select id="adminTicketPriorityFilter" class="select-filter form-control" style="width: auto;" onchange="loadSupportTickets(1)">
+                  <option value="ALL">All Priorities</option>
+                  <option value="CRITICAL">Critical</option>
+                  <option value="HIGH">High</option>
+                  <option value="NORMAL">Normal / Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+
+                <select id="adminTicketCategoryFilter" class="select-filter form-control" style="width: auto;" onchange="loadSupportTickets(1)">
+                  <option value="ALL">All Categories</option>
+                  <option value="TECHNICAL">Technical Support</option>
+                  <option value="INFRASTRUCTURE">Cloud Infrastructure &amp; Network</option>
+                  <option value="BILLING">Billing &amp; Tax Challan</option>
+                  <option value="EMAIL_HOSTING">Email Hosting</option>
+                  <option value="SECURITY">Security &amp; SSL</option>
+                  <option value="SALES">Sales</option>
+                </select>
+
+                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #fb7185; cursor: pointer; font-weight: 600;">
+                  <input type="checkbox" id="adminTicketEscalatedOnly" onchange="loadSupportTickets(1)">
+                  <span>🚨 Escalated Only</span>
+                </label>
+              </div>
+
+              <div style="font-size: 0.82rem; color: var(--adm-text-muted);" id="adminTicketCountDisplay">
+                Showing 0 tickets
               </div>
             </div>
+          </div>
+
+          <!-- Ticket Management Queue Table -->
+          <div class="data-panel">
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Ticket #</th>
-                    <th>Subject</th>
-                    <th>Customer / Requester</th>
-                    <th>Department</th>
+                    <th>Ticket Ref</th>
+                    <th>Subject &amp; SLA</th>
+                    <th>Customer / Buyer</th>
+                    <th>Reseller Partner</th>
+                    <th>Category</th>
                     <th>Priority</th>
                     <th>Status</th>
+                    <th>Assigned Agent</th>
+                    <th>Last Update</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="ticketsTableBody">
-                  <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading tickets...</td></tr>
+                  <tr><td colspan="10" style="text-align: center; padding: 3rem; color: var(--adm-text-muted);">Loading centralized ticket queue...</td></tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Server-Side Pagination Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-top: 1px solid var(--adm-border);">
+              <span id="adminTicketPageInfo" style="font-size: 0.82rem; color: var(--adm-text-muted);">Page 1 of 1</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-action-sm" id="btnAdminTicketPrevPage" onclick="changeAdminTicketPage(-1)" disabled>&larr; Previous</button>
+                <button type="button" class="btn-action-sm" id="btnAdminTicketNextPage" onclick="changeAdminTicketPage(1)" disabled>Next &rarr;</button>
+              </div>
             </div>
           </div>
         </section>
@@ -2069,25 +2202,113 @@
   </div>
 
   <!-- Ticket Conversation Modal -->
+  <!-- Ticket Conversation & Centralized Management Workspace Modal -->
   <div id="ticketDetailModal" class="modal-backdrop">
-    <div class="modal-window wide">
-      <div class="modal-header">
-        <h3 class="modal-title" id="ticketModalTitle">Support Ticket</h3>
+    <div class="modal-window wide" style="max-width: 960px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--adm-border); padding: 1.2rem 1.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h3 class="modal-title" id="ticketModalTitle" style="margin: 0; font-size: 1.15rem;">Support Ticket</h3>
+            <span id="ticketModalStatusBadge" class="badge">OPEN</span>
+            <span id="ticketModalPriorityBadge" class="badge">NORMAL</span>
+            <span id="ticketModalEscalatedBadge" class="badge badge-danger" style="display: none;">🚨 ESCALATED TO NOC</span>
+          </div>
+          <div id="ticketModalSubtitle" style="font-size: 0.8rem; color: var(--adm-text-muted);">Ref: TCK-000000 | Created: Just now</div>
+        </div>
         <button type="button" class="modal-close" onclick="closeModal('ticketDetailModal')">&times;</button>
       </div>
-      <div class="modal-body">
-        <div id="ticketModalContent">Loading ticket details...</div>
-        <hr style="border: 0; border-top: 1px solid var(--adm-border); margin: 1.5rem 0;">
-        <form onsubmit="handleTicketReplySubmit(event)">
-          <input type="hidden" id="replyTicketId">
-          <div class="form-group">
-            <label class="form-label">Staff Response</label>
-            <textarea id="ticketReplyMessage" class="form-control" required placeholder="Type official response to customer..."></textarea>
+
+      <div class="modal-body" style="overflow-y: auto; padding: 1.25rem 1.5rem; flex: 1;">
+        <!-- Admin Fast Actions Bar: Assign, Status, Priority, Escalation -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--adm-border); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-text-muted); font-weight: 700; margin-bottom: 0.65rem;">Staff Dispatch &amp; Lifecycle Controls</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 4px;">Assigned Support Agent</label>
+              <select id="modalAssignAgentSelect" class="form-control" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;" onchange="handleAdminAssignTicket()">
+                <option value="">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 4px;">Lifecycle Status</label>
+              <select id="modalStatusSelect" class="form-control" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;" onchange="handleAdminStatusChange()">
+                <option value="OPEN">Open</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="WAITING_BUYER">Waiting for Buyer</option>
+                <option value="WAITING_RESELLER">Waiting for Reseller</option>
+                <option value="ESCALATED">Escalated</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 4px;">Incident Priority</label>
+              <select id="modalPrioritySelect" class="form-control" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;" onchange="handleAdminPriorityChange()">
+                <option value="LOW">Low</option>
+                <option value="NORMAL">Normal / Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" id="modalEscalateToggleBtn" class="btn-admin" style="width: 100%; font-size: 0.82rem; padding: 0.45rem 0.75rem; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #f87171;" onclick="handleAdminEscalateToggle()">
+                🚨 Escalate to NOC
+              </button>
+            </div>
           </div>
-          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button type="submit" class="btn-admin btn-primary">Send Response</button>
+        </div>
+
+        <!-- Entity Context Grid (Buyer, Reseller, SLA, Related Entity) -->
+        <div id="ticketModalEntityGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Navigation Tabs: Thread & Attachments vs Audit Trail -->
+        <div style="display: flex; gap: 1rem; border-bottom: 1px solid var(--adm-border); margin-bottom: 1rem;">
+          <button type="button" id="tabBtnAdminThread" class="btn-action-sm" style="border-bottom: 2px solid var(--adm-teal); border-radius: 0; background: transparent; font-weight: 600; color: #fff;" onclick="switchAdminTicketTab('thread')">Conversation Thread (<span id="ticketReplyCount">0</span>)</button>
+          <button type="button" id="tabBtnAdminAudit" class="btn-action-sm" style="border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--adm-text-muted);" onclick="switchAdminTicketTab('audit')">Audit History (<span id="ticketAuditCount">0</span>)</button>
+        </div>
+
+        <!-- Tab 1: Conversation Thread -->
+        <div id="tabContentAdminThread">
+          <!-- Initial problem description & messages -->
+          <div id="ticketModalMessagesList" style="display: flex; flex-direction: column; gap: 0.85rem; max-height: 340px; overflow-y: auto; padding-right: 4px; margin-bottom: 1.25rem;">
+            <!-- Message bubbles -->
           </div>
-        </form>
+
+          <!-- Attachments list -->
+          <div id="ticketModalAttachmentsList" style="margin-bottom: 1.25rem; display: none;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: var(--adm-text-muted); margin-bottom: 0.4rem;">ATTACHED EVIDENCE / LOGS:</div>
+            <div id="ticketModalAttachmentsContainer" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+          </div>
+
+          <!-- Reply Composer -->
+          <form onsubmit="handleAdminTicketReplySubmit(event)" style="background: rgba(0,0,0,0.2); border: 1px solid var(--adm-border); border-radius: 8px; padding: 1rem;">
+            <input type="hidden" id="replyTicketId">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px;">
+              <label class="form-label" style="margin-bottom: 0;">Compose Response / Note</label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #f59e0b; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" id="replyIsInternal">
+                <span>🔒 Private Internal Note (Hidden from Customer &amp; Reseller)</span>
+              </label>
+            </div>
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <textarea id="ticketReplyMessage" class="form-control" rows="3" required placeholder="Type official response or private staff note..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--adm-text-muted);">Markdown supported. Internal notes are audited.</span>
+              <button type="submit" class="btn-admin btn-primary" id="btnAdminSendReply">Post Response</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tab 2: Audit History -->
+        <div id="tabContentAdminAudit" style="display: none;">
+          <div id="ticketModalAuditList" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 450px; overflow-y: auto;">
+            <!-- Audit event items -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2220,6 +2441,16 @@
     function closeModal(id) {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     // Session Verification
@@ -2884,110 +3115,519 @@
       }
     }
 
-    // 6. Support Tickets
-    async function loadSupportTickets() {
-      const status = document.getElementById('ticketStatusFilter')?.value || 'ALL';
-      const tbody = document.getElementById('ticketsTableBody');
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Fetching tickets...</td></tr>`;
+    // 6. Support Tickets - Centralized Admin & NOC Dispatch
+    let adminTicketsCurrentPage = 1;
+    let adminTicketsTotalPages = 1;
+    let adminTicketSearchDebounce = null;
+    let currentInspectedTicketId = null;
+    let adminStaffListCache = [];
 
+    function switchAdminTicketTab(tab) {
+      const threadBtn = document.getElementById('tabBtnAdminThread');
+      const auditBtn = document.getElementById('tabBtnAdminAudit');
+      const threadContent = document.getElementById('tabContentAdminThread');
+      const auditContent = document.getElementById('tabContentAdminAudit');
+
+      if (tab === 'thread') {
+        threadBtn.style.borderBottomColor = 'var(--adm-teal)';
+        threadBtn.style.color = '#fff';
+        auditBtn.style.borderBottomColor = 'transparent';
+        auditBtn.style.color = 'var(--adm-text-muted)';
+        threadContent.style.display = 'block';
+        auditContent.style.display = 'none';
+      } else {
+        auditBtn.style.borderBottomColor = 'var(--adm-teal)';
+        auditBtn.style.color = '#fff';
+        threadBtn.style.borderBottomColor = 'transparent';
+        threadBtn.style.color = 'var(--adm-text-muted)';
+        threadContent.style.display = 'none';
+        auditContent.style.display = 'block';
+      }
+    }
+
+    async function loadAdminStaffList() {
+      if (adminStaffListCache.length > 0) return adminStaffListCache;
       try {
-        const res = await fetch(`/api/admin/support/tickets?status=${encodeURIComponent(status)}`);
-        if (!res.ok) throw new Error('Failed to load tickets');
+        const res = await fetch('/api/admin/support/staff');
+        if (res.ok) {
+          const data = await res.json();
+          adminStaffListCache = data.staff || [];
+        }
+      } catch (err) {
+        console.error('Failed to load support staff list:', err);
+      }
+      return adminStaffListCache;
+    }
+
+    function changeAdminTicketPage(delta) {
+      const target = adminTicketsCurrentPage + delta;
+      if (target >= 1 && target <= adminTicketsTotalPages) {
+        loadSupportTickets(target);
+      }
+    }
+
+    // Attach search input listener once DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('adminTicketSearchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(adminTicketSearchDebounce);
+          adminTicketSearchDebounce = setTimeout(() => {
+            loadSupportTickets(1);
+          }, 350);
+        });
+      }
+    });
+
+    async function loadSupportTickets(page = 1) {
+      adminTicketsCurrentPage = page;
+      const status = document.getElementById('adminTicketStatusFilter')?.value || 'ALL';
+      const priority = document.getElementById('adminTicketPriorityFilter')?.value || 'ALL';
+      const category = document.getElementById('adminTicketCategoryFilter')?.value || 'ALL';
+      const escalatedOnly = document.getElementById('adminTicketEscalatedOnly')?.checked ? '1' : '';
+      const search = document.getElementById('adminTicketSearchInput')?.value.trim() || '';
+
+      const tbody = document.getElementById('ticketsTableBody');
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 3rem; color: var(--adm-text-muted);">Fetching authoritative ticket queue...</td></tr>`;
+
+      // 1. Fetch real-time dashboard overview metrics
+      try {
+        const ovRes = await fetch('/api/admin/support/overview');
+        if (ovRes.ok) {
+          const ov = await ovRes.json();
+          const m = ov.metrics || {};
+          const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+          setVal('kpi-spt-total', m.total || 0);
+          setVal('kpi-spt-unassigned', m.unassigned || 0);
+          setVal('kpi-spt-open', m.open || 0);
+          setVal('kpi-spt-critical', m.critical || 0);
+          setVal('kpi-spt-waiting', m.waiting || 0);
+          setVal('kpi-spt-escalated', m.escalated || 0);
+          setVal('kpi-spt-resolved', m.resolved || 0);
+          setVal('kpi-spt-sla', m.slaBreaching || 0);
+        }
+      } catch (e) {
+        console.warn('Overview KPI update failed:', e);
+      }
+
+      // 2. Fetch paginated ticket records
+      try {
+        const queryParams = new URLSearchParams({
+          page: String(adminTicketsCurrentPage),
+          limit: '10'
+        });
+        if (status !== 'ALL') queryParams.append('status', status);
+        if (priority !== 'ALL') queryParams.append('priority', priority);
+        if (category !== 'ALL') queryParams.append('category', category);
+        if (escalatedOnly) queryParams.append('escalated', 'true');
+        if (search) queryParams.append('search', search);
+
+        const res = await fetch(`/api/admin/support/tickets?${queryParams.toString()}`);
+        if (!res.ok) throw new Error('Failed to load support tickets');
         const data = await res.json();
 
+        adminTicketsTotalPages = data.totalPages || 1;
+        const totalCount = data.total || 0;
+
+        const countDisplay = document.getElementById('adminTicketCountDisplay');
+        if (countDisplay) countDisplay.textContent = `Showing ${data.tickets.length} of ${totalCount} tickets`;
+
+        const pageInfo = document.getElementById('adminTicketPageInfo');
+        if (pageInfo) pageInfo.textContent = `Page ${data.page} of ${adminTicketsTotalPages} (${totalCount} total)`;
+
+        const prevBtn = document.getElementById('btnAdminTicketPrevPage');
+        const nextBtn = document.getElementById('btnAdminTicketNextPage');
+        if (prevBtn) prevBtn.disabled = data.page <= 1;
+        if (nextBtn) nextBtn.disabled = data.page >= adminTicketsTotalPages;
+
         if (data.tickets.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No support tickets in queue.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 3rem; color: var(--adm-text-muted);">No support tickets found matching the specified filter criteria.</td></tr>`;
           return;
         }
 
-        tbody.innerHTML = data.tickets.map(t => `
-          <tr>
-            <td class="mono" style="color: #fff;">${t.ticket_number}</td>
-            <td>
-              <div class="table-entity-title">
-                ${t.subject}
-                <span class="table-entity-sub">${t.created_at.slice(0, 16)}</span>
-              </div>
-            </td>
-            <td>${t.customer_company || t.requester_name}</td>
-            <td><span class="badge badge-info">${t.department}</span></td>
-            <td>
-              <span class="badge ${t.priority === 'CRITICAL' ? 'badge-danger' : (t.priority === 'HIGH' ? 'badge-warning' : 'badge-info')}">
-                ${t.priority}
-              </span>
-            </td>
-            <td>
-              <span class="badge ${t.status === 'OPEN' ? 'badge-danger' : (t.status === 'IN_PROGRESS' ? 'badge-warning' : 'badge-success')}">
-                ${t.status}
-              </span>
-            </td>
-            <td>
-              <button class="btn-action-sm" onclick="inspectTicket('${t.id}')">View & Reply</button>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = data.tickets.map(t => {
+          // Status badge class
+          let statusBadgeClass = 'badge-info';
+          if (t.status === 'OPEN') statusBadgeClass = 'badge-danger';
+          else if (t.status === 'ASSIGNED') statusBadgeClass = 'badge-primary';
+          else if (t.status === 'IN_PROGRESS') statusBadgeClass = 'badge-warning';
+          else if (t.status === 'WAITING_BUYER' || t.status === 'WAITING_RESELLER') statusBadgeClass = 'badge-purple';
+          else if (t.status === 'ESCALATED') statusBadgeClass = 'badge-danger';
+          else if (t.status === 'RESOLVED' || t.status === 'CLOSED') statusBadgeClass = 'badge-success';
+
+          // Priority badge class
+          let prioColor = '#94a3b8';
+          if (t.priority === 'CRITICAL') prioColor = '#fb7185';
+          else if (t.priority === 'HIGH') prioColor = '#f59e0b';
+          else if (t.priority === 'NORMAL') prioColor = 'var(--adm-teal)';
+
+          // SLA countdown indicator
+          let slaBadge = '';
+          if (t.sla_due_at) {
+            const dueTime = new Date(t.sla_due_at).getTime();
+            const now = Date.now();
+            const diffHours = (dueTime - now) / 3600000;
+            if (t.status === 'RESOLVED' || t.status === 'CLOSED') {
+              slaBadge = `<span style="font-size: 0.72rem; color: #34d399;">✓ Met</span>`;
+            } else if (diffHours < 0) {
+              slaBadge = `<span style="font-size: 0.72rem; color: #fb7185; font-weight: 700;">⚠️ SLA Breached</span>`;
+            } else if (diffHours < 2) {
+              slaBadge = `<span style="font-size: 0.72rem; color: #f59e0b; font-weight: 700;">⏱️ ${Math.round(diffHours * 60)}m SLA</span>`;
+            } else {
+              slaBadge = `<span style="font-size: 0.72rem; color: var(--adm-text-subtle);">⏱️ ${Math.round(diffHours)}h SLA</span>`;
+            }
+          }
+
+          const partnerDisplay = t.partner_name 
+            ? `<span style="color: #67e8f9; font-weight: 600;">🤝 ${escapeHtml(t.partner_name)}</span>`
+            : `<span style="color: var(--adm-text-subtle);">Direct Platform</span>`;
+
+          const assignedDisplay = t.assigned_agent_name
+            ? `<span style="font-size: 0.82rem; color: #fff;">👤 ${escapeHtml(t.assigned_agent_name)}</span>`
+            : `<span style="font-size: 0.75rem; color: #fb7185; font-weight: 600;">⚠️ Unassigned</span>`;
+
+          return `
+            <tr style="${t.is_escalated ? 'background: rgba(244, 63, 94, 0.04);' : ''}">
+              <td class="mono" style="color: #fff; font-weight: 700;">
+                ${t.ticket_number}
+                ${t.is_escalated ? '<div style="font-size: 0.68rem; color: #fb7185; font-weight: 700;">🚨 ESCALATED</div>' : ''}
+              </td>
+              <td>
+                <div class="table-entity-title">
+                  <span style="font-weight: 600; color: #fff;">${escapeHtml(t.subject)}</span>
+                  <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                    <span class="table-entity-sub" style="margin: 0;">${(t.created_at || '').slice(0, 16)}</span>
+                    ${slaBadge}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-weight: 500; color: #fff;">${escapeHtml(t.buyer_name || t.requester_name || 'Anonymous')}</div>
+                <div style="font-size: 0.74rem; color: var(--adm-text-muted);">${escapeHtml(t.buyer_email || t.requester_email || '')}</div>
+              </td>
+              <td>${partnerDisplay}</td>
+              <td><span class="badge" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.72rem;">${escapeHtml(t.category || t.department || 'GENERAL')}</span></td>
+              <td>
+                <span class="badge" style="color: ${prioColor}; border: 1px solid ${prioColor}40; background: ${prioColor}15; font-size: 0.72rem;">
+                  ${t.priority}
+                </span>
+              </td>
+              <td>
+                <span class="badge ${statusBadgeClass}" style="font-size: 0.72rem;">
+                  ${t.status}
+                </span>
+              </td>
+              <td>${assignedDisplay}</td>
+              <td style="font-size: 0.78rem; color: var(--adm-text-muted);">${(t.updated_at || t.created_at || '').slice(0, 16)}</td>
+              <td>
+                <button class="btn-action-sm" onclick="inspectTicket('${t.id}')">Inspect &amp; Dispatch</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #fb7185; padding: 3rem;">Error retrieving queue: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
 
     async function inspectTicket(ticketId) {
+      currentInspectedTicketId = ticketId;
       openModal('ticketDetailModal');
-      const content = document.getElementById('ticketModalContent');
-      content.innerHTML = '<div style="padding: 2rem; text-align: center;">Loading ticket thread...</div>';
+
+      const messagesList = document.getElementById('ticketModalMessagesList');
+      const entityGrid = document.getElementById('ticketModalEntityGrid');
+      const auditList = document.getElementById('ticketModalAuditList');
+      
+      messagesList.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--adm-text-muted);">Fetching complete conversation history and telemetry...</div>';
+      entityGrid.innerHTML = '';
+      auditList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--adm-text-muted);">Loading audit log...</div>';
+
       document.getElementById('replyTicketId').value = ticketId;
       document.getElementById('ticketReplyMessage').value = '';
+      document.getElementById('replyIsInternal').checked = false;
+      switchAdminTicketTab('thread');
 
       try {
-        const res = await fetch(`/api/admin/support/tickets/${ticketId}`);
-        if (!res.ok) throw new Error('Failed to load ticket');
-        const data = await res.json();
+        const [ticketRes, staffList] = await Promise.all([
+          fetch(`/api/admin/support/tickets/${ticketId}`),
+          loadAdminStaffList()
+        ]);
+
+        if (!ticketRes.ok) throw new Error('Failed to load ticket details');
+        const data = await ticketRes.json();
         const t = data.ticket;
 
+        // Set Header details
         document.getElementById('ticketModalTitle').textContent = `[${t.ticket_number}] ${t.subject}`;
-        content.innerHTML = `
-          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <strong>Requester: ${t.requester_name} &lt;${t.requester_email}&gt;</strong>
-              <span class="badge badge-warning">${t.priority}</span>
-            </div>
-            <p style="color: #fff; font-size: 0.9rem;">${t.message}</p>
+        document.getElementById('ticketModalSubtitle').textContent = `Ref: ${t.ticket_number} | Category: ${t.category} | Created: ${t.created_at}`;
+
+        // Status badge
+        const sBadge = document.getElementById('ticketModalStatusBadge');
+        sBadge.textContent = t.status;
+        sBadge.className = 'badge ' + (t.status === 'OPEN' ? 'badge-danger' : (t.status === 'IN_PROGRESS' ? 'badge-warning' : (t.status === 'RESOLVED' ? 'badge-success' : 'badge-info')));
+
+        // Priority badge
+        const pBadge = document.getElementById('ticketModalPriorityBadge');
+        pBadge.textContent = t.priority;
+        pBadge.className = 'badge ' + (t.priority === 'CRITICAL' ? 'badge-danger' : (t.priority === 'HIGH' ? 'badge-warning' : 'badge-info'));
+
+        // Escalated badge & button toggle
+        const escBadge = document.getElementById('ticketModalEscalatedBadge');
+        const escBtn = document.getElementById('modalEscalateToggleBtn');
+        if (t.is_escalated) {
+          escBadge.style.display = 'inline-block';
+          escBtn.textContent = '🛡️ De-escalate from NOC';
+          escBtn.style.color = '#38bdf8';
+          escBtn.style.background = 'rgba(56, 189, 248, 0.12)';
+          escBtn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        } else {
+          escBadge.style.display = 'none';
+          escBtn.textContent = '🚨 Escalate to NOC';
+          escBtn.style.color = '#f87171';
+          escBtn.style.background = 'rgba(239,68,68,0.15)';
+          escBtn.style.borderColor = 'rgba(239,68,68,0.4)';
+        }
+
+        // Populate Staff Select
+        const staffSelect = document.getElementById('modalAssignAgentSelect');
+        staffSelect.innerHTML = `<option value="">-- Unassigned --</option>` + staffList.map(s => `
+          <option value="${s.id}" ${t.assigned_to === s.id ? 'selected' : ''}>${escapeHtml(s.full_name)} (${s.role})</option>
+        `).join('');
+
+        // Populate Status & Priority Selects
+        document.getElementById('modalStatusSelect').value = t.status;
+        document.getElementById('modalPrioritySelect').value = t.priority;
+
+        // Populate Context Entity Grid
+        let slaRemainingText = 'Not specified';
+        if (t.sla_due_at) {
+          const hoursLeft = Math.round((new Date(t.sla_due_at).getTime() - Date.now()) / 3600000);
+          slaRemainingText = hoursLeft < 0 ? `⚠️ Breached by ${Math.abs(hoursLeft)}h` : `${hoursLeft} hours remaining`;
+        }
+
+        entityGrid.innerHTML = `
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--adm-border); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--adm-text-muted); text-transform: uppercase;">Customer / Buyer</div>
+            <div style="font-weight: 600; color: #fff; font-size: 0.88rem; margin-top: 2px;">${escapeHtml(t.buyer_name || t.requester_name || 'Anonymous')}</div>
+            <div style="font-size: 0.78rem; color: var(--adm-teal);">${escapeHtml(t.buyer_email || t.requester_email || 'N/A')}</div>
+            ${t.buyer_phone ? `<div style="font-size: 0.75rem; color: var(--adm-text-subtle);">${escapeHtml(t.buyer_phone)}</div>` : ''}
           </div>
 
-          <h5 style="margin-bottom: 0.75rem; color: #fff;">Replies & Conversation History (${data.replies.length})</h5>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto;">
-            ${data.replies.length === 0 ? '<p style="color: var(--adm-text-subtle);">No staff replies yet.</p>' : data.replies.map(r => `
-              <div style="padding: 0.85rem; border-radius: 8px; background: rgba(93, 224, 196, 0.05); border: 1px solid rgba(93, 224, 196, 0.2);">
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.35rem;">
-                  <strong style="color: var(--adm-teal);">${r.author_name}</strong>
-                  <span style="color: var(--adm-text-subtle);">${r.created_at.slice(0, 16)}</span>
-                </div>
-                <div style="font-size: 0.85rem; color: #fff;">${r.message}</div>
-              </div>
-            `).join('')}
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--adm-border); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--adm-text-muted); text-transform: uppercase;">Reseller Relationship</div>
+            <div style="font-weight: 600; color: #67e8f9; font-size: 0.88rem; margin-top: 2px;">${t.partner_name ? escapeHtml(t.partner_name) : 'Direct Platform Buyer'}</div>
+            <div style="font-size: 0.78rem; color: var(--adm-text-muted);">${t.partner_email ? escapeHtml(t.partner_email) : 'No reseller intermediary'}</div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--adm-border); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--adm-text-muted); text-transform: uppercase;">Related Resource</div>
+            <div style="font-weight: 600; color: #fff; font-size: 0.88rem; margin-top: 2px;">${escapeHtml(t.related_product_code || t.related_service_id || 'General Support')}</div>
+            ${t.related_order_id ? `<div style="font-size: 0.78rem; color: var(--adm-text-subtle);">Order: ${escapeHtml(t.related_order_id)}</div>` : ''}
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--adm-border); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--adm-text-muted); text-transform: uppercase;">SLA Target Countdown</div>
+            <div style="font-weight: 600; color: ${slaRemainingText.includes('Breached') ? '#fb7185' : '#34d399'}; font-size: 0.88rem; margin-top: 2px;">${slaRemainingText}</div>
+            <div style="font-size: 0.75rem; color: var(--adm-text-subtle);">Due: ${(t.sla_due_at || '').slice(0, 16)}</div>
           </div>
         `;
+
+        // Render Conversation Messages
+        const messages = data.messages || [];
+        document.getElementById('ticketReplyCount').textContent = messages.length;
+
+        if (messages.length === 0) {
+          messagesList.innerHTML = `
+            <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px;">
+              <p style="color: #fff; margin: 0; font-size: 0.88rem;">${escapeHtml(t.message || t.description || 'No description provided.')}</p>
+            </div>
+          `;
+        } else {
+          messagesList.innerHTML = messages.map(m => {
+            const isInternal = !!m.is_internal;
+            const bubbleBg = isInternal 
+              ? 'rgba(245, 158, 11, 0.08)' 
+              : (m.author_role === 'ADMIN' || m.author_role === 'STAFF' ? 'rgba(93, 224, 196, 0.06)' : 'rgba(255, 255, 255, 0.03)');
+            const borderCol = isInternal 
+              ? 'rgba(245, 158, 11, 0.4)' 
+              : (m.author_role === 'ADMIN' || m.author_role === 'STAFF' ? 'rgba(93, 224, 196, 0.25)' : 'var(--adm-border)');
+            const authorRoleTag = isInternal 
+              ? `<span style="background: #f59e0b; color: #000; font-weight: 800; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;">🔒 INTERNAL NOTE</span>` 
+              : `<span class="badge" style="font-size: 0.68rem;">${m.author_role}</span>`;
+
+            return `
+              <div style="padding: 1rem; border-radius: 8px; background: ${bubbleBg}; border: 1px solid ${borderCol};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong style="color: ${isInternal ? '#f59e0b' : 'var(--adm-teal)'}; font-size: 0.88rem;">${escapeHtml(m.author_name || 'Support Staff')}</strong>
+                    ${authorRoleTag}
+                  </div>
+                  <span style="color: var(--adm-text-muted); font-size: 0.75rem;">${(m.created_at || '').slice(0, 16)}</span>
+                </div>
+                <div style="font-size: 0.86rem; color: #fff; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(m.message)}</div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Render Attachments
+        const attachments = data.attachments || [];
+        const attContainer = document.getElementById('ticketModalAttachmentsContainer');
+        const attListWrap = document.getElementById('ticketModalAttachmentsList');
+        if (attachments.length > 0) {
+          attListWrap.style.display = 'block';
+          attContainer.innerHTML = attachments.map(a => `
+            <a href="/api/support/attachments/${a.id}" target="_blank" class="btn-action-sm" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 4px 10px;">
+              <span>📎 ${escapeHtml(a.original_filename)}</span>
+              <span style="font-size: 0.7rem; color: var(--adm-text-subtle);">(${Math.round(a.file_size / 1024)} KB)</span>
+            </a>
+          `).join('');
+        } else {
+          attListWrap.style.display = 'none';
+        }
+
+        // Render Audit Events
+        const auditEvents = data.auditEvents || [];
+        document.getElementById('ticketAuditCount').textContent = auditEvents.length;
+        if (auditEvents.length === 0) {
+          auditList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--adm-text-muted);">No audit entries recorded yet.</div>';
+        } else {
+          auditList.innerHTML = auditEvents.map(a => `
+            <div style="padding: 0.75rem 1rem; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--adm-border); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="badge" style="font-size: 0.7rem; margin-right: 6px;">${escapeHtml(a.event_type)}</span>
+                <span style="font-size: 0.82rem; color: #fff;">${escapeHtml(a.actor_name || 'System')} (${a.actor_role}): </span>
+                <span style="font-size: 0.82rem; color: var(--adm-text-muted);">${escapeHtml(a.reason || a.new_value || 'State transitioned')}</span>
+              </div>
+              <span style="font-size: 0.72rem; color: var(--adm-text-subtle);">${(a.created_at || '').slice(0, 16)}</span>
+            </div>
+          `).join('');
+        }
+
       } catch (err) {
-        content.innerHTML = `<div style="padding: 2rem; color: #fb7185;">Error: ${err.message}</div>`;
+        messagesList.innerHTML = `<div style="padding: 2rem; color: #fb7185; text-align: center;">Error loading ticket: ${escapeHtml(err.message)}</div>`;
       }
     }
 
-    async function handleTicketReplySubmit(e) {
+    async function handleAdminTicketReplySubmit(e) {
       e.preventDefault();
       const ticketId = document.getElementById('replyTicketId').value;
       const message = document.getElementById('ticketReplyMessage').value.trim();
+      const isInternal = document.getElementById('replyIsInternal').checked;
+      const sendBtn = document.getElementById('btnAdminSendReply');
+
+      if (!message) return;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Posting...';
 
       try {
         const res = await fetch(`/api/admin/support/tickets/${ticketId}/reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message, is_internal: isInternal })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to send reply');
-        showToast('Official reply sent to client.', 'success');
+        if (!res.ok) throw new Error(data.message || 'Failed to post reply');
+
+        showToast(isInternal ? 'Internal staff note recorded.' : 'Official reply sent to requester.', 'success');
+        document.getElementById('ticketReplyMessage').value = '';
         inspectTicket(ticketId);
-        loadSupportTickets();
+        loadSupportTickets(adminTicketsCurrentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Post Response';
+      }
+    }
+
+    async function handleAdminAssignTicket() {
+      if (!currentInspectedTicketId) return;
+      const assigned_to = document.getElementById('modalAssignAgentSelect').value || null;
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${currentInspectedTicketId}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigned_to })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Assignment failed');
+
+        showToast('Support staff assignment updated.', 'success');
+        inspectTicket(currentInspectedTicketId);
+        loadSupportTickets(adminTicketsCurrentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function handleAdminStatusChange() {
+      if (!currentInspectedTicketId) return;
+      const status = document.getElementById('modalStatusSelect').value;
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${currentInspectedTicketId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, reason: 'Updated via Administrator Workspace' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Status transition failed');
+
+        showToast(`Ticket status updated to ${status}.`, 'success');
+        inspectTicket(currentInspectedTicketId);
+        loadSupportTickets(adminTicketsCurrentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function handleAdminPriorityChange() {
+      if (!currentInspectedTicketId) return;
+      const priority = document.getElementById('modalPrioritySelect').value;
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${currentInspectedTicketId}/priority`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priority, reason: 'Updated via Administrator Workspace' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Priority update failed');
+
+        showToast(`Ticket priority changed to ${priority}.`, 'success');
+        inspectTicket(currentInspectedTicketId);
+        loadSupportTickets(adminTicketsCurrentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function handleAdminEscalateToggle() {
+      if (!currentInspectedTicketId) return;
+      const escBtn = document.getElementById('modalEscalateToggleBtn');
+      const isCurrentlyEscalated = escBtn.textContent.includes('De-escalate');
+
+      const action = isCurrentlyEscalated ? 'deescalate' : 'escalate';
+      let reason = 'Toggled via Administrator Workspace';
+      if (!isCurrentlyEscalated) {
+        reason = prompt('Enter justification for escalating to Platform NOC / Tier 3:', 'Immediate Tier-3 network engineering review required');
+        if (!reason) return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${currentInspectedTicketId}/escalate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, reason })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Escalation operation failed');
+
+        showToast(isCurrentlyEscalated ? 'Ticket de-escalated from NOC.' : 'Ticket escalated to NOC.', 'success');
+        inspectTicket(currentInspectedTicketId);
+        loadSupportTickets(adminTicketsCurrentPage);
       } catch (err) {
         showToast(err.message, 'error');
       }

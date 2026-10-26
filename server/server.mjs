@@ -209,7 +209,7 @@ export function createServer() {
       }
 
       const ext = path.extname(filePath).toLowerCase();
-      const isDynamic = ext === '.html' || ext === '.js' || ext === '.mjs';
+      const isDynamic = ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css';
       res.writeHead(200, {
         'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
         'Cache-Control': isDynamic ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'

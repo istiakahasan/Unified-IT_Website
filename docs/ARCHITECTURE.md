@@ -1,86 +1,213 @@
-# Architecture
 
-## Overview
+# Unified Cloud System Architecture
 
-A static site with no bundler. `index.html` holds the page markup, links `assets/css/main.css` (which imports the CSS files
-in cascade order), loads the libraries, then runs the application scripts in a fixed order. Each module finds its
-elements by id and wires itself up when it runs, so a module must come **after** the markup it uses and after any
-module that builds that markup.
+## 1. Overview & High-Level Architecture
+
+Unified Cloud is an enterprise cloud infrastructure platform built with a high-performance vanilla JavaScript and Node.js architecture. The platform operates without heavy frontend bundlers, maintaining ultra-fast load times, clear separation of concerns, and native browser standards.
 
 ```
-index.html
- ├─ assets/css/main.css                  → imports 18 CSS files in cascade order
- ├─ <body> markup                        hero layers, header, About, Partner, VPS / VDS / Business Email pages
- ├─ <script id="cfs" type="x-shader/…">  cloud fragment shader (read by modules/flight-scene.js)
- ├─ vendor: three r128, GLTFLoader, meshopt (local), anime.js 4.0.2 (CDN)
- └─ scripts in the order below
+Unified Cloud Platform
+ ├── Public Cloud Website (index.html)
+ │    ├── 3D WebGL Datacenter Flight Journey (Three.js r128 + Meshopt)
+ │    ├── Dynamic Service Catalogues & Calculators (assets/js/modules/dynamic-services.js)
+ │    ├── Dhaka Anycast Domain Engine (assets/js/modules/domain-search.js)
+ │    └── Universal Support Ticket Entry & Modal (assets/js/modules/support-ticket.js)
+ ├── Cloud Partner Portal (partners.html, partner-dashboard.html, admin-partners.html)
+ │    ├── Spend-Based Tier Engine & Wholesale Margins (5% - 25%)
+ │    ├── Reseller-to-Buyer Customer Relationship Management
+ │    └── Reseller Ticket Desk (triage, reply, escalate to Platform NOC)
+ ├── Centralized Admin Portal (admin.html)
+ │    ├── Multi-zone Infrastructure & NOC Incidents (Dhaka DC-01, Singapore SG-01)
+ │    ├── Live Financials, MRR & Justified Refund Approval
+ │    ├── RBAC Matrix (8 specialized administrative roles)
+ │    └── Unified Support Management Workspace (8 live KPIs, triage, internal notes, SLA)
+ └── Node.js Microservices Backend (server/)
+      ├── server.mjs                → Virtual host router, static server & API dispatcher
+      ├── api.mjs                   → REST API routing & RBAC middleware guards
+      ├── tickets-service.mjs       → Ticketing domain engine, SLA calculation, multi-tenant isolation
+      ├── db.mjs                    → Native SQLite persistence, schema migrations & relations
+      ├── auth.mjs                  → SessionStore, token revocation & brute-force lockout
+      ├── pricing-engine.mjs        → Automated wholesale pricing & tier transitions
+      ├── reward-service.mjs        → Commission & reward point ledger
+      ├── whmcs-adapter.mjs         → WHMCS enterprise billing & invoice lifecycle
+      └── cloudstack-adapter.mjs    → Apache CloudStack multi-zone VM provisioning
 ```
 
-## Script load order
+---
 
-| # | File |
-|---|---|
-| 1 | `assets/js/vendor/three.min.js` |
-| 2 | `assets/js/vendor/GLTFLoader.js` |
-| 3 | `assets/js/vendor/meshopt_decoder.js` |
-| 4 | `assets/js/config.js` |
-| 5 | `assets/js/data/service-pages.js` |
-| 6 | `assets/js/data/digicert-prices.js` |
-| 7 | `assets/js/data/comodo-prices.js` |
-| 8 | `assets/js/modules/flight-scene.js` |
-| 9 | `assets/js/modules/services-gallery.js` |
-| 10 | `assets/js/modules/latency-widget.js` |
-| 11 | `assets/js/modules/about-page.js` |
-| 12 | `assets/js/modules/header-nav.js` |
-| 13 | `assets/js/modules/partner-page.js` |
-| 14 | `assets/js/modules/hosting-overlays.js` |
-| 15 | `assets/js/modules/service-modal.js` |
-| 16 | `assets/js/modules/dynamic-services.js` |
-| 17 | `assets/js/modules/ssl-configurator.js` |
-| 18 | `assets/js/modules/digicert-catalog.js` |
-| 19 | `assets/js/modules/comodo-catalog.js` |
-| 20 | `assets/js/modules/vps-matrix.js` |
-| 21 | `assets/js/modules/storage-calc.js` |
-| 22 | `assets/js/modules/ui-toggles.js` |
-| 23 | `assets/js/app.js` |
+## 2. Frontend Script Loading & Execution Order
 
-(`data/model-data.js` is added by a small inline script only when the page runs on `file://`.)
+All modules are loaded in strict sequence to respect DOM element dependencies and shared registries.
 
-## Data flow
+| # | File | Purpose | Scope / Dependencies |
+|---|---|---|---|
+| 1 | `assets/js/vendor/three.min.js` | WebGL 3D 3rd-party runtime | Global `THREE` |
+| 2 | `assets/js/vendor/GLTFLoader.js` | glTF / GLB model loader | `THREE.GLTFLoader` |
+| 3 | `assets/js/vendor/meshopt_decoder.js` | Meshopt geometry decoder | `MeshoptDecoder` |
+| 4 | `assets/js/config.js` | Base configuration & endpoints | `window.UNIFIED_CONFIG` |
+| 5 | `assets/js/data/service-pages.js` | Service catalog schemas & pricing specs | `window.SERVICE_PAGES` |
+| 6 | `assets/js/data/digicert-prices.js` | DigiCert SSL tier pricing registry | `window.DIGICERT_PRICES` |
+| 7 | `assets/js/data/comodo-prices.js` | Comodo/Sectigo SSL tier pricing | `window.COMODO_PRICES` |
+| 8 | `assets/js/modules/flight-scene.js` | WebGL volumetric scene & scroll driver | Publishes `window.__sm` |
+| 9 | `assets/js/modules/services-gallery.js`| 3D services carousel & cards | Reads `window.__sm` |
+| 10 | `assets/js/modules/latency-widget.js` | BDIX & global edge telemetry | Edge ping measurements |
+| 11 | `assets/js/modules/about-page.js` | Company profile & datacenter specs | `#aboutOverlay` |
+| 12 | `assets/js/modules/header-nav.js` | Navigation bar, mega menus & search | Desktop & mobile header |
+| 13 | `assets/js/modules/partner-page.js` | Partner application form handler | Multi-step validation |
+| 14 | `assets/js/modules/hosting-overlays.js`| Web hosting & cPanel configurators | Hosting modal logic |
+| 15 | `assets/js/modules/service-modal.js` | Dynamic product detail drawers | Cart integration |
+| 16 | `assets/js/modules/dynamic-services.js`| Dynamic service page generator | Shared footer `window.__UF` |
+| 17 | `assets/js/modules/ssl-configurator.js`| SSL order matrix & SAN calculator | Cart checkout |
+| 18 | `assets/js/modules/digicert-catalog.js`| DigiCert modal catalog viewer | Product filters |
+| 19 | `assets/js/modules/comodo-catalog.js` | Sectigo modal catalog viewer | Product filters |
+| 20 | `assets/js/modules/vps-matrix.js` | Cloud VPS compute configurator | Spec sliders & pricing |
+| 21 | `assets/js/modules/storage-calc.js` | S3-compatible cloud storage calculator| TB/Bandwidth slider |
+| 22 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
+| 23 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
+| 24 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
 
-1. `data/service-pages.js` defines `window.SERVICE_PAGES`: one entry per page (`cyber`, `hosting`, `ssl`, `domain`,
-   `storage`, `m365`, `agentic`, `contact`, `login`, `hybrid`, `cloud`, `signup`) with accent colours, icon, cards and HTML sections.
-2. `modules/dynamic-services.js` builds the `.pg` pages (`#pg-<name>`), the shared footer (`window.__UF`) and the
-   Business Email / Hybrid Email / Microsoft 365 tab bar.
-3. Page modules attach behaviour to those pages: `ssl-configurator.js` (`#pg-ssl`) and `digicert-catalog.js` (the DigiCert window inside it), `vps-matrix.js` (`#pg-cloud`),
-   `storage-calc.js` (`#pg-storage`), `ui-toggles.js` (Microsoft 365 sets, accordions, billing switch).
-4. `flight-scene.js` loads `assets/models/server-rack.glb` (via `fetch`, or the base64 copy on `file://`), builds the scene
-   and publishes `window.__sm` (smoothed scroll progress). Other modules read it to appear at the right scroll position.
+---
 
-## Shared globals
+## 3. Database Architecture & Schema Relationships
 
-| Global | Set by | Read by |
-|---|---|---|
-| `window.UNIFIED_CONFIG` | `config.js` | `flight-scene`, `services-gallery`, `header-nav`, `dynamic-services` |
-| `window.SERVICE_PAGES` | `data/service-pages.js` | `dynamic-services` |
-| `window.UNIFIED_MODEL_B64` | `data/model-data.js` (file:// only) | `flight-scene` |
-| `window.__sm` (smoothed scroll, 0 to 1) | `flight-scene` | `services-gallery`, `about-page`, `partner-page`, `hosting-overlays`, `dynamic-services` |
-| `window.__aboutOpen` (an overlay is open) | `about-page`, `partner-page`, `hosting-overlays`, `dynamic-services` | `flight-scene`, `services-gallery` |
-| `window.__UF` (footer builder) | `dynamic-services` | `dynamic-services` |
-| `window.anime` | anime.js | `services-gallery` |
-| `window.DIGICERT_PRICES` | `data/digicert-prices.js` (rewritten daily by `scripts/update-digicert-prices.mjs`) | `digicert-catalog` |
-| `window.COMODO_PRICES` | `data/comodo-prices.js` (rewritten daily by `scripts/update-comodo-prices.mjs`) | `comodo-catalog` |
-| `window.UnifiedCart` (`add({n, d, p, q})`) | `ssl-configurator` (cart drawer) | `digicert-catalog`, `comodo-catalog` |
+The persistence layer is managed by Node.js native SQLite (`server/db.mjs`) with foreign key constraints, indexes, and automated schema migrations.
 
-## Adding a service page
+```mermaid
+erDiagram
+    ADMIN_USERS ||--o{ SUPPORT_TICKETS : assigns
+    WHMCS_CUSTOMERS ||--o{ SUPPORT_TICKETS : owns
+    PARTNERS ||--o{ PARTNER_CUSTOMER_RELATIONSHIPS : manages
+    PARTNERS ||--o{ SUPPORT_TICKETS : escalates
+    PARTNER_CUSTOMER_RELATIONSHIPS ||--o{ SUPPORT_TICKETS : links
+    SUPPORT_TICKETS ||--|{ TICKET_MESSAGES : contains
+    SUPPORT_TICKETS ||--o{ TICKET_ATTACHMENTS : includes
+    SUPPORT_TICKETS ||--|{ TICKET_AUDIT_EVENTS : records
+```
 
-1. Add an entry to `assets/js/data/service-pages.js` (copy an existing one such as `hybrid`).
-2. If it should appear in the menus, add its slug to the `SL` and `DD` lists in `modules/header-nav.js`.
-3. Put behaviour in a new module under `assets/js/modules/` and add its `<script>` after `dynamic-services.js`.
-4. Add styles to the closest file in `assets/css/`, or a new file imported at the end of `main.css`.
+### Table Definitions
 
-## Conventions
+1. **`support_tickets`**
+   - `id` (INTEGER PRIMARY KEY)
+   - `ticket_number` (TEXT UNIQUE) — Human-readable format: `TCK-YYYY-XXXXX`
+   - `subject` (TEXT NOT NULL), `description` (TEXT NOT NULL)
+   - `category` (TEXT) — Billing, Technical, Infrastructure, Domain, Partner, Other
+   - `priority` (TEXT) — `LOW`, `NORMAL`, `HIGH`, `CRITICAL`
+   - `status` (TEXT) — `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `WAITING_BUYER`, `WAITING_RESELLER`, `ESCALATED`, `RESOLVED`, `CLOSED`
+   - `customer_id` (INTEGER, FK to `whmcs_customers`)
+   - `partner_id` (INTEGER, FK to `partners`)
+   - `buyer_name` (TEXT), `buyer_email` (TEXT), `buyer_phone` (TEXT)
+   - `assigned_to` (INTEGER, FK to `admin_users`)
+   - `related_service_id`, `related_order_id`, `related_product_code`
+   - `preferred_contact` (TEXT) — `EMAIL`, `PHONE`, `PORTAL`
+   - `is_escalated` (INTEGER DEFAULT 0)
+   - `escalated_at` (DATETIME), `escalated_by` (TEXT), `escalation_reason` (TEXT)
+   - `sla_due_at` (DATETIME)
+   - `resolved_at` (DATETIME), `closed_at` (DATETIME)
+   - `created_at` (DATETIME), `updated_at` (DATETIME)
 
-- Modules are classic scripts. Each section inside a module is wrapped in `try/catch` so one failure cannot stop the others.
-- Prices use `data-m` / `data-y` attributes so the billing switch can swap them without re-rendering.
-- CSS files are imported in the order of the original stylesheet; reordering them changes the cascade.
+2. **`ticket_messages`**
+   - `id` (INTEGER PRIMARY KEY)
+   - `ticket_id` (INTEGER NOT NULL, FK to `support_tickets`)
+   - `author_id` (INTEGER), `author_name` (TEXT), `author_email` (TEXT)
+   - `author_role` (TEXT) — `CUSTOMER`, `PARTNER`, `ADMIN`, `SUPPORT_AGENT`, `SYSTEM`
+   - `message` (TEXT NOT NULL)
+   - `is_internal` (INTEGER DEFAULT 0) — Masked from non-admin roles
+   - `created_at` (DATETIME)
+
+3. **`ticket_attachments`**
+   - `id` (INTEGER PRIMARY KEY)
+   - `ticket_id` (INTEGER, FK to `support_tickets`), `message_id` (INTEGER)
+   - `original_name` (TEXT), `file_path` (TEXT), `file_size` (INTEGER), `mime_type` (TEXT)
+   - `uploaded_by` (TEXT), `created_at` (DATETIME)
+
+4. **`ticket_audit_events`**
+   - `id` (INTEGER PRIMARY KEY)
+   - `ticket_id` (INTEGER NOT NULL)
+   - `action` (TEXT), `event_type` (TEXT)
+   - `actor_id` (INTEGER), `actor_name` (TEXT), `actor_role` (TEXT)
+   - `old_state` (TEXT JSON), `new_state` (TEXT JSON)
+   - `notes` (TEXT), `created_at` (DATETIME)
+
+---
+
+## 4. Ticketing Lifecycle & State Transitions
+
+Permitted status transitions are strictly enforced in `server/tickets-service.mjs`:
+
+```
+   ┌─────────┐
+   │  OPEN   │
+   └────┬────┘
+        │
+   ┌────▼────────┐       Assign Agent       ┌──────────────┐
+   │ IN_PROGRESS │ ───────────────────────► │   ASSIGNED   │
+   └────┬────────┘                          └──────┬───────┘
+        │                                          │
+        ├──────────────────┬───────────────────────┤
+        │                  │                       │
+   ┌────▼───────────┐ ┌────▼─────────────┐   ┌─────▼────────┐
+   │ WAITING_BUYER  │ │ WAITING_RESELLER │   │  ESCALATED   │ (To NOC Admin)
+   └────┬───────────┘ └────┬─────────────┘   └─────┬────────┘
+        │                  │                       │
+        └──────────────────┼───────────────────────┘
+                           │
+                     ┌─────▼──────┐
+                     │  RESOLVED  │
+                     └─────┬──────┘
+                           │
+                     ┌─────▼──────┐
+                     │   CLOSED   │
+                     └────────────┘
+```
+
+### SLA Calculation Policy
+- **Critical (`CRITICAL`)**: 2 Hours target SLA
+- **High (`HIGH`)**: 4 Hours target SLA
+- **Normal (`NORMAL`)**: 12 Hours target SLA
+- **Low (`LOW`)**: 24 Hours target SLA
+
+---
+
+## 5. Security & Multi-Tenant Isolation Architecture
+
+1. **Strict Reseller Tenant Isolation**:
+   - Resellers can only query tickets where `partner_id == actor.partnerId`.
+   - Any attempt to read or modify another reseller's ticket triggers an immediate `Tenant access violation (403 Forbidden)`.
+2. **Private Administrative Notes Isolation**:
+   - Support staff can flag replies as internal (`is_internal: 1`).
+   - The query projection in `getTicketDetails()` strictly strips internal messages whenever the requesting actor is a `CUSTOMER` or `PARTNER`.
+3. **Insecure Direct Object Reference (IDOR) Protection**:
+   - Guests cannot view tickets simply by knowing a ticket ID or reference number.
+   - Lookups require both the human-readable `ticket_number` and the verified `buyer_email`. Mismatched requests return `404 Not Found`.
+4. **Attachment Security**:
+   - File uploads are checked against an extension allowlist (`png`, `jpg`, `jpeg`, `pdf`, `txt`, `log`, `zip`, `gz`). Executables (`.exe`, `.sh`, `.bat`, `.js`, `.py`) are rejected.
+   - Max file size: 10MB per attachment.
+5. **Rate Limiting**:
+   - IP-based rate limiting on ticket creation and public replies prevents spam and denial-of-service abuse.
+
+---
+
+## 6. Public Website Entry Point Rules
+
+To preserve brand identity and visual aesthetics:
+- **Included Entry Points**:
+  - `partners.html` (header navigation link + footer links).
+  - All dynamic service catalog pages (`dynamic-services.js` shared footer `window.__UF` support trigger).
+- **Explicitly Excluded**:
+  - Homepage (`index.html`) root 3D scene layers (`#`, `#a`, `#b`, `#c`).
+  - Legacy introductory page (`Fly into the future.html`).
+
+---
+
+## 7. Automated Testing Architecture
+
+Testing is executed natively using Node.js Test Runner (`node --test`), verifying 92 tests across 3 comprehensive test suites:
+
+- **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
+- **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
+- **`tests/support-ticketing.test.mjs`** (26 tests):
+  1. Public ticket submission, validation, SLA, and guest lookup.
+  2. Reseller-to-buyer workflow, buyer ticket creation, and tenant isolation.
+  3. Centralized admin visibility, staff assignment, and internal note masking.
+  4. Attachment security, extension filtering, and status validation.
+  5. Public website entry points and homepage exclusion enforcement.
