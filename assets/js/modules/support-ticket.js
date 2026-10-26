@@ -42,11 +42,12 @@
       document.head.appendChild(link);
     }
 
-    // Build Modal DOM
-    buildModalDOM();
-
-    // Fetch catalog
-    fetchCatalog();
+    // Do NOT build modal DOM eagerly on excluded homepage during load!
+    // Modal will build lazily when triggered or if page hash explicitly targets #support.
+    if (!isHomepageOrIntro() || window.location.hash === '#support' || window.location.hash === '#p-support') {
+      buildModalDOM();
+      fetchCatalog();
+    }
 
     // Setup entry points based on page rules
     setupPageEntryPoints();
@@ -64,13 +65,31 @@
     });
   }
 
+  let cartObserverAttached = false;
+
+  function syncFloatingButtonWithCart() {
+    const trigger = document.getElementById('unifiedSupportFloatingBtn');
+    if (!trigger) return;
+    const cartEl = document.getElementById('cart');
+    const isCartOpen = (cartEl && cartEl.classList.contains('on')) ||
+                       document.body.classList.contains('cart-drawer-open');
+    if (isCartOpen) {
+      trigger.classList.add('cart-hidden');
+    } else {
+      trigger.classList.remove('cart-hidden');
+    }
+  }
+
   // Setup Entry Points according to rules
   function setupPageEntryPoints() {
     let trigger = document.getElementById('unifiedSupportFloatingBtn');
 
     if (isHomepageOrIntro()) {
       // Excluded on homepage and intro page
-      if (trigger) trigger.style.display = 'none';
+      if (trigger) {
+        trigger.style.display = 'none';
+        trigger.remove();
+      }
       return;
     }
 
@@ -92,6 +111,15 @@
     }
 
     trigger.style.display = 'flex';
+    syncFloatingButtonWithCart();
+
+    if (!cartObserverAttached && typeof MutationObserver !== 'undefined') {
+      cartObserverAttached = true;
+      const observer = new MutationObserver(() => {
+        syncFloatingButtonWithCart();
+      });
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+    }
   }
 
   // Fetch product catalog for support dropdowns
@@ -131,6 +159,7 @@
     const overlay = document.createElement('div');
     overlay.id = 'unifiedSupportModal';
     overlay.className = 'spt-modal-overlay';
+    overlay.style.display = 'none'; // Critical: Prevents any flash of unstyled content
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
 
@@ -619,8 +648,14 @@
 
   // Global APIs
   window.openSupportTicketModal = function (mode = 'submit', ticketRef = '', email = '') {
+    buildModalDOM();
+    if (!catalogData.categories || !catalogData.categories.length) {
+      fetchCatalog();
+    }
     const modal = document.getElementById('unifiedSupportModal');
     if (!modal) return;
+    modal.style.display = 'flex';
+    void modal.offsetWidth; // Force layout reflow for animation
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 
@@ -641,6 +676,11 @@
     if (modal) {
       modal.classList.remove('active');
       document.body.style.overflow = '';
+      setTimeout(() => {
+        if (!modal.classList.contains('active')) {
+          modal.style.display = 'none';
+        }
+      }, 260);
     }
   };
 

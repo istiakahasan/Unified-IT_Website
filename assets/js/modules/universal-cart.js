@@ -289,19 +289,38 @@
     }
   }
 
+  function setSupportFloatingHidden(hidden) {
+    if (document.body) {
+      document.body.classList.toggle('cart-drawer-open', !!hidden);
+    }
+    var floatingBtn = document.getElementById('unifiedSupportFloatingBtn');
+    if (floatingBtn) {
+      floatingBtn.classList.toggle('cart-hidden', !!hidden);
+    }
+  }
+
   function openDropdown() {
     var dd = document.getElementById('hdr-cart-dropdown');
-    if (dd) dd.classList.add('open');
+    if (dd) {
+      dd.classList.add('open');
+      if (document.body) document.body.classList.add('cart-dropdown-open');
+    }
   }
 
   function closeDropdown() {
     var dd = document.getElementById('hdr-cart-dropdown');
-    if (dd) dd.classList.remove('open');
+    if (dd) {
+      dd.classList.remove('open');
+      if (document.body) document.body.classList.remove('cart-dropdown-open');
+    }
   }
 
   function toggleDropdown() {
     var dd = document.getElementById('hdr-cart-dropdown');
-    if (dd) dd.classList.toggle('open');
+    if (dd) {
+      var isOpen = dd.classList.toggle('open');
+      if (document.body) document.body.classList.toggle('cart-dropdown-open', isOpen);
+    }
   }
 
   function openDrawer() {
@@ -310,10 +329,12 @@
       renderDrawer();
       drawerEl.classList.add('on');
     }
+    setSupportFloatingHidden(true);
   }
 
   function closeDrawer() {
     if (drawerEl) drawerEl.classList.remove('on');
+    setSupportFloatingHidden(false);
   }
 
   // Public API
