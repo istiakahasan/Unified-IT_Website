@@ -46,9 +46,11 @@ unified-it/
 │   └── ARCHITECTURE.md                 # System load order, data flow, globals, and design patterns
 └── assets/
     ├── css/                            # Modular CSS architecture imported by main.css
-    │   └── support-ticket.css          # Support ticket modal, badges, conversation threads & SLA timers
+    │   ├── support-ticket.css          # Support ticket modal, badges, conversation threads & SLA timers
+    │   └── universal-cart.css          # Shopping cart flyout dropdown, trash bin buttons & slide-out drawer
     ├── js/                             # Interactive controllers, catalog engines, WebGL shaders
-    │   └── modules/support-ticket.js   # Client ticket controller: submission, lookup, validation & upload
+    │   ├── modules/support-ticket.js   # Client ticket controller: submission, lookup, validation & upload
+    │   └── modules/universal-cart.js   # Universal cart manager: flyout dropdown, trash bin removal & toast
     ├── models/                         # 3D Datacenter server rack model (meshopt glTF)
     └── images/                         # Brand logos, icons, and textures
 ```
@@ -81,7 +83,7 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
 | **`FINANCE_ADMIN`** | Billing, Invoices & Payouts | Review gross revenue, MRR, invoices, approve refunds with justification, payment gateways. | Modifying cloud VM state, user role changes |
 | **`PARTNER_MANAGER`** | Partner Desk & Agreements | Approve/reject partner applications, manage partner tiers, custom discount agreements, sales rewards. | Modifying customer accounts, VM termination |
 | **`SUPPORT_ADMIN`** | Customer Support Helpdesk | View support queue, triage tickets, assign staff, post internal notes, adjust priority/SLA, resolve issues. | Approving refunds, modifying infrastructure |
-| **`CONTENT_ADMIN`** | Public Website CMS | Manage announcements/banners, cloud service plans & pricing, SEO metadata, promo coupons. | Access to customer/partner accounts, security logs |
+| **`CONTENT_ADMIN`** | Public Website CMS | Manage announcements/banners, cloud service plan specifications (vCPU, RAM, NVMe, BDT/USD pricing), and update page SEO metadata and promo coupons. | Access to customer/partner accounts, security logs |
 | **`AUDITOR`** | Compliance & Audit | Read-only compliance access to audit logs, security events, customer records, billing, telemetry, and tickets. | **All state-changing actions** (write/delete/refund) |
 | **`PARTNER`** (Reseller) | Partner Tenant Scope | View/manage own buyer customer relationships, submit tickets for buyers, reply, resolve, or escalate to Platform NOC. | Access to other resellers' data, internal staff notes |
 | **`CUSTOMER` / Guest** | Own Ticket Scope | Submit tickets, verify ownership by ticket reference + email, view public replies, post follow-ups. | Administrative actions, internal notes, other buyers |
@@ -111,7 +113,23 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
   - **Private Internal Notes**: Platform engineers and support agents can post internal notes completely hidden from buyers and resellers.
   - Full audit event stream tracking actor, previous state, new state, and reason.
 
-### 2. Centralized Admin Portal (`admin.html`)
+### 2. Universal Shopping Cart & Flyout Dropdown
+- **Header Flyout Dropdown (`#hdr-cart-dropdown`)**:
+  - Displays quick line-item list, selected options, live running total in BDT (`৳`), and a **standard trash bin icon**.
+  - Clicking the trash bin icon (`.hcd-item-del`) immediately removes the item, syncs `localStorage`, recomputes the total, and shows an instant toast alert.
+- **Slide-Out Full Drawer (`#cart`)**:
+  - Interactive cart drawer with item quantity modifiers (`-` / `+`), item deletion, and automated order email generation.
+- **Catalog Integration**:
+  - Seamlessly integrates with Domain Registration, Cloud VPS (`vps-matrix.js`), Dedicated Servers, Email Hosting, SSL, and Storage.
+
+### 3. Business Email Hosting (`#p-email`)
+- **Affordable Enterprise Email**:
+  - **Basic Plan**: **BDT 100 Tk** / Month (BDT 1,200 Tk / Year) with 5 GB mailbox.
+  - **Standard Plan**: BDT 250 Tk / Month (20 GB mailbox).
+  - **Premium Plan**: BDT 300 Tk / Month (50 GB mailbox).
+- **Features**: ActiveSync mobile synchronization, AI anti-spam filtering, custom domain alignment (SPF, DKIM, DMARC), calendar service, and 30-day retention.
+
+### 4. Centralized Admin Portal (`admin.html`)
 - **Live Telemetry Dashboard**: Real-time stats calculated from SQLite (customers by status, active VMs across zones, MRR, invoices, open tickets, active sessions). Zero fabricated metrics.
 - **Customer Account Management**: Search, filter, inspect details, linked compute instances, and billing history. Account suspension requires documented justification. Secure one-time password reset workflow without exposing passwords or hashes.
 - **Cloud Infrastructure Management**: Multi-zone visibility across **Dhaka DC-01** (AMD EPYC & Intel Xeon KVM nodes, BDIX peering) and **Singapore SG-01** (Equinix SG1 peering). VM lifecycle operations (`START`, `STOP` with reason, `TERMINATE` with justification). NOC incident reporting and resolution workflow.
@@ -119,7 +137,7 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
 - **Public Website CMS**: Manage homepage announcements/maintenance banners, configure cloud service plan specifications (vCPU, RAM, NVMe, BDT/USD pricing), and update page SEO metadata and promo coupons.
 - **Security Monitoring & Session Revocation**: Append-only security event audit stream, 5-attempt brute-force protection with 15-minute lockouts, active session inspection with IP and client metadata, and immediate session token revocation.
 
-### 3. Cloud Partner Program Platform
+### 5. Cloud Partner Program Platform
 - **Automatic Spend-Based Tier Progression**:
   - **Registered Partner**: 5% wholesale margin (৳0 minimum spend)
   - **Silver Partner**: 10% wholesale margin (৳30,000 monthly spend)
@@ -130,13 +148,13 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
 - **Custom Commercial Discounts**: Bespoke agreements granted by administrators synchronize instantly to partner dashboards.
 - **Sales Reward Points Ledger**: 10% reward points earned on eligible cloud sales, with anti-abuse self-referral prevention and refund reversal safety.
 
-### 4. Domain Registration & Search Engine
+### 6. Domain Registration & Search Engine
 - High-performance domain search located in [domain-search.js](file:///e:/Projects/unified-it/assets/js/modules/domain-search.js):
   - Provides real-time pricing and availability for top-level domains (`.com`, `.org`, `.ai`, `.to`, `.net`, `.io`, `.xyz`, `.tech`, `.online`, `.com.bd`).
   - Instant Dhaka Anycast DNS routing quotes and favorite bookmarking.
   - Direct integration with `window.UnifiedCart` for instant checkout.
 
-### 5. 3D WebGL Flight Experience & Adaptive Performance
+### 7. 3D WebGL Flight Experience & Adaptive Performance
 - **Cinematic 3D Hero Scene**: Volumetric raymarched cloud dive, server rack swoop, animated laptop, pulsating rack LEDs, and interactive cursor damping using Three.js r128 and Meshopt compression.
 - **Hardware-Adaptive Tiers**: Automatically balances PCF soft shadows, draw calls, and particle density across Discrete, Integrated, and Low-End GPUs.
 - **Battery-Saving Throttling**: Pauses frame rendering immediately when the browser tab is hidden (`document.hidden`).

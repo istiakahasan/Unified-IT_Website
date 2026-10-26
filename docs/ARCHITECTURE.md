@@ -1,4 +1,3 @@
-
 # Unified Cloud System Architecture
 
 ## 1. Overview & High-Level Architecture
@@ -11,6 +10,7 @@ Unified Cloud Platform
  │    ├── 3D WebGL Datacenter Flight Journey (Three.js r128 + Meshopt)
  │    ├── Dynamic Service Catalogues & Calculators (assets/js/modules/dynamic-services.js)
  │    ├── Dhaka Anycast Domain Engine (assets/js/modules/domain-search.js)
+ │    ├── Universal Shopping Cart & Taka System (assets/js/modules/universal-cart.js)
  │    └── Universal Support Ticket Entry & Modal (assets/js/modules/support-ticket.js)
  ├── Cloud Partner Portal (partners.html, partner-dashboard.html, admin-partners.html)
  │    ├── Spend-Based Tier Engine & Wholesale Margins (5% - 25%)
@@ -48,27 +48,96 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 | 5 | `assets/js/data/service-pages.js` | Service catalog schemas & pricing specs | `window.SERVICE_PAGES` |
 | 6 | `assets/js/data/digicert-prices.js` | DigiCert SSL tier pricing registry | `window.DIGICERT_PRICES` |
 | 7 | `assets/js/data/comodo-prices.js` | Comodo/Sectigo SSL tier pricing | `window.COMODO_PRICES` |
-| 8 | `assets/js/modules/flight-scene.js` | WebGL volumetric scene & scroll driver | Publishes `window.__sm` |
-| 9 | `assets/js/modules/services-gallery.js`| 3D services carousel & cards | Reads `window.__sm` |
-| 10 | `assets/js/modules/latency-widget.js` | BDIX & global edge telemetry | Edge ping measurements |
-| 11 | `assets/js/modules/about-page.js` | Company profile & datacenter specs | `#aboutOverlay` |
-| 12 | `assets/js/modules/header-nav.js` | Navigation bar, mega menus & search | Desktop & mobile header |
-| 13 | `assets/js/modules/partner-page.js` | Partner application form handler | Multi-step validation |
-| 14 | `assets/js/modules/hosting-overlays.js`| Web hosting & cPanel configurators | Hosting modal logic |
-| 15 | `assets/js/modules/service-modal.js` | Dynamic product detail drawers | Cart integration |
-| 16 | `assets/js/modules/dynamic-services.js`| Dynamic service page generator | Shared footer `window.__UF` |
-| 17 | `assets/js/modules/ssl-configurator.js`| SSL order matrix & SAN calculator | Cart checkout |
-| 18 | `assets/js/modules/digicert-catalog.js`| DigiCert modal catalog viewer | Product filters |
-| 19 | `assets/js/modules/comodo-catalog.js` | Sectigo modal catalog viewer | Product filters |
-| 20 | `assets/js/modules/vps-matrix.js` | Cloud VPS compute configurator | Spec sliders & pricing |
-| 21 | `assets/js/modules/storage-calc.js` | S3-compatible cloud storage calculator| TB/Bandwidth slider |
-| 22 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
-| 23 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
-| 24 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
+| 8 | `assets/js/modules/webgl-perf.js` | Dynamic hardware GPU tier detection | Quality scaling |
+| 9 | `assets/js/modules/flight-scene.js` | WebGL volumetric scene & scroll driver | Publishes `window.__sm` |
+| 10 | `assets/js/modules/services-gallery.js`| 3D services carousel & cards | Reads `window.__sm` |
+| 11 | `assets/js/modules/latency-widget.js` | BDIX & global edge telemetry | Edge ping measurements |
+| 12 | `assets/js/modules/about-page.js` | Company profile & datacenter specs | `#aboutOverlay` |
+| 13 | `assets/js/modules/header-nav.js` | Navigation bar, mega menus & search | Desktop & mobile header |
+| 14 | `assets/js/modules/partner-page.js` | Partner application form handler | Multi-step validation |
+| 15 | `assets/js/modules/hosting-overlays.js`| Web hosting & cPanel configurators | Hosting modal logic |
+| 16 | `assets/js/modules/service-modal.js` | Dynamic product detail drawers | Cart integration |
+| 17 | `assets/js/modules/dynamic-services.js`| Dynamic service page generator | Shared footer `window.__UF` |
+| 18 | `assets/js/modules/universal-cart.js` | Cart dropdown flyout, drawer, BDT engine | `window.UnifiedCart` |
+| 19 | `assets/js/modules/ssl-configurator.js`| SSL order matrix & SAN calculator | Cart checkout |
+| 20 | `assets/js/modules/digicert-catalog.js`| DigiCert modal catalog viewer | Product filters |
+| 21 | `assets/js/modules/comodo-catalog.js` | Sectigo modal catalog viewer | Product filters |
+| 22 | `assets/js/modules/vps-matrix.js` | Cloud VPS compute configurator | Spec sliders & pricing |
+| 23 | `assets/js/modules/storage-calc.js` | S3-compatible cloud storage calculator| TB/Bandwidth slider |
+| 24 | `assets/js/modules/domain-search.js` | Real-time Dhaka Anycast domain search | Instant cart addition |
+| 25 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
+| 26 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
+| 27 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
 
 ---
 
-## 3. Database Architecture & Schema Relationships
+## 3. Universal Shopping Cart Architecture
+
+The platform features an integrated universal shopping cart system powered by [`assets/js/modules/universal-cart.js`](file:///e:/Projects/unified-it/assets/js/modules/universal-cart.js) and styled via [`assets/css/universal-cart.css`](file:///e:/Projects/unified-it/assets/css/universal-cart.css):
+
+```
+                       ┌─────────────────────────┐
+                       │   Product Action (Add)  │
+                       └────────────┬────────────┘
+                                    │
+                                    ▼
+                       ┌─────────────────────────┐
+                       │ window.UnifiedCart.add  │
+                       └────────────┬────────────┘
+                                    │
+            ┌───────────────────────┴───────────────────────┐
+            ▼                                               ▼
+┌─────────────────────────┐                     ┌─────────────────────────┐
+│  Header Flyout Dropdown │                     │  Slide-out Full Drawer  │
+│   #hdr-cart-dropdown    │                     │          #cart          │
+│ ─────────────────────── │                     │ ─────────────────────── │
+│ • Quick Item List       │                     │ • Detailed Item View    │
+│ • Trash Bin Icon (Del)  │                     │ • Quantity +/- Controls │
+│ • Running BDT Subtotal  │                     │ • Checkout Mailto Gen   │
+│ • View Cart CTA Button  │                     │ • Keep Shopping Option  │
+└───────────┬─────────────┘                     └───────────┬─────────────┘
+            │                                               │
+            └───────────────────────┬───────────────────────┘
+                                    │
+                                    ▼
+                       ┌─────────────────────────┐
+                       │ localStorage Persist    │
+                       │ & Live Badge / Toast    │
+                       └─────────────────────────┘
+```
+
+### Key Cart Capabilities:
+1. **Header Flyout Dropdown (`#hdr-cart-dropdown`)**:
+   - Toggled via the cart button in the main navigation.
+   - Renders each item's title, configured specification details, formatted line total (`৳`), and an intuitive **standard trash bin icon**.
+   - Clicking the trash bin icon (`.hcd-item-del`) immediately invokes `remove(idx)`, syncs with `localStorage`, recomputes the subtotal, updates header and mobile badges, and triggers a feedback toast notification.
+2. **Slide-Out Drawer (`#cart`)**:
+   - Opens from "View Cart" or direct configurator additions.
+   - Provides quantity adjusters (`-` / `+`), item removal, and instant checkout payload compilation.
+3. **BDT Currency Engine**:
+   - Native parsing of BDT, Tk, and USD strings with dynamic exchange conversion (1 USD = 120 BDT).
+
+---
+
+## 4. Product Catalog & Pricing Specifications
+
+### Business Email Hosting (`#p-email` / `#bem`)
+- **Basic Plan**:
+  - **Monthly**: **BDT 100 Tk** / Month
+  - **Yearly**: **BDT 1,200 Tk** / Year
+  - **Features**: 5 GB Mailbox, ActiveSync, Spam filtering, Calendar service, 30 Days Retention policy, Flexible Hybrid Solutions, Zero Downtime Migrations.
+- **Standard Plan**:
+  - **Monthly**: BDT 250 Tk / Month
+  - **Yearly**: BDT 3,000 Tk / Year
+  - **Features**: 20 GB Mailbox.
+- **Premium Plan**:
+  - **Monthly**: BDT 300 Tk / Month
+  - **Yearly**: BDT 3,600 Tk / Year
+  - **Features**: 50 GB Mailbox.
+
+---
+
+## 5. Database Architecture & Schema Relationships
 
 The persistence layer is managed by Node.js native SQLite (`server/db.mjs`) with foreign key constraints, indexes, and automated schema migrations.
 
@@ -130,7 +199,7 @@ erDiagram
 
 ---
 
-## 4. Ticketing Lifecycle & State Transitions
+## 6. Ticketing Lifecycle & State Transitions
 
 Permitted status transitions are strictly enforced in `server/tickets-service.mjs`:
 
@@ -168,7 +237,7 @@ Permitted status transitions are strictly enforced in `server/tickets-service.mj
 
 ---
 
-## 5. Security & Multi-Tenant Isolation Architecture
+## 7. Security & Multi-Tenant Isolation Architecture
 
 1. **Strict Reseller Tenant Isolation**:
    - Resellers can only query tickets where `partner_id == actor.partnerId`.
@@ -187,7 +256,7 @@ Permitted status transitions are strictly enforced in `server/tickets-service.mj
 
 ---
 
-## 6. Public Website Entry Point Rules
+## 8. Public Website Entry Point Rules
 
 To preserve brand identity and visual aesthetics:
 - **Included Entry Points**:
@@ -199,7 +268,7 @@ To preserve brand identity and visual aesthetics:
 
 ---
 
-## 7. Automated Testing Architecture
+## 9. Automated Testing Architecture
 
 Testing is executed natively using Node.js Test Runner (`node --test`), verifying 92 tests across 3 comprehensive test suites:
 
