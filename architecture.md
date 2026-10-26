@@ -112,6 +112,8 @@ The platform features an integrated universal shopping cart system powered by [`
    - Renders each item's title, configured specification details, formatted line total (`৳`), and an intuitive **standard trash bin icon**.
    - Clicking the trash bin icon (`.hcd-item-del`) immediately invokes `remove(idx)`, syncs with `localStorage`, recomputes the subtotal, updates header and mobile badges, and triggers a feedback toast notification.
 2. **Slide-Out Drawer (`#cart`)**:
+   - Elevated to `z-index: 995` to overlay standard view layers cleanly.
+   - Toggles `body.cart-drawer-open` and coordinates with DOM observers to dynamically hide fixed floating buttons (e.g. Support Tickets) while open.
    - Opens from "View Cart" or direct configurator additions.
    - Provides quantity adjusters (`-` / `+`), item removal, and instant checkout payload compilation.
 3. **BDT Currency Engine**:
@@ -134,6 +136,12 @@ The platform features an integrated universal shopping cart system powered by [`
   - **Monthly**: BDT 300 Tk / Month
   - **Yearly**: BDT 3,600 Tk / Year
   - **Features**: 50 GB Mailbox.
+
+### Microsoft 365 Cloud Suite (`#p-m365`)
+- **Microsoft 365 Business Basic**:
+  - **Price**: **BDT 4,500 Tk** / Year
+  - **Features**: Exchange, Web & Mobile Office apps, OneDrive 1TB, Teams, anti-malware security.
+  - **Cart Action**: 1-click "Order Now" adds item directly to `window.UnifiedCart` and opens drawer.
 
 ---
 
@@ -256,15 +264,22 @@ Permitted status transitions are strictly enforced in `server/tickets-service.mj
 
 ---
 
-## 8. Public Website Entry Point Rules
+## 8. Public Website Entry Point Rules & Floating Trigger Lifecycle
 
-To preserve brand identity and visual aesthetics:
+To preserve brand identity, visual aesthetics, and viewport ergonomics:
 - **Included Entry Points**:
-  - `partners.html` (header navigation link + footer links).
-  - All dynamic service catalog pages (`dynamic-services.js` shared footer `window.__UF` support trigger).
+  - `partners.html` (header navigation link + footer links + floating button).
+  - All dynamic service catalog pages (`dynamic-services.js` shared footer `window.__UF` support trigger + floating trigger).
 - **Explicitly Excluded**:
   - Homepage (`index.html`) root 3D scene layers (`#`, `#a`, `#b`, `#c`).
   - Legacy introductory page (`Fly into the future.html`).
+- **Zero-Flash (FOUC Prevention) Architecture**:
+  - `support-ticket.css` is statically bundled into `assets/css/main.css`.
+  - The modal overlay `.spt-modal-overlay` defaults to `display: none; pointer-events: none;` with inline `style="display: none;"` on element creation.
+  - Deferral / lazy instantiation: `buildModalDOM()` bypasses initial execution on the root homepage, ensuring zero unstyled elements flash during page load or refresh.
+- **Cart-Aware Floating Collision Avoidance**:
+  - On every page where the floating Support Tickets button is mounted, it automatically transitions to `opacity: 0; visibility: hidden; pointer-events: none;` whenever the slide-out cart drawer (`#cart.on`, `body.cart-drawer-open`) or flyout dropdown (`#hdr-cart-dropdown.open`) is active.
+  - Seamlessly reappears upon cart closure via CSS cascade and JavaScript `MutationObserver`.
 
 ---
 

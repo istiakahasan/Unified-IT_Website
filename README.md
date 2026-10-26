@@ -96,6 +96,8 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
 - **Universal Public Entry Point**:
   - Accessible via header navigation and footer across all applicable public pages (`partners.html`, and dynamic service pages via `dynamic-services.js`).
   - Strict exclusion rule: Not rendered on the 3D WebGL homepage root layers (`#`, `#a`, `#b`, `#c`) or the introductory page (`Fly into the future.html`).
+  - **Zero-Flash Architecture**: Styles are imported upfront in `assets/css/main.css`, and modal construction is deferred lazily with inline `display: none` guards, preventing any glimpse of the form upon refreshing the homepage.
+  - **Cart-Aware Visibility & Dynamic Hiding**: Whenever the cart drawer (`#cart.on`) or the header flyout dropdown (`#hdr-cart-dropdown.open`) is open, the floating support ticket trigger automatically hides (`opacity: 0`, `visibility: hidden`, `pointer-events: none`) so it never obscures "Proceed to Checkout" or drawer controls. It smoothly reappears once the cart is closed.
 - **Interactive Ticket Submission Experience**:
   - Validates subject, category, priority, related services/orders, contact preferences, and detailed descriptions.
   - Generates unique human-readable ticket numbers (`TCK-YYYY-XXXXX`).
@@ -118,16 +120,20 @@ Implemented in [`server/auth.mjs`](file:///e:/Projects/unified-it/server/auth.mj
   - Displays quick line-item list, selected options, live running total in BDT (`৳`), and a **standard trash bin icon**.
   - Clicking the trash bin icon (`.hcd-item-del`) immediately removes the item, syncs `localStorage`, recomputes the total, and shows an instant toast alert.
 - **Slide-Out Full Drawer (`#cart`)**:
-  - Interactive cart drawer with item quantity modifiers (`-` / `+`), item deletion, and automated order email generation.
+  - Interactive cart drawer positioned at elevated `z-index: 995` with item quantity modifiers (`-` / `+`), item deletion, and automated order email generation.
+  - Body synchronization (`cart-drawer-open`, `cart-dropdown-open`) for dynamic coexistence with fixed UI triggers.
 - **Catalog Integration**:
-  - Seamlessly integrates with Domain Registration, Cloud VPS (`vps-matrix.js`), Dedicated Servers, Email Hosting, SSL, and Storage.
+  - Seamlessly integrates with Domain Registration, Cloud VPS (`vps-matrix.js`), Dedicated Servers, Email Hosting, SSL, Storage, and Microsoft 365.
 
-### 3. Business Email Hosting (`#p-email`)
-- **Affordable Enterprise Email**:
+### 3. Business Email Hosting (`#p-email`) & Microsoft 365 (`#p-m365`)
+- **Affordable Enterprise Email (`#p-email`)**:
   - **Basic Plan**: **BDT 100 Tk** / Month (BDT 1,200 Tk / Year) with 5 GB mailbox.
   - **Standard Plan**: BDT 250 Tk / Month (20 GB mailbox).
   - **Premium Plan**: BDT 300 Tk / Month (50 GB mailbox).
-- **Features**: ActiveSync mobile synchronization, AI anti-spam filtering, custom domain alignment (SPF, DKIM, DMARC), calendar service, and 30-day retention.
+  - Features: ActiveSync mobile synchronization, AI anti-spam filtering, custom domain alignment (SPF, DKIM, DMARC), calendar service, and 30-day retention.
+- **Microsoft 365 Cloud Suite (`#p-m365`)**:
+  - **Microsoft 365 Business Basic**: **BDT 4,500 Tk** / Year.
+  - Direct 1-click **Order Now** integration placing Exchange, Web & Mobile Office, and OneDrive 1TB straight into the Universal Cart drawer.
 
 ### 4. Centralized Admin Portal (`admin.html`)
 - **Live Telemetry Dashboard**: Real-time stats calculated from SQLite (customers by status, active VMs across zones, MRR, invoices, open tickets, active sessions). Zero fabricated metrics.
