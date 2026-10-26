@@ -446,18 +446,23 @@
       return;
     }
 
-    // 3. Microsoft 365 (.mhero .vb)
-    var m365Btn = t.closest('.mhero .vb');
+    // 3. Microsoft 365 (.mhero .vb, #pg-m365 .vb)
+    var m365Btn = t.closest('.mhero .vb') || t.closest('#pg-m365 .vb') || (t.closest('#pg-m365') && t.closest('.vb'));
     if (m365Btn) {
       e.preventDefault();
       e.stopPropagation();
+      var mCard = m365Btn.closest('.mhero') || m365Btn.closest('.vc') || document.querySelector('#pg-m365 .mhero');
+      var mTitle = (mCard && mCard.querySelector('h3') ? mCard.querySelector('h3').textContent : 'Microsoft 365 Business Basic').trim();
+      var mPriceEl = mCard && mCard.querySelector('.vd b');
+      var mPrice = mPriceEl ? parsePrice(mPriceEl.textContent) : 4500;
       add({
-        name: 'Microsoft 365 Business Basic',
+        name: mTitle,
         details: 'Exchange, Web & Mobile Office, OneDrive 1TB',
-        price: 4500,
+        price: mPrice || 4500,
         period: '/yr',
         quantity: 1
       });
+      openDrawer();
       return;
     }
 
