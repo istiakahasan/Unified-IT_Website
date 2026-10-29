@@ -191,4 +191,5 @@ The browser tests cover: every header service page (two rounds), deep links, `/p
 
 ## 11. Commit
 
-Recorded in the commit that adds this file on branch `fix/navigation-freeze-hardening`. The final hash is in `git log` and in the delivery report.
+- Implementation commit: `5903504` (`fix: resolve navigation freezes and harden application`) on branch `fix/navigation-freeze-hardening`, parent `e184364` (`main`).
+- This hash note was added in a separate follow-up commit on the same branch.
