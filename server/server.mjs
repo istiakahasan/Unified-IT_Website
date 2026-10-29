@@ -43,24 +43,106 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon',
   '.glb': 'model/gltf-binary',
   '.frag': 'text/plain; charset=utf-8',
-  '.woff2': 'font/woff2'
+  '.woff2': 'font/woff2',
+  '.webp': 'image/webp',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.woff': 'font/woff'
 };
 
+// Largest accepted API request body. Support attachments are base64 JSON (10 MB file ~ 13.4 MB encoded).
+const MAX_BODY_BYTES = 15 * 1024 * 1024;
+
+// Only these files and folders are public. Everything else in the repository (data/ with the SQLite
+// database and uploaded attachments, server/, tests/, scripts/, .git/, .env*, package files) is never served.
+const PUBLIC_PAGES = new Set(['index.html', 'admin.html', 'partners.html', 'partner-dashboard.html', 'admin-partners.html', 'Fly into the future.html']);
+const PUBLIC_DIRS = ['assets'];
+
+function isPublicPath(rel) {
+  const parts = rel.split(/[\\/]+/).filter(Boolean);
+  if (!parts.length) return false;
+  if (parts.some(p => p.startsWith('.'))) return false; // dotfiles and dot-directories
+  if (parts.length === 1) return PUBLIC_PAGES.has(parts[0]);
+  return PUBLIC_DIRS.includes(parts[0]);
+}
+
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Origins allowed to make credentialed cross-origin API calls: the configured domains plus local development. */
+function buildAllowedOrigins() {
+  const hosts = [PUBLIC_DOMAIN, WWW_DOMAIN, ADMIN_DOMAIN, PARTNER_DOMAIN, API_DOMAIN];
+  const set = new Set();
+  for (const h of hosts) {
+    set.add(`https://${h}`);
+    if (process.env.NODE_ENV !== 'production') set.add(`http://${h}`);
+  }
+  for (const extra of String(process.env.CORS_ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)) {
+    set.add(extra.replace(/\/$/, ''));
+  }
+  return set;
+}
+const ALLOWED_ORIGINS = buildAllowedOrigins();
+
+function isAllowedOrigin(origin, reqHost) {
+  if (!origin) return false;
+  let u;
+  try { u = new URL(origin); } catch { return false; }
+  if (ALLOWED_ORIGINS.has(u.origin)) return true;
+  // Same host as the request (e.g. http://localhost:3000 calling its own API)
+  if (reqHost && u.host === reqHost) return true;
+  if (process.env.NODE_ENV !== 'production' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname.endsWith('.localhost'))) return true;
+  return false;
+}
+
+function sendPlain(res, status, text) {
+  if (res.headersSent) return res.end();
+  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end(text);
+}
+
 export function createServer() {
-  const server = http.createServer(async (req, res) => {
+  const server = http.createServer((req, res) => {
+    handleRequest(req, res).catch(err => {
+      // A single bad request must never take the whole site down.
+      console.error('[Request Error]', req.method, req.url, err && err.message);
+      sendPlain(res, 500, 'Internal Server Error');
+    });
+  });
+
+  // Malformed HTTP from a client: answer 400 instead of leaving the socket hanging.
+  server.on('clientError', (err, socket) => {
+    if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+  });
+
+  return server;
+}
+
+async function handleRequest(req, res) {
     // 1. Enterprise Security Headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-    // 2. CORS Handling
-    const origin = req.headers.origin || '*';
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    const reqHost = (req.headers.host || '').toLowerCase();
+
+    // 2. CORS Handling: only allow-listed origins get credentialed access
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Vary', 'Origin');
+      if (isAllowedOrigin(origin, reqHost)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+    }
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -69,10 +151,9 @@ export function createServer() {
 
     let parsedUrl;
     try {
-      parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      parsedUrl = new URL(req.url, 'http://localhost');
     } catch {
-      res.writeHead(400);
-      return res.end('Bad Request');
+      return sendPlain(res, 400, 'Bad Request');
     }
 
     const pathname = parsedUrl.pathname;
@@ -105,20 +186,55 @@ export function createServer() {
 
       authenticateRequest(req, db);
 
+      const isUnsafeMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+      const sendJsonError = (status, message) => {
+        // 413: the rest of the body is never read, so the connection cannot be reused
+        const extra = status === 413 ? { Connection: 'close' } : {};
+        res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...extra });
+        return res.end(JSON.stringify({ error: true, message }));
+      };
+
+      // CSRF: a browser attaches the session cookie automatically, so state-changing calls that are
+      // authenticated by cookie (not by an explicit Bearer header) must come from an allow-listed origin.
+      const hasBearer = String(req.headers['authorization'] || '').startsWith('Bearer ');
+      if (isUnsafeMethod && !hasBearer && /(?:^|;\s*)(uct_session|admin_session)=/.test(req.headers['cookie'] || '')) {
+        let source = req.headers.origin;
+        if (!source && req.headers.referer) {
+          try { source = new URL(req.headers.referer).origin; } catch { source = null; }
+        }
+        if (source && !isAllowedOrigin(source, reqHost)) {
+          return sendJsonError(403, 'Cross-site request blocked (CSRF protection).');
+        }
+      }
+
       let body = {};
-      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      if (isUnsafeMethod) {
+        const declared = Number(req.headers['content-length'] || 0);
+        if (declared > MAX_BODY_BYTES) {
+          return sendJsonError(413, 'Request body too large.');
+        }
+        let raw;
         try {
           const buffers = [];
+          let size = 0;
           for await (const chunk of req) {
+            size += chunk.length;
+            if (size > MAX_BODY_BYTES) {
+              return sendJsonError(413, 'Request body too large.');
+            }
             buffers.push(chunk);
           }
-          const raw = Buffer.concat(buffers).toString('utf8');
-          if (raw) {
-            body = JSON.parse(raw);
-          }
+          raw = Buffer.concat(buffers).toString('utf8');
         } catch {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: true, message: 'Invalid JSON payload in request body' }));
+          return sendJsonError(400, 'Could not read request body');
+        }
+        if (raw) {
+          try {
+            body = JSON.parse(raw);
+          } catch {
+            return sendJsonError(400, 'Invalid JSON payload in request body');
+          }
+          if (body === null || typeof body !== 'object') body = {};
         }
       }
 
@@ -137,88 +253,104 @@ export function createServer() {
     }
 
     // 5. Host & Subdomain Specific Static Views
-    let filePath = null;
+    const decodedPath = safeDecode(pathname);
+    if (decodedPath === null || decodedPath.includes(String.fromCharCode(0))) {
+      return sendPlain(res, 400, 'Bad Request');
+    }
+
+    let rel = null;
 
     if (isAdminHost) {
       // Dedicated Admin Subdomain (admin.example.com)
       if (pathname === '/' || pathname === '/login' || pathname === '/index.html') {
-        filePath = path.join(ROOT, 'admin.html');
+        rel = 'admin.html';
       } else if (pathname === '/partners' || pathname === '/partners/' || pathname === '/partner') {
-        filePath = path.join(ROOT, 'admin-partners.html');
+        rel = 'admin-partners.html';
       } else {
-        filePath = path.join(ROOT, decodeURIComponent(pathname));
+        rel = decodedPath;
       }
     } else if (isPartnerHost) {
       // Dedicated Partner Subdomain (partners.example.com)
       if (pathname === '/' || pathname === '/dashboard' || pathname === '/dashboard/') {
-        filePath = path.join(ROOT, 'partner-dashboard.html');
+        rel = 'partner-dashboard.html';
       } else if (pathname === '/program' || pathname === '/join' || pathname === '/apply') {
-        filePath = path.join(ROOT, 'partners.html');
+        rel = 'partners.html';
       } else {
-        filePath = path.join(ROOT, decodeURIComponent(pathname));
+        rel = decodedPath;
       }
     } else {
       // Canonical Public Website & Local Development Path Fallback
       if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
-        filePath = path.join(ROOT, 'admin.html');
+        rel = 'admin.html';
       } else if (pathname === '/admin/partners' || pathname === '/admin/partners/' || pathname === '/admin/partner') {
-        filePath = path.join(ROOT, 'admin-partners.html');
+        rel = 'admin-partners.html';
       } else if (pathname === '/partners' || pathname === '/partners/' || pathname === '/partner' || pathname === '/partner/') {
-        filePath = path.join(ROOT, 'partners.html');
+        rel = 'partners.html';
       } else if (pathname === '/partner/dashboard' || pathname === '/partner/dashboard/') {
-        filePath = path.join(ROOT, 'partner-dashboard.html');
+        rel = 'partner-dashboard.html';
       } else {
-        let rel = decodeURIComponent(pathname);
+        rel = decodedPath;
         if (rel.startsWith('/admin/assets/')) {
           rel = rel.replace('/admin/assets/', '/assets/');
         } else if (rel.startsWith('/partner/assets/')) {
           rel = rel.replace('/partner/assets/', '/assets/');
         }
         if (rel.endsWith('/')) rel += 'index.html';
-        filePath = path.join(ROOT, rel);
       }
     }
 
-    // Security check: stay within ROOT directory
-    if (!filePath || (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep))) {
-      res.writeHead(403, { 'Content-Type': 'text/plain' });
-      return res.end('Forbidden');
+    const filePath = path.join(ROOT, rel);
+    const relToRoot = path.relative(ROOT, filePath);
+
+    // Security check: stay within ROOT and only serve the public allow-list
+    const servable = relToRoot && !relToRoot.startsWith('..') && !path.isAbsolute(relToRoot) && isPublicPath(relToRoot);
+
+    const sendFallbackOr404 = () => {
+      // SPA fallbacks for the subdomains (only ever the public HTML shells)
+      const fallback = isAdminHost ? 'admin.html'
+        : (isPartnerHost || pathname.startsWith('/partner/')) ? 'partner-dashboard.html'
+        : null;
+      if (fallback) {
+        return serveFile(req, res, path.join(ROOT, fallback), () => sendPlain(res, 404, 'Not found'));
+      }
+      return sendPlain(res, 404, 'Not found');
+    };
+
+    if (!servable) return sendFallbackOr404();
+    return serveFile(req, res, filePath, sendFallbackOr404);
+}
+
+/**
+ * Streams a static file with validators so browsers can revalidate (304) instead of
+ * re-downloading three.js, the GLB model and every module on each page load.
+ */
+function serveFile(req, res, filePath, onMissing) {
+  fs.stat(filePath, (statErr, stat) => {
+    if (statErr || !stat.isFile()) return onMissing();
+
+    const ext = path.extname(filePath).toLowerCase();
+    const isCode = ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css';
+    const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
+    const headers = {
+      'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+      // HTML/JS/CSS: always revalidate (cheap 304 when unchanged) so deployments are picked up immediately
+      'Cache-Control': isCode ? 'no-cache' : 'public, max-age=3600',
+      'ETag': etag,
+      'Last-Modified': stat.mtime.toUTCString()
+    };
+
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, headers);
+      return res.end();
     }
 
-    // Static file serving with MIME detection and caching controls
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        // Fallback checks for subdomains
-        if (isAdminHost) {
-          const adminFallback = path.join(ROOT, 'admin.html');
-          if (fs.existsSync(adminFallback)) {
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            return res.end(fs.readFileSync(adminFallback));
-          }
-        }
-        if (isPartnerHost || pathname.startsWith('/partner/')) {
-          const partnerFallback = path.join(ROOT, 'partner-dashboard.html');
-          if (fs.existsSync(partnerFallback)) {
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            return res.end(fs.readFileSync(partnerFallback));
-          }
-        }
-
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        return res.end('Not found');
-      }
-
-      const ext = path.extname(filePath).toLowerCase();
-      const isDynamic = ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css';
-      res.writeHead(200, {
-        'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
-        'Cache-Control': isDynamic ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
-      });
-      res.end(data);
-    });
+    headers['Content-Length'] = stat.size;
+    res.writeHead(200, headers);
+    if (req.method === 'HEAD') return res.end();
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', () => res.destroy());
+    stream.pipe(res);
   });
-
-  return server;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url) || process.env.RUN_STANDALONE === '1') {

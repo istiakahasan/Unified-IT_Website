@@ -4,6 +4,18 @@
 
 Unified Cloud is an enterprise cloud infrastructure platform built with a high-performance vanilla JavaScript and Node.js architecture. The platform operates without heavy frontend bundlers, maintaining ultra-fast load times, clear separation of concerns, and native browser standards.
 
+**Actual stack (verified from the source):**
+
+| Layer | Technology |
+|---|---|
+| Public site | Static multi-page HTML + classic (non-module) browser scripts; Three.js r128 (`assets/js/vendor/three.min.js`), GLTFLoader + Meshopt decoder, anime.js 4.0.2 (CDN) |
+| Framework | **None.** No React or Next.js. Routing is hash-based inside `index.html`, plus separate HTML pages served by the Node server |
+| Build | Vite 6 (`vite.config.mjs`): copies `assets/` and emits the five HTML entry pages to `dist/`. Classic scripts are not bundled |
+| Backend | Node.js ≥ 22.5 (`node:http`, `node:sqlite` `DatabaseSync`), no web framework |
+| Database | SQLite file `data/partner-system.db` (git-ignored) |
+| Tests | Node test runner (`node --test`); browser tests with `playwright-core` driving an installed Chrome or Edge |
+| Deployment (as configured in the repo) | `docker-compose.yml` (Node 22 container + nginx proxy), or `caddy/Caddyfile`. No CI deploy pipeline. The only GitHub workflow refreshes SSL prices |
+
 ```
 Unified Cloud Platform
  ├── Public Cloud Website (index.html)
@@ -73,7 +85,7 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 
 ## 3. Universal Shopping Cart Architecture
 
-The platform features an integrated universal shopping cart system powered by [`assets/js/modules/universal-cart.js`](file:///e:/Projects/unified-it/assets/js/modules/universal-cart.js) and styled via [`assets/css/universal-cart.css`](file:///e:/Projects/unified-it/assets/css/universal-cart.css):
+The platform features an integrated universal shopping cart system powered by [`assets/js/modules/universal-cart.js`](assets/js/modules/universal-cart.js) and styled via [`assets/css/universal-cart.css`](assets/css/universal-cart.css):
 
 ```
                        ┌─────────────────────────┐
@@ -280,12 +292,13 @@ To preserve brand identity, visual aesthetics, and viewport ergonomics:
 - **Cart-Aware Floating Collision Avoidance**:
   - On every page where the floating Support Tickets button is mounted, it automatically transitions to `opacity: 0; visibility: hidden; pointer-events: none;` whenever the slide-out cart drawer (`#cart.on`, `body.cart-drawer-open`) or flyout dropdown (`#hdr-cart-dropdown.open`) is active.
   - Seamlessly reappears upon cart closure via CSS cascade and JavaScript `MutationObserver`.
+  - **Observer contract (since 2026-10-29):** the `MutationObserver` watches only `class` on `<body>` and `#cart` (no `subtree`), and the callback writes `cart-hidden` *only when the state changes*. The earlier version observed every element and called `classList.add/remove` unconditionally. Those calls always rewrite the attribute, so the observer re-triggered itself in an endless microtask loop, which was the site-wide navigation freeze (see `CHANGES.md` §2.1). Any future observer must follow the same rule: never write unconditionally to an attribute you observe.
 
 ---
 
 ## 9. Automated Testing Architecture
 
-Testing is executed natively using Node.js Test Runner (`node --test`), verifying 92 tests across 3 comprehensive test suites:
+Testing is executed natively using Node.js Test Runner (`node --test`). `npm run test:all` runs 123 tests across 4 suites:
 
 - **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
 - **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
@@ -295,3 +308,80 @@ Testing is executed natively using Node.js Test Runner (`node --test`), verifyin
   3. Centralized admin visibility, staff assignment, and internal note masking.
   4. Attachment security, extension filtering, and status validation.
   5. Public website entry points and homepage exclusion enforcement.
+- **`tests/security-hardening.test.mjs`** (31 tests): starts the real HTTP server on a random port. Covers the static allow-list (database, `.git`, sources not served), malformed URL and cookie handling (server stays up), invalid JSON, the 413 body limit, the CORS allow-list, the cookie CSRF origin check, attachment MIME handling, `TRUST_PROXY` IP resolution, and the demo-credential lockout and bootstrap admin.
+
+Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 8 tests) start the server and drive an installed Chrome or Edge through `playwright-core`. They check that the main thread stays responsive (a `requestAnimationFrame` round-trip within 5 s) after every header navigation (two full rounds), deep links, `/partners`, back/forward, rapid repeated clicks, the mobile menu, the overlay WebGL canvases being created on open, the animation loop running, and the no-WebGL fallback. The suite is skipped when no Chromium browser is found (`CHROME_PATH` overrides detection).
+
+`npm run lint` (`scripts/check-syntax.mjs`) parses every first-party `.js`/`.mjs` file with `node --check`. There is no TypeScript and no ESLint configuration in the project.
+
+---
+
+## 10. Public Site Navigation Architecture
+
+`index.html` is one document that hosts the hero scene plus every "page" as a full-screen overlay. Navigation is **hash-based**: no client router library and no page reload.
+
+| Destination | Element | Owner module | Hash |
+|---|---|---|---|
+| Service pages (cloud, email, hybrid, m365, cyber, hosting, ssl, domain, storage, agentic, contact, signup, login…) | `section.pg#pg-<key>`, built from `window.SERVICE_PAGES` | `dynamic-services.js` | `#p-<key>` |
+| Cloud VPS / Dedicated Server configurators | `#vps`, `#vds` | `hosting-overlays.js` | `#vps`, `#vds` |
+| Business email (legacy) | `#bem` | `hosting-overlays.js` | `#email` / `#bem` → redirected to `#p-email` |
+| About | `#about` | `about-page.js` | `#about` |
+| Partner program | separate page `partners.html` | `partner-page.js`, `header-nav.js`, inline script in `index.html` | `/partners` (full page load; `#partner` hashes redirect there) |
+| Admin / partner dashboard | `admin.html`, `partner-dashboard.html`, `admin-partners.html` | server routes | `/admin`, `/partner/dashboard`, `/admin/partners` |
+
+**Click → page lifecycle:**
+1. Header, mobile-menu, mega-menu and footer links keep their real `https://unified.it.com/...` hrefs (with `target="_blank"`) as a no-JS fallback.
+2. A document-level **capture** listener in `dynamic-services.js` maps the slug through `MAP` to a hash, calls `preventDefault()` + `stopImmediatePropagation()`, closes menus (`mgo`/`mmo`), sets `location.hash` and calls `sync()` immediately. `header-nav.js` has the equivalent `ROUTE_MAP` for clicks that reach its listeners. Partner links do a full navigation to `/partners`.
+3. Every overlay module listens for `hashchange` and runs its own `sync()`: it opens itself (adds `.on`, sets `window.__aboutOpen = true`, starts its render loop) when the hash is its own, and closes otherwise. `dynamic-services.js` is registered last, so it settles the shared flag.
+4. CSS performs the transition: `.pg` / `#about` / `#vps` fade with `opacity .5s` and `visibility`, and child elements animate in through `.pg.on …{animation:vin …}`.
+5. Back and forward replay the hash history, so the same `sync()` path runs. Escape clears the hash.
+
+**Shared state flags:** `window.__sm` (smoothed scroll progress, published by the hero), `window.__aboutOpen` ("some overlay is open": the hero stops rendering and keeps the header visible), and `window.__svcOpen` (the services slide gallery is fully open).
+
+**Header interactivity:** `#hdr` has `pointer-events:none` until the scroll progress `__sm` passes about 0.67, or while an overlay is open. `flight-scene.js` sets this every frame (`runDomScrollDriver()` without WebGL). Below 820 px the desktop `.nv` is hidden and the `.burger` button toggles `body.mmo`, which shows `#mm`.
+
+## 11. Animation & WebGL Lifecycle
+
+| Module | Effect | Render loop | Context created |
+|---|---|---|---|
+| `flight-scene.js` | Hero: raymarched clouds (low-res RT, adaptive scale), server racks (GLB + Meshopt), laptop with CRT shader, dust, cursor parallax | Always (`requestAnimationFrame`). Skips work while the tab is hidden or an overlay covers it | Page load |
+| `services-gallery.js` | Scroll-driven slides, 3D wire shapes, particles, anime.js pulse and burst | Always; returns early until scrolled in or while an overlay is open | Page load |
+| `dynamic-services.js` | One shared particle field moved into whichever `.pg` is open | Always; renders only while a page is open | Page load |
+| `about-page.js` | Particle field for `#about` | Only while `#about` has `.on` | **First open** |
+| `hosting-overlays.js` | Particle fields for `#vps`, `#vds` (and `#bem`) | Only while that overlay is open | **First open** |
+| `partner-page.js` | Partner overlay particles (overlay redirects to `/partners`, so normally never shown) | Only while open | **First open** |
+
+- `webgl-perf.js` picks a hardware tier (`high` / `medium` / `low` / `fallback`), caps the pixel ratio, debounces resizes and handles `webglcontextlost` / `restored`. With `fallback`, or if the renderer cannot be created, `runDomScrollDriver()` drives the same layer fades and header logic without WebGL.
+- **Why lazy creation:** browsers cap live WebGL contexts and discard the oldest first, which is the hero scene. The page used to create 9 contexts at load; it now creates 4. The shaders, particle counts and timing are identical; only the creation time moved.
+- Reduced motion: `prefers-reduced-motion` slows the hero travel speed. All other effects remain unchanged.
+
+## 12. Server Request Pipeline & Security Boundaries (`server/server.mjs`)
+
+1. **Crash guard:** every request runs through `handleRequest().catch()`, so a failing request returns `500` instead of terminating the process. Malformed HTTP is answered with `400` via `clientError`.
+2. **Security headers:** `nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`. HSTS and the admin CSP are added by the nginx config.
+3. **CORS:** credentialed CORS headers are only sent for the configured domains, the request's own host, `localhost` in development, and `CORS_ALLOWED_ORIGINS`.
+4. **Vhost routing:** `www.` → 301 to the apex; `admin.`, `partners.` and `api.` hosts select their HTML shell or the API.
+5. **API** (`/api/*` or the `api.` host): authenticate (Bearer header or `uct_session` cookie) → CSRF origin check for cookie-authenticated `POST/PUT/PATCH/DELETE` → body read with a 15 MB limit (`413`) → JSON parse (`400`) → `handleApiRequest` (`server/api.mjs`, RBAC per route).
+6. **Static files:** paths are decoded safely (`400` on malformed input). Only the six public HTML pages and `assets/**` are servable; anything else, including `data/` (database and attachments), `server/`, `tests/`, `scripts/`, dotfiles and `package*.json`, returns `404`. Files are streamed with `ETag` / `Last-Modified`. HTML/JS/CSS use `Cache-Control: no-cache` (revalidate, `304` when unchanged); other assets use `max-age=3600`.
+
+**Identity and secrets:** `TRUST_PROXY=1` makes rate limiting use the proxy's `X-Real-IP`. In production, accounts that still accept their public demo password are re-keyed with a random password at startup (`secureDemoCredentials`). `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` create the first real Super Admin. Integration credentials (WHMCS, CloudStack, payment gateways) come only from environment variables.
+
+**Attachments:** stored under `data/attachments/` (git-ignored, never served statically). They are downloaded only through `GET /api/support/attachments/:id` after a ticket ownership check, with the MIME type taken from the extension, `inline` only for raster images and PDF, and `Content-Security-Policy: default-src 'none'; sandbox`.
+
+## 13. Error Handling & Recovery
+
+- Each section of the classic frontend modules is wrapped in `try { … } catch (err) { console.error('[Module]', err) }`, so one failing section does not stop the others from initialising.
+- WebGL failures (creation errors, `fallback` tier, context loss) fall back to the DOM scroll driver or to an overlay without particles. Navigation keeps working (covered by the no-WebGL e2e test).
+- Overlay `sync()` functions are idempotent (`if(open)return`), so repeated or rapid clicks and back/forward settle on the last hash with exactly one page visible (covered by e2e).
+- Server: per-request crash isolation, explicit `400` / `404` / `413` / `500` responses, no stack traces sent to clients.
+
+## 14. Deployment Architecture (as configured in the repository)
+
+- `docker-compose.yml`: `app` (`node:22-alpine`, runs `node server/server.mjs`, persists `data/` in the `app-data` volume, health check `GET /api/public/plans`) behind `proxy` (nginx with `nginx/unified-cloud.conf`: TLS, HSTS, rate limits, subdomain vhosts).
+- Alternative: `caddy/Caddyfile` (automatic TLS).
+- `npm run build` produces a static `dist/` with all five HTML pages. A static host can serve the public site, but the API, admin and partner features need the Node server.
+- Pushing to GitHub does **not** deploy anything. The only workflow (`.github/workflows/update-digicert-prices.yml`) commits refreshed SSL prices daily.
+
+### Rollback
+
+The changes in `CHANGES.md` are contained in one branch. To roll back a deployment, redeploy the previous image or commit (`git checkout <previous-sha>` then `docker compose up -d --build`). The SQLite schema was not changed, so no database migration has to be reversed. In production, demo-account passwords that `secureDemoCredentials` re-keyed stay re-keyed; that is intended and safe.

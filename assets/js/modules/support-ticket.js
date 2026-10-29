@@ -73,10 +73,12 @@
     const cartEl = document.getElementById('cart');
     const isCartOpen = (cartEl && cartEl.classList.contains('on')) ||
                        document.body.classList.contains('cart-drawer-open');
-    if (isCartOpen) {
-      trigger.classList.add('cart-hidden');
-    } else {
-      trigger.classList.remove('cart-hidden');
+    // Only write when the state actually changes. classList.add/remove always rewrite the class
+    // attribute (even when nothing changes), which queues a new mutation record; inside the
+    // MutationObserver below that re-triggered this function forever and froze the page on the
+    // second navigation.
+    if (trigger.classList.contains('cart-hidden') !== isCartOpen) {
+      trigger.classList.toggle('cart-hidden', isCartOpen);
     }
   }
 
@@ -118,7 +120,12 @@
       const observer = new MutationObserver(() => {
         syncFloatingButtonWithCart();
       });
-      observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+      // Watch only the two elements whose classes signal an open cart (body.cart-drawer-open and #cart.on).
+      // Observing the whole subtree also fired for the header, slide panels and overlays, which change
+      // class on every animation frame.
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      const cartEl = document.getElementById('cart');
+      if (cartEl) observer.observe(cartEl, { attributes: true, attributeFilter: ['class'] });
     }
   }
 

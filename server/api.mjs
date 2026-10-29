@@ -12,6 +12,37 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
+// Support attachment types. The MIME type is always taken from this table, never from the uploader.
+const ATTACHMENT_MIME_BY_EXT = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain; charset=utf-8',
+  '.log': 'text/plain; charset=utf-8',
+  '.json': 'application/json',
+  '.zip': 'application/zip'
+};
+const INLINE_ATTACHMENT_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.pdf'];
+
+/**
+ * Client IP used for rate limiting and audit records. X-Forwarded-For is client-controlled,
+ * so it is only honoured when the app runs behind a trusted reverse proxy (TRUST_PROXY=1).
+ */
+export function getClientIp(req) {
+  if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+    // nginx sets X-Real-IP to $remote_addr; with $proxy_add_x_forwarded_for the proxy-observed
+    // address is the LAST entry (earlier entries come from the client and can be forged).
+    const realIp = String(req.headers['x-real-ip'] || '').trim();
+    if (realIp) return realIp;
+    const hops = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1];
+  }
+  return req.socket?.remoteAddress || '127.0.0.1';
+}
+
 /**
  * REST API Router for Cloud Partner Program & Centralized Admin Portal
  */
@@ -32,7 +63,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
     sendJson(statusCode, { error: true, message, ...extra });
   };
 
-  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+  const clientIp = getClientIp(req);
   const userAgent = req.headers['user-agent'] || 'Unknown Client';
 
   // Audit log helper
@@ -364,12 +395,17 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       'application/pdf', 'text/plain', 'application/zip', 'application/x-zip-compressed',
       'text/x-log', 'application/json'
     ];
-    const mime = (mimeType || 'application/octet-stream').toLowerCase();
     const safeExt = path.extname(fileName).toLowerCase();
-    const allowedExts = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.pdf', '.txt', '.zip', '.log', '.json'];
-    
+    const allowedExts = Object.keys(ATTACHMENT_MIME_BY_EXT);
+
     if (!allowedExts.includes(safeExt)) {
       return sendError(400, `File type '${safeExt}' is not permitted. Allowed: ${allowedExts.join(', ')}`);
+    }
+    // The stored MIME type is derived from the extension, never from the client, so an upload
+    // cannot be served back as text/html (stored XSS). The client value is only sanity-checked.
+    const mime = ATTACHMENT_MIME_BY_EXT[safeExt];
+    if (mimeType && !allowedMime.includes(String(mimeType).toLowerCase()) && String(mimeType).toLowerCase() !== 'application/octet-stream') {
+      return sendError(400, `MIME type '${mimeType}' is not permitted.`);
     }
 
     try {
@@ -442,22 +478,28 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
           original_filename: att.file_name,
           fileSize: att.file_size,
           mimeType: att.mime_type,
-          download_url: `/data/attachments/${att.file_path}`
+          download_url: `/api/support/attachments/${encodeURIComponent(att.id)}`
         }
       });
     }
 
-    const fullPath = path.join(ROOT, 'data', 'attachments', att.file_path);
-    if (!fs.existsSync(fullPath)) {
+    const attachDir = path.join(ROOT, 'data', 'attachments');
+    const fullPath = path.join(attachDir, path.basename(String(att.file_path || '')));
+    if (!fullPath.startsWith(attachDir + path.sep) || !fs.existsSync(fullPath)) {
       return sendError(404, 'Attachment file not found on disk storage.');
     }
 
     try {
       const stat = fs.statSync(fullPath);
+      const ext = path.extname(fullPath).toLowerCase();
+      const servedMime = ATTACHMENT_MIME_BY_EXT[ext] || 'application/octet-stream';
+      // Only raster images and PDFs may render inline; everything else (SVG, text, JSON, zip) downloads.
+      const inline = INLINE_ATTACHMENT_EXTS.includes(ext);
       res.writeHead(200, {
-        'Content-Type': att.mime_type || 'application/octet-stream',
+        'Content-Type': servedMime,
         'Content-Length': stat.size,
-        'Content-Disposition': `inline; filename="${encodeURIComponent(att.file_name)}"`,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${encodeURIComponent(att.file_name)}"`,
+        'Content-Security-Policy': "default-src 'none'; sandbox",
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, max-age=3600'
       });
@@ -677,7 +719,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       const { email, password } = body;
       const sessionData = handleLogin(db, email, password);
 
-      res.setHeader('Set-Cookie', `uct_session=${sessionData.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`);
+      // Secure flag in production (HTTPS behind the proxy) or when COOKIE_SECURE=true
+      const secureCookie = process.env.COOKIE_SECURE === 'true' || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false');
+      res.setHeader('Set-Cookie', `uct_session=${sessionData.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${secureCookie ? '; Secure' : ''}`);
       logAudit(sessionData.user.role, sessionData.user.id, sessionData.user.email, 'USER_LOGIN_SUCCESS', 'users', sessionData.user.id, {});
       return sendJson(200, { success: true, ...sessionData });
     } catch (err) {

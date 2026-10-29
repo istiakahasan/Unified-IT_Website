@@ -20,8 +20,11 @@ export function hashPassword(password, salt = crypto.randomBytes(16).toString('h
 }
 
 export function verifyPassword(password, hash, salt) {
-  const check = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
-  return check === hash;
+  if (typeof password !== 'string' || !hash || !salt) return false;
+  const check = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256');
+  const expected = Buffer.from(String(hash), 'hex');
+  // Constant-time comparison so response timing does not leak how much of the hash matched
+  return expected.length === check.length && crypto.timingSafeEqual(check, expected);
 }
 
 export function initDatabase(dbPath = DB_FILE) {
@@ -748,7 +751,69 @@ export function initDatabase(dbPath = DB_FILE) {
   seedDefaultData(db);
   seedRewardSystemData(db);
   seedAdminPortalData(db);
+  secureDemoCredentials(db);
+  bootstrapAdminFromEnv(db);
   return db;
+}
+
+// Demo logins seeded for local development. Their passwords are public (README, login fast-fill chips).
+const DEMO_CREDENTIALS = [
+  ['admin@unified.test', 'AdminSecure2026!'],
+  ['partner@unified.test', 'Partner123!'],
+  ['superadmin@unified.cloud', 'SuperAdmin2026!'],
+  ['security@unified.cloud', 'SecurityAdmin2026!'],
+  ['infra@unified.cloud', 'InfraAdmin2026!'],
+  ['finance@unified.cloud', 'FinanceAdmin2026!'],
+  ['partners@unified.cloud', 'PartnerAdmin2026!'],
+  ['support@unified.cloud', 'SupportAdmin2026!'],
+  ['content@unified.cloud', 'ContentAdmin2026!'],
+  ['auditor@unified.cloud', 'AuditorAdmin2026!']
+];
+
+/**
+ * In production, any account that still accepts its publicly documented demo password gets a random,
+ * unknown password instead, so the published credentials cannot be used against a live deployment.
+ * Set ALLOW_DEMO_CREDENTIALS=1 only for a disposable demo environment.
+ */
+export function secureDemoCredentials(db, env = process.env) {
+  if (env.NODE_ENV !== 'production' || env.ALLOW_DEMO_CREDENTIALS === '1') return 0;
+  const find = db.prepare('SELECT id, password_hash, salt FROM users WHERE email = ?');
+  const update = db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?');
+  let secured = 0;
+  for (const [email, pass] of DEMO_CREDENTIALS) {
+    const user = find.get(email);
+    if (user && verifyPassword(pass, user.password_hash, user.salt)) {
+      const auth = hashPassword(crypto.randomBytes(32).toString('hex'));
+      update.run(auth.hash, auth.salt, user.id);
+      secured++;
+    }
+  }
+  if (secured) {
+    console.warn(`[Security] Disabled the public demo password on ${secured} account(s). Set BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD to create a real Super Admin.`);
+  }
+  return secured;
+}
+
+/** Creates (or re-keys) a Super Admin from BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD when both are set. */
+export function bootstrapAdminFromEnv(db, env = process.env) {
+  const email = String(env.BOOTSTRAP_ADMIN_EMAIL || '').trim().toLowerCase();
+  const pass = String(env.BOOTSTRAP_ADMIN_PASSWORD || '');
+  if (!email || !pass) return false;
+  if (pass.length < 12) {
+    console.warn('[Security] BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters; bootstrap admin not created.');
+    return false;
+  }
+  const auth = hashPassword(pass);
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (existing) {
+    db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?').run(auth.hash, auth.salt, existing.id);
+  } else {
+    db.prepare(`
+      INSERT INTO users (id, email, password_hash, salt, role, partner_id, name, status)
+      VALUES (?, ?, ?, ?, 'SUPER_ADMIN', NULL, 'Bootstrap Super Admin', 'ACTIVE')
+    `).run('usr-bootstrap-' + crypto.randomBytes(4).toString('hex'), email, auth.hash, auth.salt);
+  }
+  return true;
 }
 
 function seedDefaultData(db) {

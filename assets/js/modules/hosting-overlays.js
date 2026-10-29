@@ -12,7 +12,12 @@ var tier = perf ? perf.getTier() : 'high';
 var hasGL = tier !== 'fallback' && (!perf || perf.checkSupport());
 var rd = null, sc = null, cam = null, mat = null, animId = null;
 
-if (hasGL) {
+var loop = null;
+// The WebGL renderer is created on first open, not at page load: every overlay used to hold its own
+// context from the start (9 per page), and browsers drop the oldest context (the hero scene) past their limit.
+function initGL() {
+  if (rd || !hasGL) return;
+  hasGL = false; // one attempt; on failure the overlay simply opens without particles
   try {
     var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';V.insertBefore(cv,V.firstChild);
     rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});
@@ -37,20 +42,20 @@ if (hasGL) {
     }
     addEventListener('resize',perf ? perf.debounce(size,80) : size);size();
 
-    function loop(){
+    loop = function(){
       if(!open){animId=null;return;}
       animId=requestAnimationFrame(loop);
       if(document.hidden)return;
       m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
       if((window.__sm||0)>=.86&&hd)hd.style.setProperty('--ph',String(Math.round(268+Math.sin(t*.6)*14)));
-    }
+    };
   }catch(e){
     console.warn('[VPS overlay] WebGL init fallback:',e);
     rd=null;
   }
 }
 
-function startLoop(){if(rd&&!animId)animId=requestAnimationFrame(loop);}
+function startLoop(){initGL();if(rd&&!animId)animId=requestAnimationFrame(loop);}
 function others(){return (AB&&AB.classList.contains('on'))||(PT&&PT.classList.contains('on'))||(document.getElementById('vds')&&document.getElementById('vds').classList.contains('on'))||(document.getElementById('bem')&&document.getElementById('bem').classList.contains('on'));}
 function openV(){if(open)return;open=true;window.__aboutOpen=true;document.body.classList.add('vp');document.body.classList.remove('mmo','mgo');V.classList.add('on');V.scrollTop=0;startLoop();}
 function closeV(){if(!open)return;open=false;document.body.classList.remove('vp');V.classList.remove('on');if(!others())window.__aboutOpen=false;}
@@ -72,7 +77,12 @@ var tier = perf ? perf.getTier() : 'high';
 var hasGL = tier !== 'fallback' && (!perf || perf.checkSupport());
 var rd = null, sc = null, cam = null, mat = null, animId = null;
 
-if (hasGL) {
+var loop = null;
+// The WebGL renderer is created on first open, not at page load: every overlay used to hold its own
+// context from the start (9 per page), and browsers drop the oldest context (the hero scene) past their limit.
+function initGL() {
+  if (rd || !hasGL) return;
+  hasGL = false; // one attempt; on failure the overlay simply opens without particles
   try {
     var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';V.insertBefore(cv,V.firstChild);
     rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});
@@ -97,20 +107,20 @@ if (hasGL) {
     }
     addEventListener('resize',perf ? perf.debounce(size,80) : size);size();
 
-    function loop(){
+    loop = function(){
       if(!open){animId=null;return;}
       animId=requestAnimationFrame(loop);
       if(document.hidden)return;
       m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
       if((window.__sm||0)>=.86&&hd)hd.style.setProperty('--ph',String(Math.round(255+Math.sin(t*.6)*14)));
-    }
+    };
   }catch(e){
     console.warn('[VDS overlay] WebGL init fallback:',e);
     rd=null;
   }
 }
 
-function startLoop(){if(rd&&!animId)animId=requestAnimationFrame(loop);}
+function startLoop(){initGL();if(rd&&!animId)animId=requestAnimationFrame(loop);}
 function others(){return (AB&&AB.classList.contains('on'))||(PT&&PT.classList.contains('on'))||(document.getElementById('vps')&&document.getElementById('vps').classList.contains('on'))||(document.getElementById('bem')&&document.getElementById('bem').classList.contains('on'));}
 function openV(){if(open)return;open=true;window.__aboutOpen=true;document.body.classList.add('vd');document.body.classList.remove('mmo','mgo');V.classList.add('on');V.scrollTop=0;startLoop();}
 function closeV(){if(!open)return;open=false;document.body.classList.remove('vd');V.classList.remove('on');if(!others())window.__aboutOpen=false;}
@@ -132,7 +142,12 @@ var tier = perf ? perf.getTier() : 'high';
 var hasGL = tier !== 'fallback' && (!perf || perf.checkSupport());
 var rd = null, sc = null, cam = null, mat = null, animId = null;
 
-if (hasGL) {
+var loop = null;
+// The WebGL renderer is created on first open, not at page load: every overlay used to hold its own
+// context from the start (9 per page), and browsers drop the oldest context (the hero scene) past their limit.
+function initGL() {
+  if (rd || !hasGL) return;
+  hasGL = false; // one attempt; on failure the overlay simply opens without particles
   try {
     var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';V.insertBefore(cv,V.firstChild);
     rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});
@@ -157,20 +172,20 @@ if (hasGL) {
     }
     addEventListener('resize',perf ? perf.debounce(size,80) : size);size();
 
-    function loop(){
+    loop = function(){
       if(!open){animId=null;return;}
       animId=requestAnimationFrame(loop);
       if(document.hidden)return;
       m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
       if((window.__sm||0)>=.86&&hd)hd.style.setProperty('--ph',String(Math.round(300+Math.sin(t*.6)*14)));
-    }
+    };
   }catch(e){
     console.warn('[BEM overlay] WebGL init fallback:',e);
     rd=null;
   }
 }
 
-function startLoop(){if(rd&&!animId)animId=requestAnimationFrame(loop);}
+function startLoop(){initGL();if(rd&&!animId)animId=requestAnimationFrame(loop);}
 function others(){return (AB&&AB.classList.contains('on'))||(PT&&PT.classList.contains('on'))||(document.getElementById('vps')&&document.getElementById('vps').classList.contains('on'))||(document.getElementById('vds')&&document.getElementById('vds').classList.contains('on'));}
 function openV(){if(open)return;open=true;window.__aboutOpen=true;document.body.classList.add('be');document.body.classList.remove('mmo','mgo');V.classList.add('on');V.scrollTop=0;startLoop();}
 function closeV(){if(!open)return;open=false;document.body.classList.remove('be');V.classList.remove('on');if(!others())window.__aboutOpen=false;}

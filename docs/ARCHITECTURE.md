@@ -1,5 +1,7 @@
 # Unified Cloud System Architecture
 
+> **Note:** the maintained architecture document is [`../architecture.md`](../architecture.md). It also covers the hash-navigation lifecycle, WebGL lifecycle, server request pipeline and security boundaries updated on 2026-10-29 (see [`../CHANGES.md`](../CHANGES.md)). This copy is kept for existing links and may lag behind.
+
 ## 1. Overview & High-Level Architecture
 
 Unified Cloud is an enterprise cloud infrastructure platform built with a high-performance vanilla JavaScript and Node.js architecture. The platform operates without heavy frontend bundlers, maintaining ultra-fast load times, clear separation of concerns, and native browser standards.

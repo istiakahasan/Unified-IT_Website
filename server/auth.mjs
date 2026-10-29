@@ -260,7 +260,9 @@ export function extractToken(req) {
     const cookies = Object.fromEntries(
       cookieHeader.split(';').map(c => {
         const [k, ...v] = c.trim().split('=');
-        return [k, decodeURIComponent(v.join('='))];
+        const raw = v.join('=');
+        // A malformed %-sequence in any cookie must not throw (it used to crash the request)
+        try { return [k, decodeURIComponent(raw)]; } catch { return [k, raw]; }
       })
     );
     if (cookies.uct_session) return cookies.uct_session;
