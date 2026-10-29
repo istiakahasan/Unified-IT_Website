@@ -53,6 +53,7 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 
 | # | File | Purpose | Scope / Dependencies |
 |---|---|---|---|
+| 0 | `assets/js/csp-handlers.js` (in `<head>`) | Runs `data-onclick` / `-onsubmit` / `-onchange` / `-oninput`, `data-click-target`, `data-hide-on-error` | Delegated on `document`; parses calls, never `eval` |
 | 1 | `assets/js/vendor/three.min.js` | WebGL 3D 3rd-party runtime | Global `THREE` |
 | 2 | `assets/js/vendor/GLTFLoader.js` | glTF / GLB model loader | `THREE.GLTFLoader` |
 | 3 | `assets/js/vendor/meshopt_decoder.js` | Meshopt geometry decoder | `MeshoptDecoder` |
@@ -299,7 +300,7 @@ To preserve brand identity, visual aesthetics, and viewport ergonomics:
 
 ## 9. Automated Testing Architecture
 
-Testing is executed natively using Node.js Test Runner (`node --test`). `npm run test:all` runs 134 tests across 4 suites:
+Testing is executed natively using Node.js Test Runner (`node --test`). `npm run test:all` runs 180 tests across 5 suites:
 
 - **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
 - **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
@@ -309,9 +310,10 @@ Testing is executed natively using Node.js Test Runner (`node --test`). `npm run
   3. Centralized admin visibility, staff assignment, and internal note masking.
   4. Attachment security, extension filtering, and status validation.
   5. Public website entry points and homepage exclusion enforcement.
+- **`tests/csp-handlers.test.mjs`** (46 tests): the `data-on…` parser (accepts plain calls with literals, rejects injection attempts, keeps escaped quotes), plus a guard that no page or script contains inline `<script>`, `on…=` attributes or `javascript:` URLs.
 - **`tests/security-hardening.test.mjs`** (42 tests): starts the real HTTP server on a random port. Also covers password hashing (format, legacy upgrade on login, event loop not blocked, no timing enumeration), the CSP header, and the cookie and database-path settings. Covers the static allow-list (database, `.git`, sources not served), malformed URL and cookie handling (server stays up), invalid JSON, the 413 body limit, the CORS allow-list, the cookie CSRF origin check, attachment MIME handling, `TRUST_PROXY` IP resolution, and the demo-credential lockout and bootstrap admin.
 
-Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 9 tests; run in both Chrome and Edge) start the server and drive an installed Chrome or Edge through `playwright-core`. They check that the main thread stays responsive (a `requestAnimationFrame` round-trip within 5 s) after every header navigation (two full rounds), deep links, `/partners`, back/forward, rapid repeated clicks, the mobile menu, the overlay WebGL canvases being created on open, the animation loop running, zero Content-Security-Policy violations across all pages, and the no-WebGL fallback. Helpers poll with `page.evaluate()`, because `page.waitForFunction()` uses string evaluation, which the site's CSP blocks. The suite is skipped when no Chromium browser is found (`CHROME_PATH` overrides detection).
+Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 10 tests; pass on Chrome, Edge, Firefox and WebKit, with `BROWSER=chromium|firefox|webkit`) start the server and drive an installed Chrome or Edge through `playwright-core`. They check that the main thread stays responsive (a `requestAnimationFrame` round-trip within 5 s) after every header navigation (two full rounds), deep links, `/partners`, back/forward, rapid repeated clicks, the mobile menu, the overlay WebGL canvases being created on open, the animation loop running, zero Content-Security-Policy violations across all pages, and the no-WebGL fallback. Helpers poll with `page.evaluate()`, because `page.waitForFunction()` uses string evaluation, which the site's CSP blocks. The suite is skipped when no Chromium browser is found (`CHROME_PATH` overrides detection).
 
 `npm run lint` (`scripts/check-syntax.mjs`) parses every first-party `.js`/`.mjs` file with `node --check`. There is no TypeScript and no ESLint configuration in the project.
 
@@ -359,7 +361,7 @@ Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 9 tests;
 ## 12. Server Request Pipeline & Security Boundaries (`server/server.mjs`)
 
 1. **Crash guard:** every request runs through `handleRequest().catch()`, so a failing request returns `500` instead of terminating the process. Malformed HTTP is answered with `400` via `clientError`.
-2. **Security headers:** `nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`; HSTS is added by the proxy config. Every HTML response carries the **Content-Security-Policy** from `buildContentSecurityPolicy()`: `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'` (no CDN, no `eval`), fonts from Google Fonts, `connect-src` limited to this site plus the FX-rate API, `img-src` allowing `data:`/`blob:` for GLB textures, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, and `upgrade-insecure-requests` in production. `CSP_REPORT_ONLY=1` sends it report-only.
+2. **Security headers:** `nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`; HSTS is added by the proxy config. Every HTML response carries the **Content-Security-Policy** from `buildContentSecurityPolicy()`: `script-src 'self' 'wasm-unsafe-eval'`: script **files** from this site only, with no inline `<script>`, no `on…=` attributes, no `javascript:` URLs, no `eval` and no CDN. (`style-src` still allows inline styles; they cannot execute code.), fonts from Google Fonts, `connect-src` limited to this site plus the FX-rate API, `img-src` allowing `data:`/`blob:` for GLB textures, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, and `upgrade-insecure-requests` in production. `CSP_REPORT_ONLY=1` sends it report-only.
 3. **CORS:** credentialed CORS headers are only sent for the configured domains, the request's own host, `localhost` in development, and `CORS_ALLOWED_ORIGINS`.
 4. **Vhost routing:** `www.` → 301 to the apex; `admin.`, `partners.` and `api.` hosts select their HTML shell or the API.
 5. **API** (`/api/*` or the `api.` host): authenticate (Bearer header or `uct_session` cookie) → CSRF origin check for cookie-authenticated `POST/PUT/PATCH/DELETE` → body read with a 15 MB limit (`413`) → JSON parse (`400`) → `handleApiRequest` (`server/api.mjs`, RBAC per route).
@@ -373,10 +375,20 @@ Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 9 tests;
 
 **Attachments:** stored under `data/attachments/` (git-ignored, never served statically). They are downloaded only through `GET /api/support/attachments/:id` after a ticket ownership check, with the MIME type taken from the extension, `inline` only for raster images and PDF, and `Content-Security-Policy: default-src 'none'; sandbox`.
 
+## 12a. Inline-Script-Free Front End (CSP contract)
+
+Since 2026-10-29 the CSP forbids inline script, so front-end code follows these rules:
+
+- **Page code** lives in `assets/js/pages/<page>.js` (formerly inline `<script>` blocks) and is included with `<script src>` at the same position, so execution order and globals did not change. Top-level `function` declarations stay globals, which the admin SPA relies on.
+- **Event handlers** in markup and in HTML built by JS are `data-onclick="fn('arg', 2, true, event)"` (also `data-onsubmit`, `data-onchange`, `data-oninput`). `assets/js/csp-handlers.js` parses the attribute: one call of a global (or `obj.method`) with string, number, boolean or null literals, or `event`. It never evaluates code. Handlers run from the target up through its ancestors (inline bubbling order), honour `stopPropagation()`, and a `data-onclick` on `<a href="#">` does not change the hash.
+- **Values from the database** inside such attributes go through `handlerArg()` (`assets/js/pages/admin.js`, `admin-partners.js`): JS-string escaping, then HTML-attribute escaping. Combined with the parser, a stored value can only ever become a string argument. This closed a stored-XSS path in the admin row buttons.
+- **Declarative helpers:** `data-click-target="<selector>"` clicks another element; `data-hide-on-error` hides an `<img>` that fails to load. Hover effects belong in CSS.
+- `tests/csp-handlers.test.mjs` fails if any page or script reintroduces inline `<script>`, `on…=` or `javascript:`.
+
 ## 13. Error Handling & Recovery
 
 - Each section of the classic frontend modules is wrapped in `try { … } catch (err) { console.error('[Module]', err) }`, so one failing section does not stop the others from initialising.
-- WebGL failures (creation errors, `fallback` tier, context loss) fall back to the DOM scroll driver or to an overlay without particles. Navigation keeps working (covered by the no-WebGL e2e test).
+- WebGL failures (creation errors, `fallback` tier, context loss) fall back to the DOM scroll driver or to an overlay without particles. Every renderer is created inside `try`/`catch`. Before 2026-10-29 the service-page builder (`dynamic-services.js`) created its particle renderer unguarded, so without WebGL **no service page was built at all**. Navigation now keeps working, and the no-WebGL e2e test asserts the page is visible (Chromium and Firefox).
 - Overlay `sync()` functions are idempotent (`if(open)return`), so repeated or rapid clicks and back/forward settle on the last hash with exactly one page visible (covered by e2e).
 - Server: per-request crash isolation, explicit `400` / `404` / `413` / `500` responses, no stack traces sent to clients.
 

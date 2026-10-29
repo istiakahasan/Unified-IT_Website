@@ -53,7 +53,8 @@ unified-it/
 │   ├── partner-system.test.mjs         # Production Partner Program test suite (33 tests)
 │   ├── support-ticketing.test.mjs      # Role-Based Support Ticketing System test suite (26 tests)
 │   ├── security-hardening.test.mjs     # HTTP security, CSP, hashing & cookie regression suite (42 tests)
-│   └── e2e/navigation.e2e.mjs          # Browser navigation / animation / CSP regression suite (9 tests)
+│   ├── csp-handlers.test.mjs           # data-on… parser + "no inline script anywhere" guard (46 tests)
+│   └── e2e/navigation.e2e.mjs          # Browser navigation / animation / CSP suite (10 tests; Chrome, Edge, Firefox, WebKit)
 ├── data/                               # SQLite database + support attachments (runtime only, git-ignored, never served)
 ├── scripts/
 │   ├── serve.js                        # `npm start` entrypoint (port 3000)
@@ -68,6 +69,9 @@ unified-it/
     │   ├── support-ticket.css          # Support ticket modal, badges, conversation threads & SLA timers
     │   └── universal-cart.css          # Shopping cart flyout dropdown, trash bin buttons & slide-out drawer
     ├── js/                             # Interactive controllers, catalog engines, WebGL shaders
+    │   ├── csp-handlers.js             # Runs data-onclick/-onsubmit/-onchange/-oninput attributes (no inline JS allowed)
+    │   ├── pages/                      # Page scripts (formerly inline <script> blocks): admin.js, partners.js, …
+    │   ├── vendor/                     # three.js, GLTFLoader, Meshopt decoder, anime.js (no runtime CDN)
     │   ├── modules/support-ticket.js   # Client ticket controller: submission, lookup, validation & upload
     │   └── modules/universal-cart.js   # Universal cart manager: flyout dropdown, trash bin removal & toast
     ├── models/                         # 3D Datacenter server rack model (meshopt glTF)
@@ -227,15 +231,19 @@ npm run lint        # syntax check of every first-party .js/.mjs file (no TypeSc
 npm audit           # dependency advisories
 npm run build       # production build into dist/
 
-# Run all unit/integration suites (134 tests)
+# Run all unit/integration suites (180 tests)
 npm run test:all
 
 # HTTP security regression suite only (42 tests)
 npm run test:security
 
-# Browser navigation, animation & CSP regression tests (9 tests).
+# Browser navigation, animation & CSP regression tests (10 tests).
 # Uses an installed Chrome/Edge; set CHROME_PATH if it is not auto-detected. Skipped when none is found.
 # e.g. CHROME_PATH="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" npm run test:e2e
+# Other engines (one-time download of the Playwright builds):
+#   npx playwright-core install firefox webkit
+#   BROWSER=firefox npm run test:e2e
+#   BROWSER=webkit  npm run test:e2e      # Safari's engine
 npm run test:e2e
 
 # Run Support Ticketing System test suite only (26 tests)
@@ -307,9 +315,9 @@ Deploy [`caddy/Caddyfile`](caddy/Caddyfile) for zero-config automated Let's Encr
 - Malformed URLs or cookies cannot crash the server. Request bodies are capped at 15 MB.
 - Uploaded attachments are typed by extension (never by the client), served with a sandboxing CSP, and downloaded only through the authorised API endpoint.
 - The public demo passwords are disabled automatically in production.
-- Every HTML page is served with a Content-Security-Policy: scripts only from this site (no `eval`), WebAssembly allowed for the 3D model decoder, no plugins, no framing by other sites. All third-party libraries are vendored, so the pages make no runtime CDN requests.
+- Every HTML page is served with a Content-Security-Policy: only script **files** from this site may run (no inline `<script>`, no `onclick=`, no `javascript:` links, no `eval`), WebAssembly allowed for the 3D model decoder, no plugins, no framing by other sites. All third-party libraries are vendored, so the pages make no runtime CDN requests.
 - Passwords are hashed with PBKDF2-SHA256 at 600,000 iterations on a background thread (never blocking the server). Older hashes are upgraded on the next successful login.
-- Run `npm audit` and `npm run test:security` before releases. See [`CHANGES.md`](CHANGES.md) §3 for the full audit, and §12 for the follow-up hardening. Known remaining item: the CSP still allows inline scripts (`'unsafe-inline'`), because the pages use inline handlers.
+- Run `npm audit` and `npm run test:security` before releases. See [`CHANGES.md`](CHANGES.md) §3 for the full audit, and §12 for the follow-up hardening. §13 for the strict script policy.
 
 ## ⚡ Performance Considerations
 
@@ -329,7 +337,9 @@ Deploy [`caddy/Caddyfile`](caddy/Caddyfile) for zero-config automated Let's Encr
 | Server fails at start with `No such built-in module: node:sqlite` | Node is older than 22.5. Upgrade, and use the `node:22-alpine` image. |
 | API calls from another site get blocked | CORS and CSRF only allow the configured domains. Add the origin to `CORS_ALLOWED_ORIGINS` if it is legitimate. |
 | Admin login fails in production with the README passwords | Intended. Set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` and restart. |
-| A new inline `<script>` or external library is blocked (console: "Refused to load…") | The Content-Security-Policy in `server/server.mjs` (`buildContentSecurityPolicy`) only allows this site. Vendor the library into `assets/js/vendor/`, or add its origin there deliberately. `CSP_REPORT_ONLY=1` helps you test. |
+| A new inline `<script>`, `onclick="…"` or external library does nothing (console: "Refused to execute…" / "Refused to load…") | The Content-Security-Policy (`buildContentSecurityPolicy` in `server/server.mjs`) only runs script files from this site. Put page code in `assets/js/pages/`, write handlers as `data-onclick="myFunction('arg', 1)"` (a plain call to a global function with literal arguments, run by `assets/js/csp-handlers.js`), and vendor libraries into `assets/js/vendor/`. `CSP_REPORT_ONLY=1` helps you test. `npm run test:all` fails if inline script is reintroduced. |
+| A `data-onclick` button does nothing; console shows `[csp-handlers] Unsupported handler` or `Handler function not found` | The attribute must be one plain call like `fn('a', 2, true, event)`, and `fn` must be a global (`function fn…` in a classic script, or `window.fn = …`). Expressions, multiple statements or variables as arguments are rejected on purpose. |
+| Menu links change the URL but no page appears (browser without WebGL) | Fixed: the service pages are now built even when WebGL is unavailable (`dynamic-services.js`). |
 | Services gallery has no pulse or burst effect / console says "Missing libraries: anime" | `assets/js/vendor/anime.umd.min.js` is missing from the deployment (it was previously loaded from a CDN URL that returned 404). |
 | Login takes about half a second | Expected: passwords use 600,000 PBKDF2 iterations, computed off the main thread so other requests are unaffected. |
 | 3D scene missing / flat background | WebGL is unavailable or the context was lost. The DOM fallback keeps navigation working; check `chrome://gpu`. |

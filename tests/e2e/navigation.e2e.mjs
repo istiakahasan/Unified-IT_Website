@@ -1,11 +1,13 @@
 /**
  * Browser regression tests for the navigation freeze (see CHANGES.md).
- * Drives a locally installed Chrome / Edge through playwright-core against the real Node server.
+ * Drives a browser through playwright-core against the real Node server.
  *
- *   npm run test:e2e                         # auto-detects Chrome or Edge
+ *   npm run test:e2e                         # Chromium engine: auto-detects installed Chrome or Edge
  *   CHROME_PATH=/path/to/chrome npm run test:e2e
+ *   BROWSER=firefox npm run test:e2e         # Firefox engine  } need the Playwright builds once:
+ *   BROWSER=webkit  npm run test:e2e         # WebKit (Safari) }   npx playwright-core install firefox webkit
  *
- * The suite is skipped (not failed) when no Chromium-based browser is installed.
+ * The suite is skipped (not failed) when the selected browser is not available.
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,21 +25,39 @@ const CANDIDATES = [
 ].filter(Boolean);
 const executablePath = CANDIDATES.find(p => fs.existsSync(p));
 
-let chromium = null;
-try { ({ chromium } = await import('playwright-core')); } catch { /* optional dev dependency */ }
-const skip = !executablePath || !chromium ? 'no Chromium browser or playwright-core available' : false;
+const ENGINE = (process.env.BROWSER || 'chromium').toLowerCase();
+let pw = null;
+try { pw = await import('playwright-core'); } catch { /* optional dev dependency */ }
+const engine = pw && pw[ENGINE];
+let skip = false;
+if (!engine) skip = `playwright-core or engine "${ENGINE}" not available`;
+else if (ENGINE === 'chromium' && !executablePath) skip = 'no Chrome/Edge installation found (set CHROME_PATH)';
+else if (ENGINE !== 'chromium') {
+  try { if (!fs.existsSync(engine.executablePath())) skip = `${ENGINE} not installed: npx playwright-core install ${ENGINE}`; }
+  catch { skip = `${ENGINE} not installed: npx playwright-core install ${ENGINE}`; }
+}
+
+// Launch options per engine; withoutWebGL() returns options that disable WebGL, or null if the engine has no switch for it.
+function launchOptions() {
+  return ENGINE === 'chromium' ? { executablePath, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] } : {};
+}
+function withoutWebGL() {
+  if (ENGINE === 'chromium') return { executablePath, args: ['--disable-webgl', '--disable-webgl2', '--disable-3d-apis'] };
+  if (ENGINE === 'firefox') return { firefoxUserPrefs: { 'webgl.disabled': true } };
+  return null;
+}
 
 const SERVICE_LINKS = ['Cloud Service', 'Email', 'Agentic AI', 'Cyber Security', 'Hosting', 'SSL', 'Domain'];
 const EXPECTED_HASH = { 'Cloud Service': '#p-cloud', 'Email': '#p-email', 'Agentic AI': '#p-agentic', 'Cyber Security': '#p-cyber', 'Hosting': '#p-hosting', 'SSL': '#p-ssl', 'Domain': '#p-domain' };
 
-describe('Navigation and animation regression (browser)', { skip }, () => {
+describe(`Navigation and animation regression (${ENGINE})`, { skip }, () => {
   let server, base, browser;
 
   before(async () => {
     server = createServer();
     await new Promise(r => server.listen(0, '127.0.0.1', r));
     base = `http://127.0.0.1:${server.address().port}`;
-    browser = await chromium.launch({ executablePath, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+    browser = await engine.launch(launchOptions());
   });
 
   after(async () => {
@@ -77,7 +97,7 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
   }
 
   async function scrollToHeader(page) {
-    await page.mouse.wheel(0, 3400);
+    await page.evaluate(() => scrollTo(0, innerHeight * 4.3));
     await waitForHeader(page);
   }
 
@@ -148,7 +168,7 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
 
   it('opens a page from the mobile menu', async () => {
     const { page, context, errors } = await openPage('/', { width: 390, height: 844 });
-    await page.mouse.wheel(0, 3400);
+    await page.evaluate(() => scrollTo(0, innerHeight * 4.3));
     await waitForHeader(page);
     await page.click('[aria-label="Menu"]');
     assert.ok(await page.evaluate(() => document.body.classList.contains('mmo')), 'mobile menu opened');
@@ -162,7 +182,8 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
   it('keeps the animations running and creates overlay effects on demand', async () => {
     const { page, context } = await openPage('/');
     const frames = await page.evaluate(() => new Promise(r => { let n = 0; const t = performance.now(); (function f() { n++; if (performance.now() - t < 1000) requestAnimationFrame(f); else r(n); })(); }));
-    assert.ok(frames > 20, `animation loop is running (${frames} frames/s)`);
+    // The loop must keep running; the frame rate itself depends on the GPU (software WebGL in CI can be ~7 fps)
+    assert.ok(frames > 2, `animation loop is running (${frames} frames/s)`);
     assert.ok(await page.$('#gl'), 'hero WebGL canvas present');
     await page.evaluate(() => { location.hash = 'vps'; });
     await page.waitForTimeout(600);
@@ -194,18 +215,58 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
     await context.close();
   });
 
+  it('replaces inline handlers without losing behaviour (strict CSP: admin, support modal, footer link)', async () => {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 800 } });
+    const page = await context.newPage();
+    const problems = [];
+    await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.log('CSPV|' + e.violatedDirective)));
+    page.on('console', m => { if (/^CSPV\||csp-handlers/.test(m.text())) problems.push(m.text()); });
+    page.on('pageerror', e => problems.push(e.message));
+
+    // Admin: fast-fill chip (data-onclick) logs in; nav buttons and rendered row buttons work
+    await page.goto(base + '/admin', { waitUntil: 'load' });
+    await page.click('.role-chip >> nth=0');
+    for (let i = 0; i < 50 && !(await page.evaluate(() => !!localStorage.getItem('uct_admin_token'))); i++) await page.waitForTimeout(100);
+    assert.ok(await page.evaluate(() => !!localStorage.getItem('uct_admin_token')), 'admin login via data-onclick chip');
+    await page.click('[data-onclick="switchAdminView(\'customers\')"] >> nth=0');
+    await page.waitForSelector('[data-onclick^="inspectCustomer("]', { timeout: 10000 });
+    await page.click('[data-onclick^="inspectCustomer("] >> nth=0');
+    await page.waitForTimeout(800);
+    assert.ok(await page.evaluate(() => getComputedStyle(document.getElementById('customerDetailModal')).display !== 'none'), 'row button opened the detail modal');
+
+    // Service page footer: support link opens the modal without closing the page
+    await page.goto(base + '/#p-cloud', { waitUntil: 'load' });
+    await page.waitForTimeout(800);
+    await page.click('#pg-cloud a[data-onclick^="openSupportTicketModal"]');
+    await page.waitForTimeout(600);
+    assert.ok(await page.evaluate(() => getComputedStyle(document.querySelector('.spt-modal-overlay')).display !== 'none'), 'support modal opened');
+    assert.equal(await page.evaluate(() => location.hash), '#p-cloud', 'service page stayed open');
+    await page.click('.spt-btn-secondary:has-text("Cancel")');
+    await page.waitForTimeout(500);
+    assert.ok(await page.evaluate(() => getComputedStyle(document.querySelector('.spt-modal-overlay')).display === 'none'), 'Cancel closed the modal');
+
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   it('works without WebGL (DOM scroll fallback)', async () => {
-    const noGl = await chromium.launch({ executablePath, args: ['--disable-webgl', '--disable-webgl2', '--disable-3d-apis'] });
+    const opts = withoutWebGL();
+    if (!opts) return; // WebKit has no switch to disable WebGL; covered on Chromium and Firefox
+    const noGl = await engine.launch(opts);
     try {
       const page = await noGl.newPage({ viewport: { width: 1366, height: 800 } });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
+      page.on('console', m => { if (m.type() === 'error' && /\[Page builder\]/.test(m.text())) errors.push(m.text()); });
       await page.goto(base + '/', { waitUntil: 'load' });
-      await page.mouse.wheel(0, 3400);
+      await page.evaluate(() => scrollTo(0, innerHeight * 4.3));
       await waitForHeader(page);
       await page.click('#hdr .nv a:text-is("Email")');
       await page.click('#hdr .nv a:text-is("SSL")');
       assert.equal(await assertResponsive(page, 'no-WebGL nav'), '/#p-ssl');
+      // The page must really open: without WebGL the page builder used to abort, leaving no service pages at all
+      assert.ok(await page.$('#pg-ssl.on'), 'SSL page is built and visible without WebGL');
+      assert.equal(await page.evaluate(() => document.querySelectorAll('section.pg').length > 5), true, 'service pages were built');
       assert.deepEqual(errors, []);
     } finally {
       await noGl.close();

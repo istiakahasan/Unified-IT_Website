@@ -67,16 +67,17 @@ function isPublicPath(rel) {
 }
 
 /**
- * Content-Security-Policy for every HTML page. The pages use inline scripts and inline event handlers,
- * so 'unsafe-inline' is still required; the policy restricts every *source*: scripts only from this site
- * (all libraries are vendored in assets/js/vendor), WebAssembly for the Meshopt model decoder, no plugins, no <base> hijacking,
- * no framing by other sites. Each allowance below maps to a real use, verified in a browser with zero
- * violations (tests/e2e). CSP_REPORT_ONLY=1 sends it as Content-Security-Policy-Report-Only instead.
+ * Content-Security-Policy for every HTML page. Scripts may only be files from this site: no inline
+ * <script>, no on…= attributes, no javascript: URLs, no eval (page scripts live in assets/js/pages, event
+ * handlers are data-on… attributes run by assets/js/csp-handlers.js, libraries are vendored in
+ * assets/js/vendor). WebAssembly is allowed for the Meshopt model decoder. Inline *styles* remain allowed
+ * (style attributes are used throughout and cannot execute code). Each allowance below maps to a real use,
+ * verified in a browser with zero violations (tests/e2e). CSP_REPORT_ONLY=1 sends it report-only.
  */
 export function buildContentSecurityPolicy(env = process.env) {
   const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+    "script-src 'self' 'wasm-unsafe-eval'",                  // no inline script: handlers use data-on* (assets/js/csp-handlers.js)
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",          // GLB textures are data:/blob: URLs; logos may be remote

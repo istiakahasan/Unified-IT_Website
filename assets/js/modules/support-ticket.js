@@ -301,7 +301,7 @@
               <!-- Attachments Area -->
               <div class="spt-form-group">
                 <label class="spt-form-label">Diagnostics & Attachments (Screenshots, Logs, PDF - Max 10MB)</label>
-                <div class="spt-attach-dropzone" id="sptDropzone" onclick="document.getElementById('sptFileInput').click()">
+                <div class="spt-attach-dropzone" id="sptDropzone" data-click-target="#sptFileInput">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--spt-teal); margin-bottom:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <div style="font-size:13px; font-weight:600; color:#fff;">Click to select file or drag &amp; drop</div>
                   <div style="font-size:11px; color:var(--spt-text-muted);">Permitted: PNG, JPG, WEBP, PDF, TXT, LOG, ZIP</div>
@@ -311,7 +311,7 @@
               </div>
 
               <div class="spt-form-actions">
-                <button type="button" class="spt-btn spt-btn-secondary" onclick="window.closeSupportTicketModal()">Cancel</button>
+                <button type="button" class="spt-btn spt-btn-secondary" data-onclick="closeSupportTicketModal()">Cancel</button>
                 <button type="submit" class="spt-btn spt-btn-primary" id="sptSubmitBtn">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   Submit Support Ticket
@@ -493,7 +493,7 @@
     list.innerHTML = activeAttachments.map((att, idx) => `
       <div class="spt-attach-badge">
         <span>📎 ${att.fileName}</span>
-        <span class="spt-attach-remove" onclick="window.__removeSupportAttach(${idx})">&times;</span>
+        <span class="spt-attach-remove" data-onclick="__removeSupportAttach(${idx})">&times;</span>
       </div>
     `).join('');
   }

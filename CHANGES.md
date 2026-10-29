@@ -184,10 +184,12 @@ The browser tests cover: every header service page (two rounds), deep links, `/p
 
 ## 10. Remaining limitations and risks
 
-- No production environment or deployment credentials were available. Nothing was deployed, and the live sites were not tested.
-- The e2e tests ran on Windows with Chrome and Microsoft Edge. Safari and Firefox were not available on this machine (Playwright's Firefox needs its own patched build) and were not tested.
-- The overlays still coordinate through the shared global `window.__aboutOpen` flag and several independent `hashchange` listeners. They now work in every sequence tested, but a single router module would be easier to maintain. That refactor was deliberately left out to avoid changing transition behaviour.
-- The CSP still needs `'unsafe-inline'` for scripts and styles, because the pages use inline `<script>` blocks and `on…=` handlers throughout. Removing it means moving those into files, or using nonces/hashes. It limits *where* scripts may come from, not inline injection.
+*(Updated after the third round, §13.)*
+
+- No production environment or deployment credentials were available. Nothing was deployed, and the live sites were not tested. Deploying needs access to the server (see `architecture.md` §14 for the steps and rollback).
+- Browsers: the e2e suite passes on Chrome, Microsoft Edge, Firefox (Playwright build) and WebKit (Playwright's build of Safari's engine) on Windows. Real Safari on macOS/iOS and real mobile devices were not available. WebKit has no switch to disable WebGL, so the no-WebGL test is exercised on Chromium and Firefox only.
+- The overlays still coordinate through the shared global `window.__aboutOpen` flag and several independent `hashchange` listeners. They work in every sequence tested on all four engines. A single router module would be easier to maintain, but that is a refactor, not a defect, and was left out deliberately to avoid changing transition behaviour.
+- `style-src` still allows `'unsafe-inline'` (style attributes are used in hundreds of places). Inline styles cannot execute script. Scripts are fully restricted (§13).
 
 ## 11. Commit
 
@@ -216,6 +218,8 @@ The browser tests cover: every header service page (two rounds), deep links, `/p
 ### 12.2 Content-Security-Policy on every HTML page
 
 **File:** `server/server.mjs` (`buildContentSecurityPolicy()`)
+
+*(As introduced in this round. §13 removed `'unsafe-inline'` from `script-src`.)*
 
 ```
 default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';
@@ -258,3 +262,58 @@ Every allowance maps to a real use found in the code: WebAssembly for the Meshop
 | `npm run lint` / `npm audit` / `npm run build` | 43/43 parse / 0 vulnerabilities / OK (vendored anime.js included in `dist/`) |
 
 One test-harness change: Playwright's `page.waitForFunction()` evaluates a string, which the new CSP correctly blocks, so the e2e helpers now poll with `page.evaluate()`. The CSP is **not** bypassed in the tests.
+
+---
+
+## 13. Third round: strict script CSP, cross-browser testing, no-WebGL navigation fix (2026-10-29)
+
+### 13.1 No inline script anywhere: `'unsafe-inline'` removed from `script-src`
+
+**Policy now:** `script-src 'self' 'wasm-unsafe-eval'`. Only script *files* from this site can run: no inline `<script>`, no `on…=` attributes, no `javascript:` URLs, no `eval`.
+
+| What | Before | After |
+|---|---|---|
+| Inline `<script>` blocks | 9 (in 6 pages) | 0. Moved verbatim to `assets/js/pages/*.js` and loaded from the same position, so execution order and globals are unchanged |
+| `on…=` handler attributes in pages | 98 (88 plain calls + 10 special: burger, rewards shortcut, 2 image `onerror`, 6 hover) | 0. `data-onclick` / `data-onsubmit` / `data-onchange` / `data-oninput` |
+| Inline handlers created by JS templates | 3 in `support-ticket.js` (support modal) | 0 |
+| `javascript:` URLs | 2 (footer and partners "Support Tickets") | 0 |
+
+**`assets/js/csp-handlers.js` (new):** delegated listeners that run `data-on…` attributes. The attribute is **parsed, not evaluated**: only `name(…)` / `obj.name(…)` with string, number, boolean or null literals, or `event`, is accepted. Bubbling order and `stopPropagation()` behave as inline handlers did. A `data-onclick` on `<a href="#">` prevents the hash change, so a footer link can't close the open page. Two declarative helpers replace the non-call handlers: `data-click-target` (partner-dashboard rewards shortcut, support-modal dropzone) and `data-hide-on-error` (admin logos). The admin export-menu hover moved to CSS. The burger uses `toggleMobileMenu()` (`header-nav.js`).
+
+**Security fix that came with it: stored XSS in the admin portal.** Row buttons were built as `onclick="promptCustomerStatus('${c.id}', '${c.status}', '${c.company_name || c.email}')"`, with database values (company names, emails, VM names, invoice numbers, session tokens) dropped straight into JavaScript. A customer named `x'); …; ('` would run code in a Super Admin's browser session. Two layers now prevent this: the dispatcher never executes attribute text, and every interpolation goes through `handlerArg()` (JS-string escaping, then HTML-attribute escaping), so a name like *O'Brien Ltd* still works. Numeric arguments are coerced with `Number()`.
+
+**Verified in the browser under the enforced policy (0 violations):**
+- Admin: fast-fill chip login, every admin view, customer rows → detail modal, close modal, live search (`data-oninput`).
+- Partner desk: fast-fill + login.
+- Partner dashboard: login + rewards shortcut.
+- Support modal: open from `/partners` and from a service-page footer (the page stays open), dropzone file chooser, attachment remove, Cancel.
+- Mobile burger; Fly page redirect.
+- A full-site crawl of all pages and overlays.
+
+### 13.2 Real bug found by cross-browser testing: no service pages without WebGL
+
+**File:** `assets/js/modules/dynamic-services.js`
+
+The shared particle field was created with an unguarded `new THREE.WebGLRenderer(...)`. Where WebGL is unavailable (GPU blocked, some VMs and remote desktops, hardened browser settings), the constructor throws, which **aborted the entire page builder**: no `section.pg` was ever created, so every menu option changed the URL but showed nothing. Firefox with WebGL disabled exposed it (`[Page builder] Error`). The earlier no-WebGL test only checked the URL hash, so it missed it.
+
+**Fix:** the renderer is created in `try`/`catch`. Without WebGL, all pages are still built and open normally; only the decorative particle field is skipped (the header tint animation still runs). The no-WebGL test now asserts that the page is actually visible and that the pages were built. It **fails on the previous code and passes on the fix** (verified).
+
+### 13.3 Cross-browser e2e
+
+`tests/e2e/navigation.e2e.mjs` takes `BROWSER=chromium|firefox|webkit` (Chromium uses the installed Chrome or Edge; Firefox/WebKit use Playwright's builds: `npx playwright-core install firefox webkit`). Harness changes found along the way, none of which weaken the checks:
+- Scrolling uses `scrollTo` instead of `mouse.wheel`. Wheel deltas are engine-specific: Firefox scrolled 722 px for a 3,400 px wheel.
+- The animation test asserts the loop *runs* (more than 2 frames/s) instead of more than 20. Playwright's Windows WebKit renders WebGL at about 7 fps in software, which says nothing about the site.
+- New test: the inline-handler replacements keep their behaviour under the strict CSP.
+
+### 13.4 Tests (actual results)
+
+| Check | Result |
+|---|---|
+| `npm run test:all` | **180 / 180 pass** (+46 in `tests/csp-handlers.test.mjs`: parser accepts/rejects, no inline script, no `on…=`, no `javascript:` in any page or script) |
+| `npm run test:e2e`, Chrome | **10 / 10** |
+| Microsoft Edge | **10 / 10** |
+| Firefox (`BROWSER=firefox`) | **10 / 10** |
+| WebKit (`BROWSER=webkit`) | **10 / 10** (no-WebGL test not applicable) |
+| `npm run lint` / `npm audit` / `npm run build` | 54/54 / 0 vulnerabilities / OK |
+
+One existing assertion in `tests/support-ticketing.test.mjs` looked for the literal text `openSupportTicketModal()`. It now accepts the call with an argument and additionally asserts that no `javascript:` URL remains.

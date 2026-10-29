@@ -454,7 +454,9 @@ describe('Unified Cloud - Role-Based Support Ticketing System Test Suite', () =>
 
     it('should confirm Support Tickets entry point is integrated in dynamic service pages footer', () => {
       const dynServiceJs = fs.readFileSync(path.resolve('assets/js/modules/dynamic-services.js'), 'utf8');
-      assert.ok(dynServiceJs.includes('openSupportTicketModal()'), 'dynamic-services.js must link footer to support modal');
+      // The footer link is a CSP-safe data-onclick="openSupportTicketModal('submit')" (no javascript: URL)
+      assert.ok(dynServiceJs.includes('openSupportTicketModal('), 'dynamic-services.js must link footer to support modal');
+      assert.ok(!dynServiceJs.includes('javascript:'), 'footer must not use javascript: URLs (blocked by the CSP)');
     });
 
     it('should confirm Homepage 3D root scenes and Fly Into Future do NOT receive Support Tickets button', () => {

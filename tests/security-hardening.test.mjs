@@ -59,7 +59,7 @@ describe('Security hardening regression suite', () => {
     it('sends a Content-Security-Policy on HTML pages only', async () => {
       for (const p of ['/', '/partners', '/admin', '/partner/dashboard']) {
         const csp = (await request('GET', p)).headers['content-security-policy'] || '';
-        assert.match(csp, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'(;|$)/, p);
+        assert.match(csp, /script-src 'self' 'wasm-unsafe-eval'(;|$)/, p);
         assert.match(csp, /object-src 'none'/);
         assert.match(csp, /base-uri 'self'/);
         assert.match(csp, /frame-ancestors 'self'/);
