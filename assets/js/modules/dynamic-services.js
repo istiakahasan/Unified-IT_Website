@@ -12,12 +12,12 @@ function esc(t){return String(t).replace(/[&<>]/g,function(c){return{'&':'&amp;'
 var hd=document.getElementById('hdr'),AB=document.getElementById('about'),PT=document.getElementById('partner'),V1=document.getElementById('vps'),V2=document.getElementById('vds'),V3=document.getElementById('bem');
 var TAG={cloud:'Cloud VPS · Dedicated Server · Cloud Storage · 24/7 Expert Support',email:'Business Email · Email Hosting · Custom Domain · 24/7 Support',hybrid:'Hybrid Email · Business Email · Microsoft 365 · 24/7 Support',cyber:'Firewall · DDoS Protection · WAF · Malware Protection · Monitoring · 24/7 Support',hosting:'Web Hosting · Managed Hosting · 24/7 Expert Support',ssl:'DigiCert · Comodo · SSL Certificates · 24/7 Support',domain:'Domain Registration · Transfer · DNS Management',storage:'Cloud Storage · Object Storage · Backup Integration',m365:'Microsoft 365 · Deployment · Migration · Ongoing Management',backup:'Cloud Backup · Disaster Recovery · 24/7 Monitoring',industry:'Education · Government · Healthcare · Finance · Retail · Enterprise',agentic:'Agentic AI · Automation · Secure Deployment'};
 function UF(tag){var B=(window.UNIFIED_CONFIG&&window.UNIFIED_CONFIG.siteUrl)||'https://unified.it.com/',lg=(document.querySelector('#hdr a.hlogo img')||{}).src||'';
-function col(t,a){return '<div><h4>'+t+'</h4>'+a.map(function(x){if(!x[1])return '<span>'+x[0]+'</span>';if(x[1].indexOf('javascript:')===0||x[1].indexOf('#')===0)return '<a href="'+x[1]+'">'+x[0]+'</a>';return '<a href="'+x[1]+'" target="_blank" rel="noopener">'+x[0]+'</a>'}).join('')+'</div>'}
+function col(t,a){return '<div><h4>'+t+'</h4>'+a.map(function(x){if(!x[1])return '<span>'+x[0]+'</span>';if(x[1]==='support:')return '<a href="#" data-onclick="openSupportTicketModal(\'submit\')">'+x[0]+'</a>';if(x[1].indexOf('#')===0)return '<a href="'+x[1]+'">'+x[0]+'</a>';return '<a href="'+x[1]+'" target="_blank" rel="noopener">'+x[0]+'</a>'}).join('')+'</div>'}
 var ic=function(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'};
 return '<footer class="uf"><div class="uft"><span class="ufn"><svg viewBox="0 0 24 24" fill="none" stroke="#6ea8ff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-3-6.2"/><circle cx="21" cy="4" r=".9" fill="#c27bff" stroke="none"/></svg>Unified Information Technology Limited</span><span class="ufg">'+tag+'</span></div><div class="ufm"><div class="ufb"><span class="ufl"><img alt="Unified Cloud" src="'+lg+'"></span><p>Bangladesh\'s enterprise cloud — built on Dhaka soil for garments, banking, and healthcare that cannot afford latency.</p><a href="tel:09617200800">'+ic('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>')+'09617-200800</a><a href="mailto:info@unifiedit.xyz">'+ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>')+'info@unifiedit.xyz</a><span class="ufa">'+ic('<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>')+'Mannan Tower (3rd Floor), Ka 96/3 Progati Sharani, Dhaka 1229, Bangladesh</span></div>'
 +col('Products',[['Cloud Service',B+'services'],['Hosting',B+'services/manage-hosting'],['Email',B+'services/email-hosting'],['Microsoft 365',B+'services/microsoft'],['SSL Certificates',B+'services/ssl-certification'],['Domain Registration',B+'services/domain-registration'],['Cloud Storage',B+'services/cloud-storage'],['Cyber Security Services',B+'services/cyber-security']])
 +col('Company',[['Services',B+'services'],['Pricing',B+'pricing'],['Blog',B+'blog'],['Careers',B+'career']])
-+col('Support',[['Client Portal','https://billing.unifiedit.xyz'],['Support Tickets','javascript:window.openSupportTicketModal()'],['Knowledge Base',''],['SLA Policy',''],['Contact Sales',B+'contact']])
++col('Support',[['Client Portal','https://billing.unifiedit.xyz'],['Support Tickets','support:'],['Knowledge Base',''],['SLA Policy',''],['Contact Sales',B+'contact']])
 +'</div><div class="ufz"><span>© 2026 Unified Information Technology Limited. All rights reserved.</span><span class="ufc"><i>ISO 27001</i><i>ISO 22301</i><i>PCI DSS</i></span></div></footer>'}
 window.__UF=UF;
 var pages={},curK=null,anchor=document.getElementById('lat');
@@ -31,25 +31,27 @@ el.innerHTML='<main class="vw">'+logo+(d.html?d.html:(d.pre||'')+'<div class="vg
 document.body.insertBefore(el,anchor);pages[k]=el});
 /* one shared dust field that moves into whichever page is open */
 var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';
-var rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});rd.setPixelRatio(Math.min(devicePixelRatio||1,2));
+/* Without WebGL the renderer constructor throws; that used to abort this whole builder, so no service page
+   existed and every menu link led nowhere. The pages are now built regardless; only the dust field is skipped. */
+var rd=null;try{rd=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:false});rd.setPixelRatio(Math.min(devicePixelRatio||1,2));}catch(err){rd=null;console.warn('[Page builder] WebGL unavailable, service pages open without the particle field');}
 var sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,100);cam.position.z=10;
 var N=2200,pos=new Float32Array(N*3),sd=new Float32Array(N),sz=new Float32Array(N);
 for(var i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*30;pos[i*3+1]=(Math.random()-.5)*16;pos[i*3+2]=(Math.random()-.5)*16-2;sd[i]=Math.random();sz[i]=.5+Math.random()*1.8}
 var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('aSeed',new THREE.BufferAttribute(sd,1));g.setAttribute('aSize',new THREE.BufferAttribute(sz,1));
 var mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-uniforms:{uTime:{value:0},uMouse:{value:new THREE.Vector2()},uPx:{value:rd.getPixelRatio()},uTint:{value:new THREE.Color().setHSL(.75,.9,.62)}},
+uniforms:{uTime:{value:0},uMouse:{value:new THREE.Vector2()},uPx:{value:rd?rd.getPixelRatio():1},uTint:{value:new THREE.Color().setHSL(.75,.9,.62)}},
 vertexShader:'attribute float aSeed;attribute float aSize;uniform float uTime,uPx;uniform vec2 uMouse;varying float vTw;varying float vSeed;void main(){vec3 p=position;float sp=.25+aSeed*.55;p.y=mod(p.y-uTime*sp+8.,16.)-8.;p.x+=sin(uTime*.4+aSeed*20.)*.35;vec2 d=p.xy-uMouse*vec2(11.,6.);float f=exp(-dot(d,d)*.12);p.xy+=normalize(d+1e-4)*f*1.4;vec4 mv=modelViewMatrix*vec4(p,1.);vTw=pow(.5+.5*sin(uTime*(1.5+aSeed*4.)+aSeed*60.),5.);vSeed=aSeed;gl_PointSize=aSize*(1.+vTw*1.8)*(34./-mv.z)*uPx;gl_Position=projectionMatrix*mv;}',
 fragmentShader:'uniform vec3 uTint;varying float vTw;varying float vSeed;void main(){vec2 uv=gl_PointCoord-.5;float d=length(uv);float gl=smoothstep(.5,0.,d);float c=max(0.,1.-abs(uv.x)*22.)*max(0.,1.-abs(uv.y)*2.2)+max(0.,1.-abs(uv.y)*22.)*max(0.,1.-abs(uv.x)*2.2);vec3 col=mix(uTint,vec3(1.,.6,.95),vSeed*.6);col=mix(col,vec3(1.),vTw*.8);float a=gl*gl*.55+c*vTw;gl_FragColor=vec4(col*a,a);}'});
 sc.add(new THREE.Points(g,mat));
 var clock=new THREE.Clock(),m=new THREE.Vector2(),tm=new THREE.Vector2();
 addEventListener('pointermove',function(e){tm.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight*2-1))});
-function size(){rd.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+function size(){if(rd)rd.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',size);size();
-(function loop(){requestAnimationFrame(loop);if(!curK)return;m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
+(function loop(){requestAnimationFrame(loop);if(!curK)return;m.lerp(tm,.06);var t=clock.getElapsedTime();mat.uniforms.uTime.value=t;mat.uniforms.uMouse.value.copy(m);if(rd){mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);}
 if((window.__sm||0)>=.86)hd.style.setProperty('--ph',String(Math.round(D[curK].h+Math.sin(t*.6)*12)))})();
 function others(){return AB.classList.contains('on')||PT.classList.contains('on')||V1.classList.contains('on')||V2.classList.contains('on')||V3.classList.contains('on')}
 function openP(k){Object.keys(pages).forEach(function(x){if(x!==k)pages[x].classList.remove('on')});var el=pages[k];
-if(curK!==k){curK=k;el.insertBefore(cv,el.firstChild);mat.uniforms.uTint.value.setHSL(D[k].h/360,.9,.62);size()}
+if(curK!==k){curK=k;if(rd)el.insertBefore(cv,el.firstChild);mat.uniforms.uTint.value.setHSL(D[k].h/360,.9,.62);size()}
 el.scrollTop=0;
 window.__aboutOpen=true;document.body.classList.add('pgo');document.body.classList.remove('mmo','mgo');el.classList.add('on')}
 function closeP(){if(!curK)return;pages[curK].classList.remove('on');curK=null;document.body.classList.remove('pgo');if(!others())window.__aboutOpen=false}

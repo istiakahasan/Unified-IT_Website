@@ -14,17 +14,84 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-export function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
-  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+/*
+ * Password hashing: PBKDF2-HMAC-SHA256.
+ * New hashes are stored self-describing as "pbkdf2_sha256$<iterations>$<hex>" with
+ * PASSWORD_ITERATIONS (OWASP 2023 guidance: 600,000). Hashes written before that are bare hex
+ * at LEGACY_ITERATIONS; they keep verifying and are upgraded on the user's next successful login.
+ * At 600k iterations one hash costs ~0.5 s of CPU, so request paths must use the *Async variants,
+ * which run on libuv's thread pool instead of blocking the event loop.
+ */
+export const PASSWORD_ITERATIONS = 600000;
+export const LEGACY_ITERATIONS = 10000;
+const HASH_PREFIX = 'pbkdf2_sha256';
+
+function parseHash(stored) {
+  const s = String(stored || '');
+  const parts = s.split('$');
+  if (parts.length === 3 && parts[0] === HASH_PREFIX) {
+    const iterations = Number(parts[1]);
+    if (Number.isInteger(iterations) && iterations > 0) return { iterations, hex: parts[2] };
+    return null;
+  }
+  return { iterations: LEGACY_ITERATIONS, hex: s };
+}
+
+function formatHash(iterations, buf) {
+  const hex = buf.toString('hex');
+  return iterations === LEGACY_ITERATIONS ? hex : `${HASH_PREFIX}$${iterations}$${hex}`;
+}
+
+function equalHash(derived, hex) {
+  const expected = Buffer.from(hex, 'hex');
+  // Constant-time comparison so response timing does not leak how much of the hash matched
+  return expected.length === derived.length && crypto.timingSafeEqual(derived, expected);
+}
+
+export function hashPassword(password, salt = crypto.randomBytes(16).toString('hex'), iterations = PASSWORD_ITERATIONS) {
+  const hash = formatHash(iterations, crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha256'));
   return { hash, salt };
 }
 
-export function verifyPassword(password, hash, salt) {
-  const check = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
-  return check === hash;
+export function hashPasswordAsync(password, salt = crypto.randomBytes(16).toString('hex'), iterations = PASSWORD_ITERATIONS) {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, iterations, 64, 'sha256', (err, buf) => {
+      if (err) return reject(err);
+      resolve({ hash: formatHash(iterations, buf), salt });
+    });
+  });
 }
 
-export function initDatabase(dbPath = DB_FILE) {
+export function verifyPassword(password, hash, salt) {
+  if (typeof password !== 'string' || !hash || !salt) return false;
+  const parsed = parseHash(hash);
+  if (!parsed) return false;
+  return equalHash(crypto.pbkdf2Sync(password, salt, parsed.iterations, 64, 'sha256'), parsed.hex);
+}
+
+export function verifyPasswordAsync(password, hash, salt) {
+  if (typeof password !== 'string' || !hash || !salt) return Promise.resolve(false);
+  const parsed = parseHash(hash);
+  if (!parsed) return Promise.resolve(false);
+  return new Promise(resolve => {
+    crypto.pbkdf2(password, salt, parsed.iterations, 64, 'sha256', (err, buf) => resolve(!err && equalHash(buf, parsed.hex)));
+  });
+}
+
+/** True when a stored hash uses fewer iterations than the current policy. */
+export function needsRehash(hash) {
+  const parsed = parseHash(hash);
+  return !parsed || parsed.iterations < PASSWORD_ITERATIONS;
+}
+
+/** Database file: PARTNER_DB_PATH (absolute, or relative to the project root) or data/partner-system.db. */
+export function resolveDbPath(env = process.env) {
+  const configured = String(env.PARTNER_DB_PATH || '').trim();
+  return configured ? path.resolve(ROOT, configured) : DB_FILE;
+}
+
+export function initDatabase(dbPath = resolveDbPath()) {
+  if (dbPath !== ':memory:') fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA foreign_keys = ON;');
 
@@ -748,7 +815,76 @@ export function initDatabase(dbPath = DB_FILE) {
   seedDefaultData(db);
   seedRewardSystemData(db);
   seedAdminPortalData(db);
+  secureDemoCredentials(db);
+  bootstrapAdminFromEnv(db);
   return db;
+}
+
+// Demo logins seeded for local development. Their passwords are public (README, login fast-fill chips).
+const DEMO_CREDENTIALS = [
+  ['admin@unified.test', 'AdminSecure2026!'],
+  ['partner@unified.test', 'Partner123!'],
+  ['superadmin@unified.cloud', 'SuperAdmin2026!'],
+  ['security@unified.cloud', 'SecurityAdmin2026!'],
+  ['infra@unified.cloud', 'InfraAdmin2026!'],
+  ['finance@unified.cloud', 'FinanceAdmin2026!'],
+  ['partners@unified.cloud', 'PartnerAdmin2026!'],
+  ['support@unified.cloud', 'SupportAdmin2026!'],
+  ['content@unified.cloud', 'ContentAdmin2026!'],
+  ['auditor@unified.cloud', 'AuditorAdmin2026!']
+];
+
+/**
+ * In production, any account that still accepts its publicly documented demo password gets a random,
+ * unknown password instead, so the published credentials cannot be used against a live deployment.
+ * Set ALLOW_DEMO_CREDENTIALS=1 only for a disposable demo environment.
+ */
+export function secureDemoCredentials(db, env = process.env) {
+  if (env.NODE_ENV !== 'production' || env.ALLOW_DEMO_CREDENTIALS === '1') return 0;
+  const find = db.prepare('SELECT id, password_hash, salt FROM users WHERE email = ?');
+  const update = db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?');
+  let secured = 0;
+  for (const [email, pass] of DEMO_CREDENTIALS) {
+    const user = find.get(email);
+    // Seeded demo hashes are always low-cost; a strong hash was set deliberately later, so skip the
+    // ~0.5 s verification for it (keeps production start-up fast).
+    if (!user || !needsRehash(user.password_hash)) continue;
+    if (verifyPassword(pass, user.password_hash, user.salt)) {
+      // A random 256-bit secret cannot be guessed whatever the iteration count, so the cheap cost is fine
+      const auth = hashPassword(crypto.randomBytes(32).toString('hex'), undefined, LEGACY_ITERATIONS);
+      update.run(auth.hash, auth.salt, user.id);
+      secured++;
+    }
+  }
+  if (secured) {
+    console.warn(`[Security] Disabled the public demo password on ${secured} account(s). Set BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD to create a real Super Admin.`);
+  }
+  return secured;
+}
+
+/** Creates a Super Admin from BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD when both are set (re-keys it only with BOOTSTRAP_ADMIN_RESET=1). */
+export function bootstrapAdminFromEnv(db, env = process.env) {
+  const email = String(env.BOOTSTRAP_ADMIN_EMAIL || '').trim().toLowerCase();
+  const pass = String(env.BOOTSTRAP_ADMIN_PASSWORD || '');
+  if (!email || !pass) return false;
+  if (pass.length < 12) {
+    console.warn('[Security] BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters; bootstrap admin not created.');
+    return false;
+  }
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  // Re-keying on every start would silently undo a password change made in the portal,
+  // so an existing account is only reset when BOOTSTRAP_ADMIN_RESET=1.
+  if (existing && env.BOOTSTRAP_ADMIN_RESET !== '1') return false;
+  const auth = hashPassword(pass);
+  if (existing) {
+    db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?').run(auth.hash, auth.salt, existing.id);
+  } else {
+    db.prepare(`
+      INSERT INTO users (id, email, password_hash, salt, role, partner_id, name, status)
+      VALUES (?, ?, ?, ?, 'SUPER_ADMIN', NULL, 'Bootstrap Super Admin', 'ACTIVE')
+    `).run('usr-bootstrap-' + crypto.randomBytes(4).toString('hex'), email, auth.hash, auth.salt);
+  }
+  return true;
 }
 
 function seedDefaultData(db) {
@@ -876,14 +1012,15 @@ function seedDefaultData(db) {
   }
 
   // 4. Admin and Demo Partner Accounts
-  const adminAuth = hashPassword('AdminSecure2026!');
+  // Demo passwords are public (README); production re-keys them, so a cheap hash is sufficient here.
+  const adminAuth = hashPassword('AdminSecure2026!', undefined, LEGACY_ITERATIONS);
   const adminId = 'usr-admin-1';
   db.prepare(`
     INSERT INTO users (id, email, password_hash, salt, role, partner_id)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(adminId, 'admin@unified.test', adminAuth.hash, adminAuth.salt, 'ADMIN', null);
 
-  const partnerAuth = hashPassword('Partner123!');
+  const partnerAuth = hashPassword('Partner123!', undefined, LEGACY_ITERATIONS);
   const partnerUserId = 'usr-partner-1';
   const partnerId = 'ptn-apex-101';
 
@@ -1324,8 +1461,12 @@ export function seedAdminPortalData(db) {
     VALUES (?, ?, ?, ?, ?, NULL, ?, 'ACTIVE')
   `);
 
+  const userExists = db.prepare('SELECT 1 FROM users WHERE id = ? OR email = ?');
   for (const adm of adminUsers) {
-    const auth = hashPassword(adm.pass);
+    // Skip the hashing work entirely for accounts that already exist (INSERT OR IGNORE would discard it)
+    if (userExists.get(adm.id, adm.email)) continue;
+    // Public demo password: cheap hash is sufficient (production re-keys it in secureDemoCredentials)
+    const auth = hashPassword(adm.pass, undefined, LEGACY_ITERATIONS);
     insertUser.run(adm.id, adm.email, auth.hash, auth.salt, adm.role, adm.name);
   }
 

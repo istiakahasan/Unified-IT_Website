@@ -93,5 +93,7 @@ function place(){var r=sv.getBoundingClientRect(),w=mg.offsetWidth||540,h=w/2,x=
 sv.addEventListener('pointerenter',place);sv.addEventListener('focus',place);addEventListener('resize',place);place();
 })();
 } catch (err) { console.error("[Mega-menu placement]", err); }
+/* ---- Mobile menu button (data-onclick in index.html; inline handlers are blocked by the CSP) ---- */
+window.toggleMobileMenu = function () { document.body.classList.toggle('mmo'); };
 /* ---- Header dropdowns removed: direct navigation to Cyber Security page ---- */
 

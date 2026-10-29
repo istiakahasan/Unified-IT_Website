@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "description": "Unified Cloud - Enterprise Cloud Infrastructure Platform",
   "main": "index.html",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "node scripts/serve.js",
+    "lint": "node scripts/check-syntax.mjs",
     "test": "node --test tests/partner-system.test.mjs",
     "test:admin": "node --test tests/admin-portal.test.mjs",
+    "test:security": "node --test tests/security-hardening.test.mjs",
     "test:all": "node --test tests/*.test.mjs",
+    "test:e2e": "node --test tests/e2e/navigation.e2e.mjs",
+    "audit": "npm audit",
     "update:prices": "node scripts/update-digicert-prices.mjs && node scripts/update-comodo-prices.mjs",
     "update:digicert": "node scripts/update-digicert-prices.mjs",
     "update:comodo": "node scripts/update-comodo-prices.mjs"
@@ -27,6 +34,7 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "agentation": "^3.1.2",
-    "vite": "^5.4.0"
+    "playwright-core": "^1.48.2",
+    "vite": "^6.4.5"
   }
 }

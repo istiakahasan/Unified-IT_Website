@@ -50,6 +50,11 @@ if(tier==='fallback'||(perf&&!perf.checkSupport())) return;
 
 var A=document.getElementById('about');
 if(!A)return;
+var animId=null,loop=null;
+// Created on first open of #about instead of at page load (one fewer idle WebGL context on every visit).
+function initGL(){
+if(loop!==null)return;
+loop=false;
 var cv=document.createElement('canvas');cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none';A.insertBefore(cv,A.firstChild);
 var rd;
 try{
@@ -78,17 +83,18 @@ function size(){
 }
 addEventListener('resize',perf ? perf.debounce(size,80) : size);size();
 
-var animId=null;
-function loop(){
-  if(!window.__aboutOpen){animId=null;return;}
+loop=function(){
+  if(!A.classList.contains('on')){animId=null;return;} // stop when #about closes (__aboutOpen is shared by every overlay)
   animId=requestAnimationFrame(loop);
   if(document.hidden)return;
   m.lerp(tm,.06);mat.uniforms.uTime.value=clock.getElapsedTime();mat.uniforms.uMouse.value.copy(m);mat.uniforms.uPx.value=rd.getPixelRatio();rd.render(sc,cam);
+};
 }
 window.__startAbout3D=function(){
-  if(!animId){animId=requestAnimationFrame(loop);}
+  initGL();
+  if(loop&&!animId){animId=requestAnimationFrame(loop);}
 };
-if(window.__aboutOpen){window.__startAbout3D();}
+if(A.classList.contains('on')){window.__startAbout3D();}
 })();
 } catch (err) { console.error("[About 3D scene]", err); }
 

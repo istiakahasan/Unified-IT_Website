@@ -1,5 +1,21 @@
 import crypto from 'node:crypto';
-import { verifyPassword } from './db.mjs';
+import { verifyPassword, verifyPasswordAsync, hashPassword, hashPasswordAsync, needsRehash } from './db.mjs';
+
+/**
+ * Client IP used for rate limiting and audit records. X-Forwarded-For is client-controlled,
+ * so it is only honoured when the app runs behind a trusted reverse proxy (TRUST_PROXY=1).
+ */
+export function getClientIp(req) {
+  if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+    // nginx sets X-Real-IP to $remote_addr; with $proxy_add_x_forwarded_for the proxy-observed
+    // address is the LAST entry (earlier entries come from the client and can be forged).
+    const realIp = String(req.headers['x-real-ip'] || '').trim();
+    if (realIp) return realIp;
+    const hops = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1];
+  }
+  return req.socket?.remoteAddress || '127.0.0.1';
+}
 
 /**
  * Enterprise Role-Based Access Control (RBAC) Permissions Matrix
@@ -140,7 +156,7 @@ class SessionStore {
     const now = Date.now();
     const expiresAt = now + 24 * 60 * 60 * 1000; // 24 hours
 
-    const ipAddress = req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '127.0.0.1';
+    const ipAddress = req ? getClientIp(req) : '127.0.0.1';
     const userAgent = req?.headers?.['user-agent'] || 'Unknown Client';
 
     const sessionData = {
@@ -247,6 +263,25 @@ const cleanupInterval = setInterval(() => sessionStore.cleanExpired(), 15 * 60 *
 if (cleanupInterval.unref) cleanupInterval.unref();
 
 /**
+ * Builds the uct_session Set-Cookie value from the environment:
+ *   COOKIE_SECURE   true/false (default: on when NODE_ENV=production)
+ *   COOKIE_SAME_SITE Strict | Lax | None (default Lax; None is only valid together with Secure)
+ *   COOKIE_DOMAIN   e.g. .example.com to share the session across subdomains (default: host-only)
+ * maxAge 0 clears the cookie (the same attributes are required for the browser to match it).
+ */
+export function buildSessionCookie(value, maxAge, env = process.env) {
+  const secure = env.COOKIE_SECURE === 'true' || (env.NODE_ENV === 'production' && env.COOKIE_SECURE !== 'false');
+  const sameSiteRaw = String(env.COOKIE_SAME_SITE || 'Lax').toLowerCase();
+  let sameSite = { strict: 'Strict', lax: 'Lax', none: 'None' }[sameSiteRaw] || 'Lax';
+  if (sameSite === 'None' && !secure) sameSite = 'Lax'; // browsers reject SameSite=None without Secure
+  const parts = [`uct_session=${value}`, 'Path=/', 'HttpOnly', `SameSite=${sameSite}`, `Max-Age=${maxAge}`];
+  const domain = String(env.COOKIE_DOMAIN || '').trim();
+  if (domain && /^.?[a-z0-9-]+(.[a-z0-9-]+)+$/i.test(domain)) parts.push(`Domain=${domain}`);
+  if (secure) parts.push('Secure');
+  return parts.join('; ');
+}
+
+/**
  * Extracts Bearer token or Cookie from request
  */
 export function extractToken(req) {
@@ -260,7 +295,9 @@ export function extractToken(req) {
     const cookies = Object.fromEntries(
       cookieHeader.split(';').map(c => {
         const [k, ...v] = c.trim().split('=');
-        return [k, decodeURIComponent(v.join('='))];
+        const raw = v.join('=');
+        // A malformed %-sequence in any cookie must not throw (it used to crash the request)
+        try { return [k, decodeURIComponent(raw)]; } catch { return [k, raw]; }
       })
     );
     if (cookies.uct_session) return cookies.uct_session;
@@ -299,22 +336,22 @@ export function authenticateRequest(req, db) {
   return session;
 }
 
-/**
- * Robust Login Handler with Rate Limiting, Account Locking, and Audit Recording
- */
-export function handleLogin(db, email, password, req = null) {
+// When the email does not exist, derive a throw-away key at the current cost anyway, so a login for an
+// unknown email takes as long as a real one (no account enumeration through response timing).
+const DUMMY_SALT = crypto.randomBytes(16).toString('hex');
+
+/** Validates input and account state before the password is checked. Returns the user row or null (unknown email). */
+function loginPrecheck(db, email, password) {
   if (!email || !password) {
     throw new Error('Email and password are required');
   }
 
-  const cleanEmail = email.toLowerCase().trim();
+  const cleanEmail = String(email).toLowerCase().trim();
   const user = db.prepare(`
     SELECT * FROM users WHERE email = ?
   `).get(cleanEmail);
 
-  if (!user) {
-    throw new Error('Invalid email or password');
-  }
+  if (!user) return null;
 
   // Check account lockout
   if (user.locked_until) {
@@ -329,25 +366,27 @@ export function handleLogin(db, email, password, req = null) {
   if (user.status === 'SUSPENDED') {
     throw new Error('This administrative account has been suspended. Please contact Security Administration.');
   }
+  return user;
+}
 
-  const isValid = verifyPassword(password, user.password_hash, user.salt);
-  if (!isValid) {
-    // Increment failed attempts and trigger lockout if >= 5
-    const failedAttempts = (user.failed_login_attempts || 0) + 1;
-    if (failedAttempts >= 5) {
-      const lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      db.prepare(`
-        UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE id = ?
-      `).run(failedAttempts, lockUntil, user.id);
-      throw new Error('Account locked for 15 minutes due to 5 consecutive failed login attempts.');
-    } else {
-      db.prepare(`
-        UPDATE users SET failed_login_attempts = ? WHERE id = ?
-      `).run(failedAttempts, user.id);
-    }
-    throw new Error('Invalid email or password');
+/** Records a failed attempt (atomically, so concurrent attempts are all counted) and throws. */
+function loginFailure(db, user) {
+  db.prepare(`
+    UPDATE users SET failed_login_attempts = COALESCE(failed_login_attempts, 0) + 1 WHERE id = ?
+  `).run(user.id);
+  const { failed_login_attempts: failedAttempts } = db.prepare('SELECT failed_login_attempts FROM users WHERE id = ?').get(user.id);
+  // Lock the account after 5 consecutive failures
+  if (failedAttempts >= 5) {
+    const lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    db.prepare(`
+      UPDATE users SET locked_until = ? WHERE id = ?
+    `).run(lockUntil, user.id);
+    throw new Error('Account locked for 15 minutes due to 5 consecutive failed login attempts.');
   }
+  throw new Error('Invalid email or password');
+}
 
+function loginSuccess(db, user, req) {
   // Successful login: reset failed attempts and record last login
   db.prepare(`
     UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_login_at = datetime('now') WHERE id = ?
@@ -385,4 +424,42 @@ export function handleLogin(db, email, password, req = null) {
       status: partner.status
     } : null
   };
+}
+
+/**
+ * Robust Login Handler with Rate Limiting, Account Locking, and Audit Recording.
+ * Synchronous variant (blocks while hashing); kept for scripts and tests. The HTTP API uses handleLoginAsync.
+ */
+export function handleLogin(db, email, password, req = null) {
+  const user = loginPrecheck(db, email, password);
+  if (!user) {
+    hashPassword(String(password), DUMMY_SALT);
+    throw new Error('Invalid email or password');
+  }
+  if (!verifyPassword(password, user.password_hash, user.salt)) loginFailure(db, user);
+  return loginSuccess(db, user, req);
+}
+
+/**
+ * Login used by POST /api/auth/login. Password hashing runs on the libuv thread pool, so a login
+ * (~0.5 s of PBKDF2 at 600k iterations) never blocks other requests. Legacy hashes are upgraded
+ * to the current iteration count after a successful login.
+ */
+export async function handleLoginAsync(db, email, password, req = null) {
+  const user = loginPrecheck(db, email, password);
+  if (!user) {
+    await hashPasswordAsync(String(password), DUMMY_SALT);
+    throw new Error('Invalid email or password');
+  }
+  const valid = await verifyPasswordAsync(password, user.password_hash, user.salt);
+  if (!valid) loginFailure(db, user);
+  if (needsRehash(user.password_hash)) {
+    try {
+      const upgraded = await hashPasswordAsync(password);
+      db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?').run(upgraded.hash, upgraded.salt, user.id);
+    } catch (err) {
+      console.error('[Auth] Password hash upgrade failed:', err.message);
+    }
+  }
+  return loginSuccess(db, user, req);
 }

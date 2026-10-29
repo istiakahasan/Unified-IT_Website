@@ -3,13 +3,19 @@ version: '3.8'
 services:
   # Core Unified Cloud Application & API Daemon
   app:
-    image: node:20-alpine
+    # node:sqlite (server/db.mjs) requires Node.js 22.5+
+    image: node:22-alpine
     container_name: unified-cloud-core
     restart: always
     working_dir: /usr/src/app
     environment:
       - NODE_ENV=production
       - PORT=3000
+      # The app is only reachable through the nginx proxy below, which sets X-Real-IP
+      - TRUST_PROXY=1
+      # Optional first-run Super Admin (demo accounts are not usable in production)
+      - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-}
+      - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-}
       - PUBLIC_DOMAIN=example.com
       - WWW_DOMAIN=www.example.com
       - ADMIN_DOMAIN=admin.example.com
