@@ -65,9 +65,20 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
     return result;
   }
 
+  // page.waitForFunction() evaluates a string, which the site's CSP (no 'unsafe-eval') rightly blocks,
+  // so poll with page.evaluate() instead.
+  async function waitForHeader(page, timeout = 15000) {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) {
+      if (await page.evaluate(() => document.getElementById('hdr').style.pointerEvents === 'auto')) return;
+      await page.waitForTimeout(100);
+    }
+    throw new Error('header never became interactive');
+  }
+
   async function scrollToHeader(page) {
     await page.mouse.wheel(0, 3400);
-    await page.waitForFunction(() => document.getElementById('hdr').style.pointerEvents === 'auto', null, { timeout: 15000 });
+    await waitForHeader(page);
   }
 
   it('navigates through every header service page repeatedly without freezing', async () => {
@@ -138,7 +149,7 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
   it('opens a page from the mobile menu', async () => {
     const { page, context, errors } = await openPage('/', { width: 390, height: 844 });
     await page.mouse.wheel(0, 3400);
-    await page.waitForFunction(() => document.getElementById('hdr').style.pointerEvents === 'auto', null, { timeout: 15000 });
+    await waitForHeader(page);
     await page.click('[aria-label="Menu"]');
     assert.ok(await page.evaluate(() => document.body.classList.contains('mmo')), 'mobile menu opened');
     await page.click('#mm a:text-is("SSL")');
@@ -163,6 +174,26 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
     await context.close();
   });
 
+  it('runs every page and overlay without Content-Security-Policy violations', async () => {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 800 } });
+    const page = await context.newPage();
+    const violations = [];
+    await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.log('CSPV|' + e.violatedDirective + '|' + e.blockedURI)));
+    page.on('console', m => { if (m.text().startsWith('CSPV|')) violations.push(m.text()); });
+    await page.goto(base + '/', { waitUntil: 'load' });
+    await page.waitForTimeout(2500); // model fetch + WebAssembly decode
+    for (const h of ['#about', '#vps', '#vds', '#p-cloud', '#p-email', '#p-ssl', '#p-domain', '#p-m365', '']) {
+      await page.evaluate(h => { location.hash = h; }, h);
+      await page.waitForTimeout(400);
+    }
+    for (const p of ['/partners', '/partner/dashboard', '/admin', '/admin/partners']) {
+      await page.goto(base + p, { waitUntil: 'load' });
+      await page.waitForTimeout(500);
+    }
+    assert.deepEqual(violations, []);
+    await context.close();
+  });
+
   it('works without WebGL (DOM scroll fallback)', async () => {
     const noGl = await chromium.launch({ executablePath, args: ['--disable-webgl', '--disable-webgl2', '--disable-3d-apis'] });
     try {
@@ -171,7 +202,7 @@ describe('Navigation and animation regression (browser)', { skip }, () => {
       page.on('pageerror', e => errors.push(e.message));
       await page.goto(base + '/', { waitUntil: 'load' });
       await page.mouse.wheel(0, 3400);
-      await page.waitForFunction(() => document.getElementById('hdr').style.pointerEvents === 'auto', null, { timeout: 15000 });
+      await waitForHeader(page);
       await page.click('#hdr .nv a:text-is("Email")');
       await page.click('#hdr .nv a:text-is("SSL")');
       assert.equal(await assertResponsive(page, 'no-WebGL nav'), '/#p-ssl');

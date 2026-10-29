@@ -2,7 +2,10 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createServer, db } from '../server/server.mjs';
-import { initDatabase, secureDemoCredentials, bootstrapAdminFromEnv, verifyPassword } from '../server/db.mjs';
+import { initDatabase, secureDemoCredentials, bootstrapAdminFromEnv, verifyPassword, verifyPasswordAsync, hashPassword, needsRehash, PASSWORD_ITERATIONS, LEGACY_ITERATIONS } from '../server/db.mjs';
+import { handleLoginAsync, buildSessionCookie } from '../server/auth.mjs';
+import { resolveDbPath } from '../server/db.mjs';
+import path from 'node:path';
 import { getClientIp } from '../server/api.mjs';
 
 /**
@@ -52,6 +55,18 @@ describe('Security hardening regression suite', () => {
         assert.ok(res.body.includes(marker));
       });
     }
+
+    it('sends a Content-Security-Policy on HTML pages only', async () => {
+      for (const p of ['/', '/partners', '/admin', '/partner/dashboard']) {
+        const csp = (await request('GET', p)).headers['content-security-policy'] || '';
+        assert.match(csp, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'(;|$)/, p);
+        assert.match(csp, /object-src 'none'/);
+        assert.match(csp, /base-uri 'self'/);
+        assert.match(csp, /frame-ancestors 'self'/);
+      }
+      const js = await request('GET', '/assets/js/app.js');
+      assert.equal(js.headers['content-security-policy'], undefined);
+    });
 
     it('answers repeat asset requests with 304 via ETag', async () => {
       const first = await request('GET', '/assets/js/app.js');
@@ -180,6 +195,90 @@ describe('Security hardening regression suite', () => {
       const row = memDb.prepare('SELECT role, password_hash, salt FROM users WHERE email = ?').get('owner@example.com');
       assert.equal(row.role, 'SUPER_ADMIN');
       assert.ok(verifyPassword('a-long-unique-passphrase', row.password_hash, row.salt));
+      // A restart must not undo a password change made in the portal...
+      assert.equal(bootstrapAdminFromEnv(memDb, { BOOTSTRAP_ADMIN_EMAIL: 'owner@example.com', BOOTSTRAP_ADMIN_PASSWORD: 'another-long-passphrase' }), false);
+      // ...unless a reset is requested explicitly
+      assert.equal(bootstrapAdminFromEnv(memDb, { BOOTSTRAP_ADMIN_EMAIL: 'owner@example.com', BOOTSTRAP_ADMIN_PASSWORD: 'another-long-passphrase', BOOTSTRAP_ADMIN_RESET: '1' }), true);
+    });
+  });
+
+  describe('Password hashing', () => {
+    it('stores new hashes self-describing at the OWASP iteration count', () => {
+      assert.equal(PASSWORD_ITERATIONS, 600000);
+      const { hash, salt } = hashPassword('Correct-Horse-1');
+      assert.match(hash, /^pbkdf2_sha256\$600000\$[0-9a-f]{128}$/);
+      assert.equal(verifyPassword('Correct-Horse-1', hash, salt), true);
+      assert.equal(verifyPassword('wrong', hash, salt), false);
+      assert.equal(needsRehash(hash), false);
+    });
+
+    it('still verifies legacy bare-hex hashes and flags them for upgrade', async () => {
+      const legacy = hashPassword('Legacy-Pass-1', undefined, LEGACY_ITERATIONS);
+      assert.match(legacy.hash, /^[0-9a-f]{128}$/);
+      assert.equal(verifyPassword('Legacy-Pass-1', legacy.hash, legacy.salt), true);
+      assert.equal(await verifyPasswordAsync('Legacy-Pass-1', legacy.hash, legacy.salt), true);
+      assert.equal(needsRehash(legacy.hash), true);
+    });
+
+    it('rejects malformed stored hashes instead of throwing', () => {
+      assert.equal(verifyPassword('x', 'pbkdf2_sha256$abc$00', 'salt'), false);
+      assert.equal(verifyPassword('x', 'zz', 'salt'), false);
+    });
+
+    it('upgrades a legacy hash on successful login and keeps the event loop free while hashing', async () => {
+      const memDb = initDatabase(':memory:');
+      const before = memDb.prepare('SELECT password_hash FROM users WHERE email = ?').get('support@unified.cloud').password_hash;
+      assert.equal(needsRehash(before), true, 'seeded demo hash is legacy-cost');
+
+      // Measure the longest event-loop stall while two full-cost hashes (verify + upgrade) run
+      let worst = 0, last = performance.now(), ticking = true;
+      const tick = () => { const now = performance.now(); worst = Math.max(worst, now - last); last = now; if (ticking) setImmediate(tick); };
+      setImmediate(tick);
+      const session = await handleLoginAsync(memDb, 'support@unified.cloud', 'SupportAdmin2026!');
+      ticking = false;
+      assert.ok(session.token);
+      const after = memDb.prepare('SELECT password_hash, salt FROM users WHERE email = ?').get('support@unified.cloud');
+      assert.match(after.password_hash, /^pbkdf2_sha256\$600000\$/);
+      assert.equal(verifyPassword('SupportAdmin2026!', after.password_hash, after.salt), true);
+      assert.ok(worst < 150, `event loop stalled ${Math.round(worst)} ms during login`);
+    });
+
+    it('takes comparable time for unknown emails and wrong passwords (no enumeration by timing)', async () => {
+      const memDb = initDatabase(':memory:');
+      const strong = hashPassword('Real-Pass-123');
+      memDb.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE email = ?').run(strong.hash, strong.salt, 'auditor@unified.cloud');
+      const time = async (email) => { const t = performance.now(); await handleLoginAsync(memDb, email, 'wrong-password').catch(() => {}); return performance.now() - t; };
+      const known = await time('auditor@unified.cloud');
+      const unknown = await time('nobody@example.com');
+      assert.ok(unknown > known * 0.5, `unknown-email login too fast: ${Math.round(unknown)} ms vs ${Math.round(known)} ms`);
+    });
+  });
+
+  describe('Session cookie and database configuration', () => {
+    it('defaults to HttpOnly, SameSite=Lax, host-only, not Secure in development', () => {
+      assert.equal(buildSessionCookie('tok', 86400, {}), 'uct_session=tok; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400');
+    });
+
+    it('adds Secure in production and honours COOKIE_SAME_SITE / COOKIE_DOMAIN', () => {
+      const c = buildSessionCookie('tok', 86400, { NODE_ENV: 'production', COOKIE_SAME_SITE: 'Strict', COOKIE_DOMAIN: '.example.com' });
+      assert.equal(c, 'uct_session=tok; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400; Domain=.example.com; Secure');
+    });
+
+    it('never emits SameSite=None without Secure, and ignores an invalid domain', () => {
+      const c = buildSessionCookie('tok', 0, { COOKIE_SAME_SITE: 'None', COOKIE_DOMAIN: 'evil.com; Path=/x' });
+      assert.match(c, /SameSite=Lax/);
+      assert.ok(!c.includes('Domain='));
+    });
+
+    it('resolves PARTNER_DB_PATH relative to the project root', () => {
+      assert.match(resolveDbPath({}), /data[\\/]partner-system\.db$/);
+      assert.equal(resolveDbPath({ PARTNER_DB_PATH: 'data/custom.db' }), path.resolve(path.dirname(resolveDbPath({})), 'custom.db'));
+    });
+
+    it('login sets the configured cookie over HTTP', async () => {
+      const res = await request('POST', '/api/auth/login', { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'auditor@unified.cloud', password: 'AuditorAdmin2026!' }) });
+      assert.equal(res.status, 200, res.body);
+      assert.match(String(res.headers['set-cookie']), /^uct_session=uct_[0-9a-f]+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=86400/);
     });
   });
 

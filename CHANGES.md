@@ -99,12 +99,12 @@ Severity uses a practical scale (Critical / High / Medium / Low). "Verified" mea
 - No real secrets are committed. `.env*.example` files contain placeholders only.
 - `dangerouslySetInnerHTML` / Next.js-specific risks: not applicable. This is not a React or Next.js project (see `architecture.md`).
 
-### Not fixed: theoretical or needs a product decision
+### Initially deferred, resolved in follow-up round (see §12)
 
-- PBKDF2 uses 10,000 iterations, below current OWASP guidance (600,000 for PBKDF2-SHA256). Raising it requires a re-hash-on-login migration, so it is not changed here.
-- No Content-Security-Policy on the public pages. The pages rely on inline scripts and handlers, and a CDN (`cdn.jsdelivr.net` for anime.js), so a safe CSP needs a refactor. The nginx admin vhost already sends a CSP.
-- `COOKIE_SAME_SITE`, `COOKIE_DOMAIN` and `PARTNER_DB_PATH` appear in `.env.production.example` but are not read by the server. Comments now say so.
-- anime.js loads from a CDN without Subresource Integrity.
+- ~~PBKDF2 at 10,000 iterations~~: now 600,000 with upgrade on login (§12.1).
+- ~~No Content-Security-Policy on public pages~~: now enforced on every HTML page (§12.2).
+- ~~`COOKIE_SAME_SITE`, `COOKIE_DOMAIN`, `PARTNER_DB_PATH` documented but not read~~: now implemented (§12.4).
+- ~~anime.js from a CDN without SRI~~: the CDN URL actually returned 404; the library is now vendored (§12.3).
 
 ## 4. Performance
 
@@ -185,11 +185,76 @@ The browser tests cover: every header service page (two rounds), deep links, `/p
 ## 10. Remaining limitations and risks
 
 - No production environment or deployment credentials were available. Nothing was deployed, and the live sites were not tested.
-- The e2e tests ran on Windows with Chrome. Safari and Firefox were not tested.
+- The e2e tests ran on Windows with Chrome and Microsoft Edge. Safari and Firefox were not available on this machine (Playwright's Firefox needs its own patched build) and were not tested.
 - The overlays still coordinate through the shared global `window.__aboutOpen` flag and several independent `hashchange` listeners. They now work in every sequence tested, but a single router module would be easier to maintain. That refactor was deliberately left out to avoid changing transition behaviour.
-- See "Not fixed" in section 3 (PBKDF2 iterations, public-page CSP, unread cookie variables, no SRI on the anime.js CDN script).
+- The CSP still needs `'unsafe-inline'` for scripts and styles, because the pages use inline `<script>` blocks and `on…=` handlers throughout. Removing it means moving those into files, or using nonces/hashes. It limits *where* scripts may come from, not inline injection.
 
 ## 11. Commit
 
 - Implementation commit: `5903504` (`fix: resolve navigation freezes and harden application`) on branch `fix/navigation-freeze-hardening`, parent `e184364` (`main`).
 - This hash note was added in a separate follow-up commit on the same branch.
+- Follow-up round (§12) committed on the same branch; see `git log`.
+
+---
+
+## 12. Follow-up round: deferred items resolved (2026-10-29)
+
+### 12.1 Password hashing raised to OWASP strength without blocking the server
+
+**Files:** `server/db.mjs`, `server/auth.mjs`, `server/api.mjs`
+
+- **Measured cost on the development machine:** PBKDF2-SHA256 at 10,000 iterations takes 8.8 ms; at 600,000 (OWASP 2023), 494 ms. Doing that synchronously, as the old code did, would block **every** request for half a second per login attempt.
+- New hashes are stored as `pbkdf2_sha256$600000$<hex>`. Existing bare-hex hashes are read as 10,000 iterations, keep working, and are **re-hashed at 600,000 on the user's next successful login** (`needsRehash()` + `handleLoginAsync()`). No migration step or downtime is needed.
+- `POST /api/auth/login`, admin-user creation and partner creation now hash with the async `crypto.pbkdf2` (libuv thread pool). Test: while a login performs two full-cost hashes, the event loop never stalled for 150 ms or more.
+- A login for an unknown email now derives a throw-away key at the same cost, so response time no longer reveals which emails have accounts (tested).
+- Failed-attempt counting is now an atomic `UPDATE … SET failed_login_attempts = failed_login_attempts + 1`. With async verification, concurrent wrong guesses could otherwise overwrite each other's count and slip past the 5-attempt lockout.
+- Seeded demo accounts keep a cheap hash (their passwords are public anyway). Production re-keys them to a random 256-bit secret, which needs no work factor to resist guessing. This keeps start-up and the test suite fast; seeding also no longer computes hashes for accounts that already exist.
+- `BOOTSTRAP_ADMIN_*` now only **creates** the account. Re-keying on every restart would have silently undone a password change made in the portal; set `BOOTSTRAP_ADMIN_RESET=1` to force a reset.
+- The IP stored with each session now uses the same proxy-aware `getClientIp()` as rate limiting (it previously trusted a raw `X-Forwarded-For`).
+- `handleLogin()` (sync) is kept for scripts and the existing tests; the HTTP route uses `handleLoginAsync()`.
+
+### 12.2 Content-Security-Policy on every HTML page
+
+**File:** `server/server.mjs` (`buildContentSecurityPolicy()`)
+
+```
+default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;
+img-src 'self' data: blob: https:; connect-src 'self' https://open.er-api.com; worker-src 'self' blob:;
+object-src 'none'; base-uri 'self'; form-action 'self' mailto:; frame-ancestors 'self'
+(+ upgrade-insecure-requests in production)
+```
+
+Every allowance maps to a real use found in the code: WebAssembly for the Meshopt model decoder, `data:`/`blob:` textures inside the GLB, Google Fonts, and the open.er-api.com exchange rate used by the SSL catalogs. Verification in Chrome with the policy **enforced**:
+- A full homepage scroll, all 16 overlays/service pages, the cart, the support modal, the FX-rate fetch, `/partners`, partner dashboard login, admin login and `/admin/partners` produced **0 violations and 0 page errors**.
+- An injected `https://evil.example/x.js` was blocked and reported, proving the crawler detects violations.
+- Screenshots of the hero clouds and the server-rack / laptop scene match the pre-CSP rendering.
+- A repository-wide search found no `eval`, `new Function` or string timers (all blocked by this policy).
+
+`CSP_REPORT_ONLY=1` switches to `Content-Security-Policy-Report-Only` for a cautious rollout.
+
+### 12.3 anime.js was never loading: now vendored
+
+**Files:** `index.html`, `assets/js/vendor/anime.umd.min.js` (new, anime.js 4.0.2, MIT, 76 KB)
+
+`index.html` loaded `https://cdn.jsdelivr.net/npm/animejs@4.0.2/dist/bundles/anime.umd.min.js`, which returns **HTTP 404** (in 4.0.2 the file lives at `lib/anime.umd.min.js`). In the browser, `window.anime` was `undefined`, and `app.js` logged `Missing libraries: anime`. As a result, the **services gallery's ambient pulse and the particle burst on click / slide change** (`services-gallery.js`) never ran. The CSS slide-change flash did not depend on anime.js and was unaffected. The file is now served from `assets/js/vendor/`, like three.js, which removes the third-party runtime dependency and lets the CSP drop jsDelivr.
+
+**Verification:** `window.anime.animate` is a function. The gallery's pulse now drives the header tint: sampled lightness went 15.7% → 18.0% → 17.6% over 3 s, where before it stayed constant at 16.4%. This restores an animation already in the code; it does not add a new one.
+
+### 12.4 Documented settings that were ignored now work
+
+**Files:** `server/auth.mjs` (`buildSessionCookie()`), `server/api.mjs`, `server/db.mjs` (`resolveDbPath()`)
+
+- `COOKIE_SAME_SITE` (`Strict` / `Lax` / `None`; `None` is downgraded to `Lax` without `Secure`, as browsers require), `COOKIE_DOMAIN` (validated, so header injection is not possible), and `COOKIE_SECURE`. Login and logout use the same attributes, so logout clears a domain cookie correctly.
+- `PARTNER_DB_PATH` (absolute, or relative to the project root; its directory is created if needed).
+
+### 12.5 Tests in this round
+
+| Check | Result |
+|---|---|
+| `npm run test:all` | **134 / 134 pass** (+11: hashing format, legacy upgrade on login, event loop not blocked, no timing enumeration, malformed hashes, bootstrap reset rule, CSP header, cookie attributes, DB path) |
+| `npm run test:e2e` in **Chrome** | **9 / 9 pass** (+1: zero CSP violations across all pages) |
+| `npm run test:e2e` in **Microsoft Edge** (`CHROME_PATH=…msedge.exe`) | **9 / 9 pass** |
+| `npm run lint` / `npm audit` / `npm run build` | 43/43 parse / 0 vulnerabilities / OK (vendored anime.js included in `dist/`) |
+
+One test-harness change: Playwright's `page.waitForFunction()` evaluates a string, which the new CSP correctly blocks, so the e2e helpers now poll with `page.evaluate()`. The CSP is **not** bypassed in the tests.

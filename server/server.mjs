@@ -66,6 +66,33 @@ function isPublicPath(rel) {
   return PUBLIC_DIRS.includes(parts[0]);
 }
 
+/**
+ * Content-Security-Policy for every HTML page. The pages use inline scripts and inline event handlers,
+ * so 'unsafe-inline' is still required; the policy restricts every *source*: scripts only from this site
+ * (all libraries are vendored in assets/js/vendor), WebAssembly for the Meshopt model decoder, no plugins, no <base> hijacking,
+ * no framing by other sites. Each allowance below maps to a real use, verified in a browser with zero
+ * violations (tests/e2e). CSP_REPORT_ONLY=1 sends it as Content-Security-Policy-Report-Only instead.
+ */
+export function buildContentSecurityPolicy(env = process.env) {
+  const directives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",          // GLB textures are data:/blob: URLs; logos may be remote
+    "connect-src 'self' https://open.er-api.com",  // USD->BDT rate for the SSL catalogs (config.js fxApi)
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' mailto:",
+    "frame-ancestors 'self'"
+  ];
+  if (env.NODE_ENV === 'production') directives.push('upgrade-insecure-requests');
+  return directives.join('; ');
+}
+const CSP_HEADER = process.env.CSP_REPORT_ONLY === '1' ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+const CSP_VALUE = buildContentSecurityPolicy();
+
 function safeDecode(value) {
   try {
     return decodeURIComponent(value);
@@ -338,6 +365,7 @@ function serveFile(req, res, filePath, onMissing) {
       'ETag': etag,
       'Last-Modified': stat.mtime.toUTCString()
     };
+    if (ext === '.html') headers[CSP_HEADER] = CSP_VALUE;
 
     if (req.headers['if-none-match'] === etag) {
       res.writeHead(304, headers);

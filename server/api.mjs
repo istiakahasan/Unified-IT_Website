@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleLogin, sessionStore, extractToken, hasPermission, ROLE_PERMISSIONS } from './auth.mjs';
-import { hashPassword } from './db.mjs';
+import { handleLoginAsync, getClientIp, buildSessionCookie, sessionStore, extractToken, hasPermission, ROLE_PERMISSIONS } from './auth.mjs';
+import { hashPasswordAsync } from './db.mjs';
 import { RewardProcessingService } from './reward-service.mjs';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 import * as ticketsService from './tickets-service.mjs';
@@ -27,21 +27,8 @@ const ATTACHMENT_MIME_BY_EXT = {
 };
 const INLINE_ATTACHMENT_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.pdf'];
 
-/**
- * Client IP used for rate limiting and audit records. X-Forwarded-For is client-controlled,
- * so it is only honoured when the app runs behind a trusted reverse proxy (TRUST_PROXY=1).
- */
-export function getClientIp(req) {
-  if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
-    // nginx sets X-Real-IP to $remote_addr; with $proxy_add_x_forwarded_for the proxy-observed
-    // address is the LAST entry (earlier entries come from the client and can be forged).
-    const realIp = String(req.headers['x-real-ip'] || '').trim();
-    if (realIp) return realIp;
-    const hops = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (hops.length) return hops[hops.length - 1];
-  }
-  return req.socket?.remoteAddress || '127.0.0.1';
-}
+// getClientIp lives in auth.mjs (sessions use it too); re-exported for existing importers
+export { getClientIp };
 
 /**
  * REST API Router for Cloud Partner Program & Centralized Admin Portal
@@ -717,11 +704,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
   if (req.method === 'POST' && pathname === '/api/auth/login') {
     try {
       const { email, password } = body;
-      const sessionData = handleLogin(db, email, password);
+      const sessionData = await handleLoginAsync(db, email, password, req);
 
-      // Secure flag in production (HTTPS behind the proxy) or when COOKIE_SECURE=true
-      const secureCookie = process.env.COOKIE_SECURE === 'true' || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false');
-      res.setHeader('Set-Cookie', `uct_session=${sessionData.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${secureCookie ? '; Secure' : ''}`);
+      res.setHeader('Set-Cookie', buildSessionCookie(sessionData.token, 86400));
       logAudit(sessionData.user.role, sessionData.user.id, sessionData.user.email, 'USER_LOGIN_SUCCESS', 'users', sessionData.user.id, {});
       return sendJson(200, { success: true, ...sessionData });
     } catch (err) {
@@ -764,7 +749,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
     if (token) {
       sessionStore.destroySession(token);
     }
-    res.setHeader('Set-Cookie', `uct_session=; Path=/; HttpOnly; Max-Age=0`);
+    res.setHeader('Set-Cookie', buildSessionCookie('', 0));
     return sendJson(200, { success: true, message: 'Logged out successfully.' });
   }
 
@@ -2402,7 +2387,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get(cleanEmail);
       if (existing) return sendError(409, `An account with email '${cleanEmail}' already exists.`);
 
-      const auth = hashPassword(password);
+      const auth = await hashPasswordAsync(password);
       const id = 'usr-adm-' + crypto.randomBytes(4).toString('hex');
 
       db.prepare(`
@@ -2474,7 +2459,7 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
       // Begin atomic transaction
       const partnerId = 'ptn-' + crypto.randomBytes(6).toString('hex');
       const userId = 'usr-' + crypto.randomBytes(6).toString('hex');
-      const auth = hashPassword(initialPassword);
+      const auth = await hashPasswordAsync(initialPassword);
 
       db.exec('BEGIN TRANSACTION;');
       try {

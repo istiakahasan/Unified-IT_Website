@@ -8,7 +8,7 @@ Unified Cloud is an enterprise cloud infrastructure platform built with a high-p
 
 | Layer | Technology |
 |---|---|
-| Public site | Static multi-page HTML + classic (non-module) browser scripts; Three.js r128 (`assets/js/vendor/three.min.js`), GLTFLoader + Meshopt decoder, anime.js 4.0.2 (CDN) |
+| Public site | Static multi-page HTML + classic (non-module) browser scripts; Three.js r128 (`assets/js/vendor/three.min.js`), GLTFLoader + Meshopt decoder, anime.js 4.0.2 (`assets/js/vendor/anime.umd.min.js`, vendored; the former CDN URL returned 404) |
 | Framework | **None.** No React or Next.js. Routing is hash-based inside `index.html`, plus separate HTML pages served by the Node server |
 | Build | Vite 6 (`vite.config.mjs`): copies `assets/` and emits the five HTML entry pages to `dist/`. Classic scripts are not bundled |
 | Backend | Node.js ≥ 22.5 (`node:http`, `node:sqlite` `DatabaseSync`), no web framework |
@@ -56,6 +56,7 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 | 1 | `assets/js/vendor/three.min.js` | WebGL 3D 3rd-party runtime | Global `THREE` |
 | 2 | `assets/js/vendor/GLTFLoader.js` | glTF / GLB model loader | `THREE.GLTFLoader` |
 | 3 | `assets/js/vendor/meshopt_decoder.js` | Meshopt geometry decoder | `MeshoptDecoder` |
+| 3a | `assets/js/vendor/anime.umd.min.js` | anime.js 4.0.2 tweening (services gallery pulse/burst) | Global `anime` |
 | 4 | `assets/js/config.js` | Base configuration & endpoints | `window.UNIFIED_CONFIG` |
 | 5 | `assets/js/data/service-pages.js` | Service catalog schemas & pricing specs | `window.SERVICE_PAGES` |
 | 6 | `assets/js/data/digicert-prices.js` | DigiCert SSL tier pricing registry | `window.DIGICERT_PRICES` |
@@ -298,7 +299,7 @@ To preserve brand identity, visual aesthetics, and viewport ergonomics:
 
 ## 9. Automated Testing Architecture
 
-Testing is executed natively using Node.js Test Runner (`node --test`). `npm run test:all` runs 123 tests across 4 suites:
+Testing is executed natively using Node.js Test Runner (`node --test`). `npm run test:all` runs 134 tests across 4 suites:
 
 - **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
 - **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
@@ -308,9 +309,9 @@ Testing is executed natively using Node.js Test Runner (`node --test`). `npm run
   3. Centralized admin visibility, staff assignment, and internal note masking.
   4. Attachment security, extension filtering, and status validation.
   5. Public website entry points and homepage exclusion enforcement.
-- **`tests/security-hardening.test.mjs`** (31 tests): starts the real HTTP server on a random port. Covers the static allow-list (database, `.git`, sources not served), malformed URL and cookie handling (server stays up), invalid JSON, the 413 body limit, the CORS allow-list, the cookie CSRF origin check, attachment MIME handling, `TRUST_PROXY` IP resolution, and the demo-credential lockout and bootstrap admin.
+- **`tests/security-hardening.test.mjs`** (42 tests): starts the real HTTP server on a random port. Also covers password hashing (format, legacy upgrade on login, event loop not blocked, no timing enumeration), the CSP header, and the cookie and database-path settings. Covers the static allow-list (database, `.git`, sources not served), malformed URL and cookie handling (server stays up), invalid JSON, the 413 body limit, the CORS allow-list, the cookie CSRF origin check, attachment MIME handling, `TRUST_PROXY` IP resolution, and the demo-credential lockout and bootstrap admin.
 
-Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 8 tests) start the server and drive an installed Chrome or Edge through `playwright-core`. They check that the main thread stays responsive (a `requestAnimationFrame` round-trip within 5 s) after every header navigation (two full rounds), deep links, `/partners`, back/forward, rapid repeated clicks, the mobile menu, the overlay WebGL canvases being created on open, the animation loop running, and the no-WebGL fallback. The suite is skipped when no Chromium browser is found (`CHROME_PATH` overrides detection).
+Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 9 tests; run in both Chrome and Edge) start the server and drive an installed Chrome or Edge through `playwright-core`. They check that the main thread stays responsive (a `requestAnimationFrame` round-trip within 5 s) after every header navigation (two full rounds), deep links, `/partners`, back/forward, rapid repeated clicks, the mobile menu, the overlay WebGL canvases being created on open, the animation loop running, zero Content-Security-Policy violations across all pages, and the no-WebGL fallback. Helpers poll with `page.evaluate()`, because `page.waitForFunction()` uses string evaluation, which the site's CSP blocks. The suite is skipped when no Chromium browser is found (`CHROME_PATH` overrides detection).
 
 `npm run lint` (`scripts/check-syntax.mjs`) parses every first-party `.js`/`.mjs` file with `node --check`. There is no TypeScript and no ESLint configuration in the project.
 
@@ -358,13 +359,17 @@ Browser tests (`npm run test:e2e`, file `tests/e2e/navigation.e2e.mjs`, 8 tests)
 ## 12. Server Request Pipeline & Security Boundaries (`server/server.mjs`)
 
 1. **Crash guard:** every request runs through `handleRequest().catch()`, so a failing request returns `500` instead of terminating the process. Malformed HTTP is answered with `400` via `clientError`.
-2. **Security headers:** `nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`. HSTS and the admin CSP are added by the nginx config.
+2. **Security headers:** `nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`; HSTS is added by the proxy config. Every HTML response carries the **Content-Security-Policy** from `buildContentSecurityPolicy()`: `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'` (no CDN, no `eval`), fonts from Google Fonts, `connect-src` limited to this site plus the FX-rate API, `img-src` allowing `data:`/`blob:` for GLB textures, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, and `upgrade-insecure-requests` in production. `CSP_REPORT_ONLY=1` sends it report-only.
 3. **CORS:** credentialed CORS headers are only sent for the configured domains, the request's own host, `localhost` in development, and `CORS_ALLOWED_ORIGINS`.
 4. **Vhost routing:** `www.` → 301 to the apex; `admin.`, `partners.` and `api.` hosts select their HTML shell or the API.
 5. **API** (`/api/*` or the `api.` host): authenticate (Bearer header or `uct_session` cookie) → CSRF origin check for cookie-authenticated `POST/PUT/PATCH/DELETE` → body read with a 15 MB limit (`413`) → JSON parse (`400`) → `handleApiRequest` (`server/api.mjs`, RBAC per route).
 6. **Static files:** paths are decoded safely (`400` on malformed input). Only the six public HTML pages and `assets/**` are servable; anything else, including `data/` (database and attachments), `server/`, `tests/`, `scripts/`, dotfiles and `package*.json`, returns `404`. Files are streamed with `ETag` / `Last-Modified`. HTML/JS/CSS use `Cache-Control: no-cache` (revalidate, `304` when unchanged); other assets use `max-age=3600`.
 
-**Identity and secrets:** `TRUST_PROXY=1` makes rate limiting use the proxy's `X-Real-IP`. In production, accounts that still accept their public demo password are re-keyed with a random password at startup (`secureDemoCredentials`). `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` create the first real Super Admin. Integration credentials (WHMCS, CloudStack, payment gateways) come only from environment variables.
+**Passwords:** PBKDF2-HMAC-SHA256, stored as `pbkdf2_sha256$600000$<hex>` with a per-user salt (legacy bare-hex hashes = 10,000 iterations, upgraded on the next successful login). Request paths use the async `crypto.pbkdf2` on the libuv thread pool (`handleLoginAsync`, `hashPasswordAsync`), so the ~0.5 s hash never blocks the event loop. Unknown-email logins spend the same hashing time, and failed-attempt counting is atomic.
+
+**Session cookie:** `uct_session`, `HttpOnly`, `Path=/`, `SameSite` from `COOKIE_SAME_SITE` (default `Lax`), optional `Domain` from `COOKIE_DOMAIN`, `Secure` in production (`buildSessionCookie()`).
+
+**Identity and secrets:** `TRUST_PROXY=1` makes rate limiting and session records use the proxy's `X-Real-IP`. In production, accounts that still accept their public demo password are re-keyed with a random password at startup (`secureDemoCredentials`). `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` create the first real Super Admin (an existing account is only re-keyed with `BOOTSTRAP_ADMIN_RESET=1`). The database file comes from `PARTNER_DB_PATH` (default `data/partner-system.db`). Integration credentials (WHMCS, CloudStack, payment gateways) come only from environment variables.
 
 **Attachments:** stored under `data/attachments/` (git-ignored, never served statically). They are downloaded only through `GET /api/support/attachments/:id` after a ticket ownership check, with the MIME type taken from the extension, `inline` only for raster images and PDF, and `Content-Security-Policy: default-src 'none'; sandbox`.
 

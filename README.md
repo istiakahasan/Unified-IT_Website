@@ -11,7 +11,7 @@ An enterprise cloud infrastructure platform featuring an interactive 3D WebGL fl
 | Area | What is actually used |
 |---|---|
 | Runtime | **Node.js 22.5 or newer** (the server uses the built-in `node:sqlite` module). npm 10+ |
-| Front end | Plain HTML + classic browser scripts (no framework), Three.js r128 + GLTFLoader + Meshopt decoder (vendored in `assets/js/vendor/`), anime.js 4.0.2 from jsDelivr |
+| Front end | Plain HTML + classic browser scripts (no framework), Three.js r128 + GLTFLoader + Meshopt decoder + anime.js 4.0.2, all vendored in `assets/js/vendor/` (no runtime CDN) |
 | Back end | Node.js `http` server (`server/`), SQLite database at `data/partner-system.db` (created on first start, git-ignored) |
 | Build | Vite 6 (copies `assets/`, emits all five HTML pages to `dist/`) |
 | Tests | Node test runner; browser tests use `playwright-core` with your installed Chrome or Edge |
@@ -52,8 +52,8 @@ unified-it/
 │   ├── admin-portal.test.mjs           # Enterprise Admin Portal automated test suite (33 tests)
 │   ├── partner-system.test.mjs         # Production Partner Program test suite (33 tests)
 │   ├── support-ticketing.test.mjs      # Role-Based Support Ticketing System test suite (26 tests)
-│   ├── security-hardening.test.mjs     # HTTP security regression suite (31 tests)
-│   └── e2e/navigation.e2e.mjs          # Browser navigation / animation regression suite (8 tests)
+│   ├── security-hardening.test.mjs     # HTTP security, CSP, hashing & cookie regression suite (42 tests)
+│   └── e2e/navigation.e2e.mjs          # Browser navigation / animation / CSP regression suite (9 tests)
 ├── data/                               # SQLite database + support attachments (runtime only, git-ignored, never served)
 ├── scripts/
 │   ├── serve.js                        # `npm start` entrypoint (port 3000)
@@ -227,14 +227,15 @@ npm run lint        # syntax check of every first-party .js/.mjs file (no TypeSc
 npm audit           # dependency advisories
 npm run build       # production build into dist/
 
-# Run all unit/integration suites (123 tests)
+# Run all unit/integration suites (134 tests)
 npm run test:all
 
-# HTTP security regression suite only (31 tests)
+# HTTP security regression suite only (42 tests)
 npm run test:security
 
-# Browser navigation & animation regression tests (8 tests).
+# Browser navigation, animation & CSP regression tests (9 tests).
 # Uses an installed Chrome/Edge; set CHROME_PATH if it is not auto-detected. Skipped when none is found.
+# e.g. CHROME_PATH="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" npm run test:e2e
 npm run test:e2e
 
 # Run Support Ticketing System test suite only (26 tests)
@@ -273,9 +274,13 @@ Names only; never commit real values. See `.env.production.example` for the full
 | `PUBLIC_DOMAIN`, `WWW_DOMAIN`, `ADMIN_DOMAIN`, `PARTNER_DOMAIN`, `API_DOMAIN` | Subdomain routing; also the CORS and CSRF allow-list |
 | `CORS_ALLOWED_ORIGINS` | Extra comma-separated origins allowed to call the API with credentials |
 | `TRUST_PROXY` | `1` only behind the bundled nginx/Caddy: rate limiting then uses the proxy's `X-Real-IP` |
-| `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` | Create or re-key the first production Super Admin |
+| `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` | Create the first production Super Admin (only if that email does not exist yet) |
+| `BOOTSTRAP_ADMIN_RESET` | `1` re-keys an existing bootstrap admin to `BOOTSTRAP_ADMIN_PASSWORD` on start |
 | `ALLOW_DEMO_CREDENTIALS` | `1` keeps the public demo passwords in production (disposable demos only) |
 | `COOKIE_SECURE` | Force (`true`) or disable (`false`) the `Secure` cookie flag |
+| `COOKIE_SAME_SITE`, `COOKIE_DOMAIN` | Session cookie `SameSite` (`Strict`/`Lax`/`None`, default `Lax`) and optional shared `Domain` |
+| `PARTNER_DB_PATH` | SQLite file (default `data/partner-system.db`) |
+| `CSP_REPORT_ONLY` | `1` sends the Content-Security-Policy as report-only (rollout aid) |
 | `WHMCS_API_*`, `CLOUDSTACK_*`, `BKASH_*`, `NAGAD_*`, `SSLCOMMERZ_*` | Integration credentials |
 
 ### 2. Nginx Reverse Proxy
@@ -302,7 +307,9 @@ Deploy [`caddy/Caddyfile`](caddy/Caddyfile) for zero-config automated Let's Encr
 - Malformed URLs or cookies cannot crash the server. Request bodies are capped at 15 MB.
 - Uploaded attachments are typed by extension (never by the client), served with a sandboxing CSP, and downloaded only through the authorised API endpoint.
 - The public demo passwords are disabled automatically in production.
-- Run `npm audit` and `npm run test:security` before releases. See [`CHANGES.md`](CHANGES.md) §3 for the full audit, including the known remaining items (PBKDF2 iteration count, no CSP on public pages).
+- Every HTML page is served with a Content-Security-Policy: scripts only from this site (no `eval`), WebAssembly allowed for the 3D model decoder, no plugins, no framing by other sites. All third-party libraries are vendored, so the pages make no runtime CDN requests.
+- Passwords are hashed with PBKDF2-SHA256 at 600,000 iterations on a background thread (never blocking the server). Older hashes are upgraded on the next successful login.
+- Run `npm audit` and `npm run test:security` before releases. See [`CHANGES.md`](CHANGES.md) §3 for the full audit, and §12 for the follow-up hardening. Known remaining item: the CSP still allows inline scripts (`'unsafe-inline'`), because the pages use inline handlers.
 
 ## ⚡ Performance Considerations
 
@@ -322,4 +329,7 @@ Deploy [`caddy/Caddyfile`](caddy/Caddyfile) for zero-config automated Let's Encr
 | Server fails at start with `No such built-in module: node:sqlite` | Node is older than 22.5. Upgrade, and use the `node:22-alpine` image. |
 | API calls from another site get blocked | CORS and CSRF only allow the configured domains. Add the origin to `CORS_ALLOWED_ORIGINS` if it is legitimate. |
 | Admin login fails in production with the README passwords | Intended. Set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` and restart. |
+| A new inline `<script>` or external library is blocked (console: "Refused to load…") | The Content-Security-Policy in `server/server.mjs` (`buildContentSecurityPolicy`) only allows this site. Vendor the library into `assets/js/vendor/`, or add its origin there deliberately. `CSP_REPORT_ONLY=1` helps you test. |
+| Services gallery has no pulse or burst effect / console says "Missing libraries: anime" | `assets/js/vendor/anime.umd.min.js` is missing from the deployment (it was previously loaded from a CDN URL that returned 404). |
+| Login takes about half a second | Expected: passwords use 600,000 PBKDF2 iterations, computed off the main thread so other requests are unaffected. |
 | 3D scene missing / flat background | WebGL is unavailable or the context was lost. The DOM fallback keeps navigation working; check `chrome://gpu`. |
