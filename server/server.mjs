@@ -236,6 +236,7 @@ async function handleRequest(req, res) {
       }
 
       let body = {};
+      let rawBody = '';
       if (isUnsafeMethod) {
         const declared = Number(req.headers['content-length'] || 0);
         if (declared > MAX_BODY_BYTES) {
@@ -256,6 +257,7 @@ async function handleRequest(req, res) {
         } catch {
           return sendJsonError(400, 'Could not read request body');
         }
+        rawBody = raw;
         if (raw) {
           try {
             body = JSON.parse(raw);
@@ -272,6 +274,7 @@ async function handleRequest(req, res) {
         pathname: apiPath,
         query,
         body,
+        rawBody,
         db,
         pricingEngine,
         whmcsAdapter,

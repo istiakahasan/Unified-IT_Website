@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { initAgenticSchema } from './agentic-ai.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -812,6 +813,7 @@ export function initDatabase(dbPath = resolveDbPath()) {
     // ignore
   }
 
+  initAgenticSchema(db);
   seedDefaultData(db);
   seedRewardSystemData(db);
   seedAdminPortalData(db);

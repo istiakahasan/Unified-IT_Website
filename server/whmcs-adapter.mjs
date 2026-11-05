@@ -141,6 +141,78 @@ export class WHMCSAdapter {
     }, idempotencyKey);
   }
 
+  /** Customer-facing invoice page. WHMCS_CLIENT_AREA_URL overrides the origin derived from the API URL. */
+  getInvoiceUrl(invoiceId, clientAreaUrl = process.env.WHMCS_CLIENT_AREA_URL) {
+    if (!this.isConfigured) return null;
+    try {
+      const base = (clientAreaUrl || new URL(this.apiUrl).origin).replace(/\/+$/, '');
+      return `${base}/viewinvoice.php?id=${encodeURIComponent(invoiceId)}`;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Reads one invoice (used to confirm a payment notification against WHMCS itself). */
+  async getInvoice(invoiceId) {
+    const r = await this._callApi('GetInvoice', { invoiceid: invoiceId });
+    return { id: String(invoiceId), status: r.status, total: r.total };
+  }
+
+  /**
+   * Agentic AI order: AddOrder for the mapped product (recurring amount via priceoverride), then the
+   * one-time lines are added to the generated invoice and the WHMCS total is checked against ours.
+   * Product / addon IDs are supplied by the caller from configuration; none are invented here.
+   */
+  async createAgenticOrder({ clientId, productId, addonIds = [], paymentMethod, recurringMonthly, oneTimeItems = [], expectedTotal, orderRef, idempotencyKey }) {
+    if (!this.isConfigured) {
+      const sim = this._simulateCall('AddOrder', { orderRef }, idempotencyKey);
+      return { orderId: sim.orderid, invoiceId: sim.invoiceid, total: expectedTotal, checkoutUrl: null, sandbox: true };
+    }
+    const params = {
+      clientid: clientId,
+      paymentmethod: paymentMethod,
+      'pid[0]': productId,
+      'billingcycle[0]': 'monthly',
+      'priceoverride[0]': recurringMonthly,
+      notes: `Agentic AI order ${orderRef}`
+    };
+    if (addonIds.length) params['addons[0]'] = addonIds.join(',');
+    const order = await this._callApi('AddOrder', params, idempotencyKey);
+    const invoiceId = order.invoiceid;
+    if (!invoiceId) throw new Error('WHMCS did not return an invoice for the order.');
+    if (oneTimeItems.length) {
+      const items = {};
+      oneTimeItems.forEach((it, i) => {
+        items[`newitemdescription[${i}]`] = it.description;
+        items[`newitemamount[${i}]`] = it.amount;
+        items[`newitemtaxed[${i}]`] = 0;
+      });
+      await this._callApi('UpdateInvoice', { invoiceid: invoiceId, ...items });
+    }
+    const inv = await this.getInvoice(invoiceId);
+    if (Math.round(Number(inv.total) * 100) !== Math.round(Number(expectedTotal) * 100)) {
+      throw new Error(`WHMCS invoice ${invoiceId} total ${inv.total} does not match the expected ${expectedTotal}. Check the product price/tax configuration.`);
+    }
+    return { orderId: order.orderid, invoiceId, total: inv.total, checkoutUrl: this.getInvoiceUrl(invoiceId), sandbox: false };
+  }
+
+  /** One invoice for post-paid usage (call minutes). */
+  async createUsageInvoice({ clientId, paymentMethod, description, amount, idempotencyKey }) {
+    if (!this.isConfigured) {
+      const sim = this._simulateCall('CreateInvoice', { description, amount }, idempotencyKey);
+      return { invoiceId: sim.invoiceid, checkoutUrl: null, sandbox: true };
+    }
+    const r = await this._callApi('CreateInvoice', {
+      userid: clientId,
+      paymentmethod: paymentMethod,
+      sendinvoice: 1,
+      'itemdescription1': description,
+      'itemamount1': amount,
+      'itemtaxed1': 0
+    }, idempotencyKey);
+    return { invoiceId: r.invoiceid, checkoutUrl: this.getInvoiceUrl(r.invoiceid), sandbox: false };
+  }
+
   /**
    * Fetches invoices for a client
    */
@@ -332,6 +404,10 @@ export class WHMCSAdapter {
         result.orderid = Math.floor(14000 + Math.random() * 2000);
         result.invoiceid = Math.floor(28000 + Math.random() * 2000);
         result.message = `Sandbox order #${result.orderid} placed with invoice #${result.invoiceid}`;
+        break;
+
+      case 'CreateInvoice':
+        result.invoiceid = Math.floor(30000 + Math.random() * 20000);
         break;
 
       case 'GetInvoices':
