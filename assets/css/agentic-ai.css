@@ -942,3 +942,149 @@
     transform: none;
   }
 }
+
+/* ---- Floating Background Watermark for Agentic AI Pages ----------------- */
+
+#pg-agentic .vlogo,
+#pg-agentic-ready .vlogo,
+#pg-agentic-custom .vlogo,
+#pg-agentic-branded .vlogo,
+#pg-agentic-chat .vlogo {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: clamp(16px, 4.5vw, 80px);
+  margin: auto 0;
+  width: clamp(260px, 32vw, 540px);
+  height: clamp(146px, 18vw, 304px);
+  aspect-ratio: 16 / 9;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity .8s .3s;
+  animation: agx-watermark-float 8.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.pg.on#pg-agentic .vlogo,
+.pg.on#pg-agentic-ready .vlogo,
+.pg.on#pg-agentic-custom .vlogo,
+.pg.on#pg-agentic-branded .vlogo,
+.pg.on#pg-agentic-chat .vlogo {
+  opacity: 1;
+}
+
+/* Hide default orb vector */
+#pg-agentic .vlogo svg,
+#pg-agentic-ready .vlogo svg,
+#pg-agentic-custom .vlogo svg,
+#pg-agentic-branded .vlogo svg,
+#pg-agentic-chat .vlogo svg {
+  display: none !important;
+}
+
+/* Ambient chromatic backlight aura */
+#pg-agentic .vlogo::before,
+#pg-agentic-ready .vlogo::before,
+#pg-agentic-custom .vlogo::before,
+#pg-agentic-branded .vlogo::before,
+#pg-agentic-chat .vlogo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 210, 255, 0.22) 0%,
+    rgba(168, 85, 247, 0.18) 45%,
+    transparent 75%
+  );
+  filter: blur(50px);
+  border-radius: 50%;
+  animation: agx-watermark-aura 8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* High-tech emblem rendering with edge feathering and glow */
+#pg-agentic .vlogo::after,
+#pg-agentic-ready .vlogo::after,
+#pg-agentic-custom .vlogo::after,
+#pg-agentic-branded .vlogo::after,
+#pg-agentic-chat .vlogo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('../images/agentic-ai-watermark.jpg') center / contain no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0.75;
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.7) 52%, transparent 92%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.7) 52%, transparent 92%);
+  filter: drop-shadow(0 0 24px rgba(0, 210, 255, 0.45)) drop-shadow(0 0 55px rgba(168, 85, 247, 0.35));
+  animation: agx-watermark-pulse 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes agx-watermark-float {
+  0%, 100% {
+    transform: translate3d(0, -14px, 0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translate3d(0, 16px, 0) rotate(1.8deg);
+  }
+}
+
+@keyframes agx-watermark-pulse {
+  0% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 16px rgba(0, 210, 255, 0.3)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.2));
+  }
+  100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 30px rgba(0, 210, 255, 0.6)) drop-shadow(0 0 65px rgba(168, 85, 247, 0.45));
+  }
+}
+
+@keyframes agx-watermark-aura {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
+}
+
+@media (max-width: 1000px) {
+  #pg-agentic .vlogo,
+  #pg-agentic-ready .vlogo,
+  #pg-agentic-custom .vlogo,
+  #pg-agentic-branded .vlogo,
+  #pg-agentic-chat .vlogo {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    right: auto;
+    margin: 0 auto 26px;
+    width: clamp(220px, 60vw, 360px);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pg-agentic .vlogo,
+  #pg-agentic .vlogo::before,
+  #pg-agentic .vlogo::after,
+  #pg-agentic-ready .vlogo,
+  #pg-agentic-ready .vlogo::before,
+  #pg-agentic-ready .vlogo::after,
+  #pg-agentic-custom .vlogo,
+  #pg-agentic-custom .vlogo::before,
+  #pg-agentic-custom .vlogo::after,
+  #pg-agentic-branded .vlogo,
+  #pg-agentic-branded .vlogo::before,
+  #pg-agentic-branded .vlogo::after,
+  #pg-agentic-chat .vlogo,
+  #pg-agentic-chat .vlogo::before,
+  #pg-agentic-chat .vlogo::after {
+    animation: none !important;
+  }
+}
