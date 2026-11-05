@@ -51,18 +51,20 @@ describe('Web Hosting plan cards (browser)', { skip }, () => {
   }
   const boxes = (page) => page.$$eval('#pg-hosting .wpg-host .wp', els => els.map(e => { const r = e.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), b: Math.round(r.bottom) }; }));
 
-  it('shows four plans in a 2 x 2 grid on desktop with a heading and equal-height cards', async () => {
+  it('shows four plans in a single row on desktop with a heading and equal-height cards', async () => {
     const { page, context, errors } = await open({ width: 1366, height: 1000 });
     assert.match(await page.textContent('#pg-hosting .dlab'), /Web Hosting/);
     const b = await boxes(page);
     assert.equal(b.length, 4);
-    assert.equal(b[0].y, b[1].y, 'plans 1 and 2 share a row');
-    assert.equal(b[2].y, b[3].y, 'plans 3 and 4 share a row');
-    assert.ok(b[2].y > b[0].y + 100, 'second row sits below the first');
-    assert.equal(b[0].x, b[2].x);
-    assert.equal(b[1].x, b[3].x);
-    assert.ok(b[1].x > b[0].x + b[0].w - 2, 'two columns, not overlapping');
+    assert.equal(b[0].y, b[1].y, 'plans share a row');
+    assert.equal(b[1].y, b[2].y, 'plans share a row');
+    assert.equal(b[2].y, b[3].y, 'plans share a row');
+    assert.ok(b[1].x > b[0].x + b[0].w - 2, 'four columns, not overlapping');
+    assert.ok(b[2].x > b[1].x + b[1].w - 2);
+    assert.ok(b[3].x > b[2].x + b[2].w - 2);
     assert.equal(b[0].b, b[1].b, 'cards in a row have equal height');
+    assert.equal(b[1].b, b[2].b);
+    assert.equal(b[2].b, b[3].b);
     assert.deepEqual(errors, []);
     await context.close();
   });
@@ -86,6 +88,7 @@ describe('Web Hosting plan cards (browser)', { skip }, () => {
       assert.match(p.price, /^BDT\s*[\d,]+\s*\/ Annually$/);
     }
     assert.equal(plans[0].buttonTop, plans[1].buttonTop, 'Order Now buttons line up in a row');
+    assert.equal(plans[1].buttonTop, plans[2].buttonTop);
     assert.equal(plans[2].buttonTop, plans[3].buttonTop);
     await context.close();
   });
