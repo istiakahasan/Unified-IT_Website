@@ -1,0 +1,160 @@
+/* Web Hosting plan cards (#pg-hosting only). Everything is scoped to .wpg-host, so no other page or card changes. */
+
+.pg .wpg.wpg-host {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  justify-content: stretch;
+  margin-top: 40px;
+}
+
+.pg .wpg-host .wp {
+  flex: none;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Allocation rows read like a spec sheet: label on the left, value on the right */
+.pg .wpg-host .wspec {
+  margin: 18px 22px 0;
+  display: grid;
+  gap: 0;
+}
+
+.pg .wpg-host .wspec div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.pg .wpg-host .wspec dt {
+  font-size: 14px;
+  color: #bdb9d4;
+}
+
+.pg .wpg-host .wspec dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.pg .wpg-host .el {
+  margin: 18px 22px 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+/* Footer: price on the left, action on the right, aligned across all four cards */
+.pg .wpg-host .wfoot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  padding: 18px 22px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.pg .wpg-host .wprice {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+  color: #bdb9d4;
+}
+
+.pg .wpg-host .wprice b {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.pg .wpg-host .wprice .wp-cur {
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.14em;
+  color: #9a96b8;
+}
+
+.pg .wpg-host .wprice .wp-per {
+  font-size: 13px;
+  color: #9a96b8;
+}
+
+.pg .wpg-host .wprice-quote {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pg .wpg-host .wprice-quote b {
+  font-size: 18px;
+}
+
+.pg .wpg-host .wfoot .vb {
+  margin: 0;
+  flex: 0 0 auto;
+  color: #fff;
+  background: linear-gradient(120deg, #22c55e, #16a34a);
+  box-shadow: 0 10px 26px rgba(34, 197, 94, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.pg .wpg-host .wfoot .vb:hover,
+.pg .wpg-host .wfoot .vb:focus-visible {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.45);
+}
+
+/* Subtle card hover: a small lift and a soft glow in the plan's own colors */
+.pg .wpg-host .wp {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pg .wpg-host .wp:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--c1) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg .wpg-host .wp,
+  .pg .wpg-host .wfoot .vb {
+    transition: none;
+  }
+
+  .pg .wpg-host .wp:hover,
+  .pg .wpg-host .wfoot .vb:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .pg .wpg.wpg-host {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .pg .wpg-host .el {
+    grid-template-columns: 1fr;
+  }
+
+  .pg .wpg-host .wfoot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pg .wpg-host .wfoot .vb {
+    justify-content: center;
+  }
+}

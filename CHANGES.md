@@ -1,3 +1,15 @@
+# CHANGES — Web Hosting plan cards
+
+**Date:** 2026-11-05
+**Scope:** the four plan cards on the Web Hosting page (`#p-hosting`) only. The animated background, header, global styles and every other page are unchanged.
+
+- `assets/js/data/service-pages.js`: the four cards are generated from one table (`HOSTING_PLANS`, with `HOSTING_BILLING_PERIOD`) by `hostingPlansHtml()`. Each card keeps its gradient header and plan tag, the large space figure and the Order Now button, and now lists its allocations as spec-sheet rows (hosted domains, sub-domains, MySQL databases, email accounts), the included features with checkmarks, and a footer with the price beside Order Now.
+- `assets/css/hosting-plans.css` (new, imported in `main.css`): 2 x 2 grid on desktop, one column at 800px and below, equal-height cards with aligned footers. Every rule is scoped to `.wpg-host`, which only the hosting cards carry.
+- **Prices (BDT per year):** Plan 01 2,970, Plan 02 6,000, Plan 03 8,690, Plan 04 16,800, set in `HOSTING_PLANS` (`price: null` shows "Pricing on request" instead). Order Now uses a green theme and the cards lift slightly on hover, both scoped to the hosting cards.
+- `tests/e2e/hosting.e2e.mjs` (6 browser tests, included in `npm run test:e2e`): 2 x 2 geometry and equal heights, allocations and aligned buttons, the four prices and the unpriced fallback, the green button and hover, one column and no horizontal scroll at 390px, and no change to other pages' plan cards.
+
+---
+
 # CHANGES — Agentic AI restructured into four options with separate workflows
 
 **Date:** 2026-11-05

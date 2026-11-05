@@ -4,6 +4,39 @@
  * Microsoft 365, Agentic AI, Contact, Login, Hybrid Email, Cloud, Sign up).
  * Edit here to change page content; modules/dynamic-services.js turns it into markup.
  */
+/**
+ * Web Hosting plan cards (#pg-hosting). One table drives all four cards.
+ * `price` is whole BDT per year: price: 2970 renders "BDT 2,970 / Annually". Set it to null to show "Pricing on request" instead.
+ */
+var HOSTING_BILLING_PERIOD = 'Annually';
+var HOSTING_PLANS = [
+  { n: '01', space: '3 GB',  domains: 1, subdomains: 5,  databases: 10, emails: 3,  price: 2970, c1: '#5de0c4', c2: '#5bc8ff' },
+  { n: '02', space: '5 GB',  domains: 1, subdomains: 10, databases: 20, emails: 5,  price: 6000, c1: '#5bc8ff', c2: '#7b93ff' },
+  { n: '03', space: '10 GB', domains: 1, subdomains: 20, databases: 30, emails: 10, price: 8690, c1: '#9b86ff', c2: '#d27bff' },
+  { n: '04', space: '20 GB', domains: 1, subdomains: 25, databases: 30, emails: 20, price: 16800, c1: '#ff8bd0', c2: '#ffb36b' }
+];
+function hostingPlansHtml() {
+  var cart = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/></svg>';
+  var row = function (label, value) { return '<div><dt>' + label + '</dt><dd>' + value + '</dd></div>'; };
+  return '<div class="wpg wpg-host">' + HOSTING_PLANS.map(function (p, i) {
+    var hasPrice = typeof p.price === 'number' && p.price > 0;
+    var price = hasPrice
+      ? '<div class="wprice"><span class="wp-cur">BDT</span> <b>' + p.price.toLocaleString('en-US') + '</b> <span class="wp-per">/ ' + HOSTING_BILLING_PERIOD + '</span></div>'
+      : '<div class="wprice wprice-quote"><b>Pricing on request</b><span class="wp-per">Our team replies with a quote</span></div>';
+    return '<div class="vc wp" style="--i:' + i + ';--c1:' + p.c1 + ';--c2:' + p.c2 + '">' +
+      '<div class="wh"><div class="wtag">PLAN ' + p.n + '</div><h3>Web Hosting <span class="pn">(Plan ' + p.n + ')</span></h3></div>' +
+      '<div class="ek"><b>' + p.space + '</b> <span>HOSTING SPACE</span></div>' +
+      '<div class="vsp"></div>' +
+      '<dl class="wspec">' +
+        row('Hosted domains', p.domains) + row('Sub-domains', p.subdomains) +
+        row('MySQL databases', p.databases) + row('Email accounts', p.emails) +
+      '</dl>' +
+      '<ul class="el"><li>Free SSL Certificate</li><li>cPanel Control Panel</li><li>99.98% Uptime</li><li>24X7 Support</li></ul>' +
+      '<div class="wfoot">' + price + '<a class="vb" href="mailto:info@unifiedit.xyz">' + cart + ' Order Now</a></div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
 window.SERVICE_PAGES = {
   "cyber": {
     "h": 292,
@@ -62,7 +95,7 @@ window.SERVICE_PAGES = {
         0
       ]
     ],
-    "pre": "<section class=\"dsec\" style=\"--i:0\"><div class=\"dlab\">Web Hosting Packages</div><h2 class=\"dh\">Choose the plan that fits your website</h2><p class=\"dp\">Every plan includes cPanel, a free SSL certificate, 99.98% uptime and 24/7 support.</p><div class=\"wpg\"><div class=\"vc wp\" style=\"--i:0;--c1:#5de0c4;--c2:#5bc8ff\"><div class=\"wh\"><div class=\"wtag\">PLAN 01</div><h3>Web Hosting <span class=\"pn\">(Plan 01)</span></h3></div><div class=\"ek\"><b>3 GB</b> <span>HOSTING SPACE</span></div><div class=\"vsp\"></div><ul class=\"el\"><li>Host 1 Domain</li><li>5 Sub-Domain</li><li>10 MySQL Database</li><li>Free SSL Certificate</li><li>3 Email Accounts</li><li>cPanel Control Panel</li><li>99.98% Uptime</li><li>24X7 Support</li></ul><a class=\"vb\" href=\"mailto:info@unifiedit.xyz\"><svg viewBox=\"0 0 24 24\" width=\"17\" height=\"17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"18\" cy=\"20\" r=\"1.4\"/><path d=\"M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6\"/></svg> Order Now</a></div><div class=\"vc wp\" style=\"--i:1;--c1:#5bc8ff;--c2:#7b93ff\"><div class=\"wh\"><div class=\"wtag\">PLAN 02</div><h3>Web Hosting <span class=\"pn\">(Plan 02)</span></h3></div><div class=\"ek\"><b>5 GB</b> <span>HOSTING SPACE</span></div><div class=\"vsp\"></div><ul class=\"el\"><li>Host 1 Domain</li><li>10 Sub-Domain</li><li>20 MySQL Database</li><li>Free SSL Certificate</li><li>5 Email Accounts</li><li>cPanel Control Panel</li><li>99.98% Uptime</li><li>24X7 Support</li></ul><a class=\"vb\" href=\"mailto:info@unifiedit.xyz\"><svg viewBox=\"0 0 24 24\" width=\"17\" height=\"17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"18\" cy=\"20\" r=\"1.4\"/><path d=\"M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6\"/></svg> Order Now</a></div><div class=\"vc wp\" style=\"--i:2;--c1:#9b86ff;--c2:#d27bff\"><div class=\"wh\"><div class=\"wtag\">PLAN 03</div><h3>Web Hosting <span class=\"pn\">(Plan 03)</span></h3></div><div class=\"ek\"><b>10 GB</b> <span>HOSTING SPACE</span></div><div class=\"vsp\"></div><ul class=\"el\"><li>Host 1 Domain</li><li>20 Sub-Domain</li><li>30 MySQL Database</li><li>Free SSL Certificate</li><li>10 Email Accounts</li><li>cPanel Control Panel</li><li>99.98% Uptime</li><li>24X7 Support</li></ul><a class=\"vb\" href=\"mailto:info@unifiedit.xyz\"><svg viewBox=\"0 0 24 24\" width=\"17\" height=\"17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"18\" cy=\"20\" r=\"1.4\"/><path d=\"M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6\"/></svg> Order Now</a></div><div class=\"vc wp\" style=\"--i:3;--c1:#ff8bd0;--c2:#ffb36b\"><div class=\"wh\"><div class=\"wtag\">PLAN 04</div><h3>Web Hosting <span class=\"pn\">(Plan 04)</span></h3></div><div class=\"ek\"><b>20 GB</b> <span>HOSTING SPACE</span></div><div class=\"vsp\"></div><ul class=\"el\"><li>Host 1 Domain</li><li>25 Sub-Domain</li><li>30 MySQL Database</li><li>Free SSL Certificate</li><li>20 Email Accounts</li><li>cPanel Control Panel</li><li>99.98% Uptime</li><li>24X7 Support</li></ul><a class=\"vb\" href=\"mailto:info@unifiedit.xyz\"><svg viewBox=\"0 0 24 24\" width=\"17\" height=\"17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"18\" cy=\"20\" r=\"1.4\"/><path d=\"M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6\"/></svg> Order Now</a></div></div></section><section class=\"dsec\" style=\"--i:1;margin-bottom:34px\"><div class=\"dlab\">Managed Hosting Services</div><h2 class=\"dh\">Everything handled for you</h2></section>"
+    "pre": "<section class=\"dsec\" style=\"--i:0\"><div class=\"dlab\">Web Hosting Packages</div><h2 class=\"dh\">Choose the plan that fits your website</h2><p class=\"dp\">Every plan includes cPanel, a free SSL certificate, 99.98% uptime and 24/7 support.</p>" + hostingPlansHtml() + "</section><section class=\"dsec\" style=\"--i:1;margin-bottom:34px\"><div class=\"dlab\">Managed Hosting Services</div><h2 class=\"dh\">Everything handled for you</h2></section>"
   },
   "ssl": {
     "h": 200,
