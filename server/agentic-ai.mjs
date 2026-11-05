@@ -646,7 +646,7 @@ async function retryBilling(db, whmcs, order, env) {
         billing_error = NULL, updated_at = datetime('now') WHERE id = ?`)
         .run(String(client.clientid), String(billing.orderId), map.products[order.config_code], order.id);
       db.prepare('UPDATE customers SET whmcs_client_id = ? WHERE id = ?').run(Number(client.clientid) || null, order.customer_id);
-      db.prepare(`INSERT OR IGNORE INTO agentic_invoices (id, order_id, kind, whmcs_invoice_id, amount, checkout_url, sandbox)
+      db.prepare(`INSERT INTO agentic_invoices (id, order_id, kind, whmcs_invoice_id, amount, checkout_url, sandbox)
         VALUES (?,?,?,?,?,?,?)`).run(id(), order.id, 'INITIAL', String(billing.invoiceId), order.initial_total, billing.checkoutUrl, billing.sandbox ? 1 : 0);
       audit(db, 'system', 'WHMCS_INVOICE_CREATED', order.id, { invoiceId: billing.invoiceId, sandbox: !!billing.sandbox });
     });
@@ -807,7 +807,7 @@ export async function billUsage(db, whmcs, orderId, actor, env = process.env) {
   });
   tx(db, () => {
     const invRowId = id();
-    db.prepare("INSERT OR IGNORE INTO agentic_invoices (id, order_id, kind, whmcs_invoice_id, amount, checkout_url, sandbox) VALUES (?,?,?,?,?,?,?)")
+    db.prepare("INSERT INTO agentic_invoices (id, order_id, kind, whmcs_invoice_id, amount, checkout_url, sandbox) VALUES (?,?,?,?,?,?,?)")
       .run(invRowId, orderId, 'USAGE', String(inv.invoiceId), amount, inv.checkoutUrl, inv.sandbox ? 1 : 0);
     const upd = db.prepare('UPDATE agentic_call_usage SET usage_invoice_id = ? WHERE id = ? AND usage_invoice_id IS NULL');
     for (const r of rows) upd.run(String(inv.invoiceId), r.id);
