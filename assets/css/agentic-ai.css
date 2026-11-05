@@ -82,17 +82,254 @@
 
 /* ---- Hub: option cards and chooser ------------------------------------- */
 
-/* page-shell.css lays every .vg out as a row of quarter-width cards; the hub shows four options as a 2 x 2 grid. */
+/* All 4 Agentic AI option cards in a single row on desktop with compatible cyber colors */
 .pg .vg.agx-hub {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
   padding-right: 0;
+  align-items: stretch;
+  position: relative;
+  z-index: 2; /* Sits cleanly above the centered floating watermark */
+}
+
+/* Card color themes: compatible with the cyber emblem palette */
+.pg .vg.agx-hub .vc:nth-child(1) {
+  --c1: #00d2ff;
+  --c2: #3b82f6; /* Electric Cyan & Neon Blue */
+}
+
+.pg .vg.agx-hub .vc:nth-child(2) {
+  --c1: #6366f1;
+  --c2: #a855f7; /* Cyber Indigo & Cosmic Violet */
+}
+
+.pg .vg.agx-hub .vc:nth-child(3) {
+  --c1: #ec4899;
+  --c2: #a855f7; /* Neon Magenta & Violet */
+}
+
+.pg .vg.agx-hub .vc:nth-child(4) {
+  --c1: #38bdf8;
+  --c2: #34d399; /* Sky Cyan & Emerald Mint */
 }
 
 .pg .vg.agx-hub .vc {
-  flex: none;
-  width: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px 22px;
+  border-radius: 20px;
+  background: rgba(14, 18, 38, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+  transform: translateY(0) translateZ(0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Top neon accent border using the card's theme gradient */
+.pg .vg.agx-hub .vc::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  opacity: 0.85;
+  transition: height 0.25s ease, opacity 0.25s ease;
+}
+
+.pg .vg.agx-hub .vc:hover {
+  transform: translateY(-8px) translateZ(0);
+  border-color: color-mix(in srgb, var(--c1) 50%, rgba(255, 255, 255, 0.3));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
+              0 0 35px color-mix(in srgb, var(--c1) 28%, transparent);
+  background: rgba(18, 22, 46, 0.88);
+}
+
+.pg .vg.agx-hub .vc:hover::before {
+  height: 4px;
+  opacity: 1;
+}
+
+/* Color-coded feature icon */
+.pg .vg.agx-hub .vc .ei {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 9px;
+  border-radius: 12px;
+  color: var(--c1);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c1) 18%, transparent), color-mix(in srgb, var(--c2) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--c1) 35%, transparent);
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+}
+
+.pg .vg.agx-hub .vc:hover .ei {
+  transform: scale(1.08);
+  border-color: color-mix(in srgb, var(--c1) 60%, transparent);
+}
+
+.pg .vg.agx-hub .vc h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+
+.pg .vg.agx-hub .vc .ek {
+  font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: var(--c1);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.pg .vg.agx-hub .vc .vd {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #c4c1dc;
+  margin: 0 0 16px;
+  min-height: 60px; /* Keeps card descriptions vertically consistent */
+}
+
+.pg .vg.agx-hub .vc .vsp {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 0 14px;
+}
+
+.pg .vg.agx-hub .vc .eh {
+  font: 700 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.14em;
+  color: #8c88ab;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.pg .vg.agx-hub .vc .el {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg .vg.agx-hub .vc .el li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #d8d5ed;
+  line-height: 1.4;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+
+.pg .vg.agx-hub .vc .el li:hover {
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.pg .vg.agx-hub .vc .el li::before {
+  content: "✓" !important;
+  color: var(--c2) !important;
+  font-weight: 900;
+  font-size: 12.5px;
+  width: auto !important;
+  height: auto !important;
+  background: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.pg .vg.agx-hub .vc .el li:hover::before {
+  transform: scale(1.25);
+}
+
+/* Beautiful color-matched gradient CTA buttons aligned across all cards */
+.pg .vg.agx-hub .vc .vb {
+  margin-top: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 13px 18px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  gap: 8px;
+  color: #06101c;
+  border: 0;
+  background: linear-gradient(120deg, var(--c1), var(--c2));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--c2) 32%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transform: translateY(0);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.2s ease;
+}
+
+.pg .vg.agx-hub .vc .vb:hover,
+.pg .vg.agx-hub .vc .vb:focus-visible {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--c2) 48%, transparent);
+}
+
+.pg .vg.agx-hub .vc .vb:active {
+  transform: translateY(0);
+  filter: brightness(1.02);
+}
+
+.pg .vg.agx-hub .vc .vb svg {
+  display: block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.pg .vg.agx-hub .vc .vb:hover svg {
+  transform: translateX(3px);
+}
+
+@media (max-width: 1100px) {
+  .pg .vg.agx-hub {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 680px) {
+  .pg .vg.agx-hub {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .pg .agx-chooser {
@@ -943,7 +1180,7 @@
   }
 }
 
-/* ---- Floating Background Watermark for Agentic AI Pages ----------------- */
+/* ---- Floating Background Watermark Centered in the Window for Agentic AI Pages ---- */
 
 #pg-agentic .vlogo,
 #pg-agentic-ready .vlogo,
@@ -951,18 +1188,20 @@
 #pg-agentic-branded .vlogo,
 #pg-agentic-chat .vlogo {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  right: clamp(16px, 4.5vw, 80px);
-  margin: auto 0;
-  width: clamp(260px, 32vw, 540px);
-  height: clamp(146px, 18vw, 304px);
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  width: clamp(520px, 68vw, 1000px);
   aspect-ratio: 16 / 9;
   pointer-events: none;
   user-select: none;
   opacity: 0;
-  transition: opacity .8s .3s;
-  animation: agx-watermark-float 8.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  z-index: 0; /* Stays behind foreground cards and content */
+  transform: translate(-50%, -50%);
+  transition: opacity 0.8s 0.3s;
+  animation: agx-watermark-float-center 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   will-change: transform;
 }
 
@@ -983,7 +1222,7 @@
   display: none !important;
 }
 
-/* Ambient chromatic backlight aura */
+/* Ambient chromatic backlight aura in the center of the window */
 #pg-agentic .vlogo::before,
 #pg-agentic-ready .vlogo::before,
 #pg-agentic-custom .vlogo::before,
@@ -991,20 +1230,20 @@
 #pg-agentic-chat .vlogo::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -5%;
   background: radial-gradient(
     circle at 50% 50%,
     rgba(0, 210, 255, 0.22) 0%,
     rgba(168, 85, 247, 0.18) 45%,
     transparent 75%
   );
-  filter: blur(50px);
+  filter: blur(70px);
   border-radius: 50%;
   animation: agx-watermark-aura 8s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
-/* High-tech emblem rendering with edge feathering and glow */
+/* Big high-tech emblem watermark blending seamlessly into cosmic background */
 #pg-agentic .vlogo::after,
 #pg-agentic-ready .vlogo::after,
 #pg-agentic-custom .vlogo::after,
@@ -1015,30 +1254,30 @@
   inset: 0;
   background: url('../images/agentic-ai-watermark.jpg') center / contain no-repeat;
   mix-blend-mode: screen;
-  opacity: 0.75;
+  opacity: 0.30; /* Perfectly balanced: glowing cyber watermark without disturbing text readability */
   -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.7) 52%, transparent 92%);
   mask-image: radial-gradient(ellipse closest-side at 50% 50%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.7) 52%, transparent 92%);
-  filter: drop-shadow(0 0 24px rgba(0, 210, 255, 0.45)) drop-shadow(0 0 55px rgba(168, 85, 247, 0.35));
+  filter: drop-shadow(0 0 32px rgba(0, 210, 255, 0.45)) drop-shadow(0 0 75px rgba(168, 85, 247, 0.35));
   animation: agx-watermark-pulse 5.5s ease-in-out infinite alternate;
 }
 
-@keyframes agx-watermark-float {
+@keyframes agx-watermark-float-center {
   0%, 100% {
-    transform: translate3d(0, -14px, 0) rotate(-1.5deg);
+    transform: translate(-50%, calc(-50% - 14px)) rotate(-1.2deg);
   }
   50% {
-    transform: translate3d(0, 16px, 0) rotate(1.8deg);
+    transform: translate(-50%, calc(-50% + 14px)) rotate(1.4deg);
   }
 }
 
 @keyframes agx-watermark-pulse {
   0% {
-    opacity: 0.6;
-    filter: drop-shadow(0 0 16px rgba(0, 210, 255, 0.3)) drop-shadow(0 0 35px rgba(168, 85, 247, 0.2));
+    opacity: 0.24;
+    filter: drop-shadow(0 0 20px rgba(0, 210, 255, 0.3)) drop-shadow(0 0 45px rgba(168, 85, 247, 0.2));
   }
   100% {
-    opacity: 0.85;
-    filter: drop-shadow(0 0 30px rgba(0, 210, 255, 0.6)) drop-shadow(0 0 65px rgba(168, 85, 247, 0.45));
+    opacity: 0.36;
+    filter: drop-shadow(0 0 40px rgba(0, 210, 255, 0.6)) drop-shadow(0 0 90px rgba(168, 85, 247, 0.45));
   }
 }
 
@@ -1048,24 +1287,19 @@
     opacity: 0.55;
   }
   100% {
-    transform: scale(1.2);
+    transform: scale(1.18);
     opacity: 0.95;
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
   #pg-agentic .vlogo,
   #pg-agentic-ready .vlogo,
   #pg-agentic-custom .vlogo,
   #pg-agentic-branded .vlogo,
   #pg-agentic-chat .vlogo {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    right: auto;
-    margin: 0 auto 26px;
-    width: clamp(220px, 60vw, 360px);
-    opacity: 0.45;
+    width: clamp(320px, 86vw, 640px);
+    opacity: 0.22;
   }
 }
 
