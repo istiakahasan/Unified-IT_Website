@@ -413,7 +413,7 @@ The site is hash-routed (`dynamic-services.js` builds one `section.pg` per key o
 | Hash | Page key | Content | Script |
 |---|---|---|---|
 | `#p-agentic` | `agentic` | Hub: hero, four option cards (2 x 2), "Which option fits you?" table, order/request tracker | `agentic-tracker.js` |
-| `#p-agentic-ready` | `agentic-ready` | Ready-Made AI: product cards, compare table, options, RAG, details, sticky summary | `agentic-checkout.js` (`READY_MADE`) |
+| `#p-agentic-ready` | `agentic-ready` | Ready-Made AI: product cards (compare table when more than one product is active), options, RAG, details, sticky summary | `agentic-checkout.js` (`READY_MADE`) |
 | `#p-agentic-custom` | `agentic-custom` | Customized requirements form and "what happens next" | `agentic-requests.js` (`CUSTOMIZED`) |
 | `#p-agentic-branded` | `agentic-branded` | Branded requirements form with logo and asset upload | `agentic-requests.js` (`BRANDED`) |
 | `#p-agentic-chat` | `agentic-chat` | Chat-Only configuration, options, RAG, sticky summary | `agentic-checkout.js` (`CHAT_ONLY`) |

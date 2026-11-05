@@ -114,7 +114,7 @@
       var main = '';
       var n = 0;
       if (ready) {
-        main += A.panel(++n, 'Choose your solution', 'Pick the pre-built agent that fits best. You can compare them side by side.', productCards());
+        main += A.panel(++n, 'Choose your solution', (S.cat.products.length > 1 ? 'Pick the pre-built agent that fits best. You can compare them side by side.' : 'Your pre-built agent is selected below. Add the options you need in the next step.'), productCards());
         main += A.panel(++n, 'Options', 'Add what you need. Each option is priced separately in your summary.', optionCards());
         main += A.panel(++n, 'Knowledge base', 'Optional. Give the agent your own content.', ragPanel());
         main += A.panel(++n, 'About your use', 'Optional notes that help us prepare your deployment.', A.groupHtml(flat(spec), mode));

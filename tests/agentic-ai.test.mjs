@@ -159,7 +159,8 @@ describe('Agentic AI module', () => {
       assert.equal(r.statusCode, 200);
       assert.equal(r.data.configurations.length, 2);
       assert.deepEqual(r.data.configurations.map(c => c.code), ['READY_MADE', 'CHAT_ONLY']);
-      assert.equal(r.data.products.length, 3);
+      assert.equal(r.data.products.length, 1);
+      assert.deepEqual(r.data.products.map(p => p.code), ['SUPPORT_AGENT']);
       assert.ok(r.data.forms.CUSTOMIZED && r.data.forms.BRANDED && r.data.forms.CHAT_ONLY);
       assert.equal(r.data.rates.ragPerCharacter, 1);
       assert.equal(r.data.telephony.configured, false);
@@ -347,6 +348,40 @@ describe('Agentic AI module', () => {
       const row = db.prepare('SELECT id FROM agentic_orders WHERE order_ref = ?').get(created.data.orderRef);
       const r = await call('POST', `/api/admin/agentic/orders/${row.id}/service`, { token: adminToken, body: { action: 'activate' } });
       assert.equal(r.statusCode, 409);
+    });
+  });
+
+  describe('single Ready-Made starter solution', () => {
+    const legacy = (codes) => {
+      const ins = db2.prepare("INSERT OR REPLACE INTO agentic_products (code, name, capabilities_json, active) VALUES (?,?,?,1)");
+      for (const c of codes) ins.run(c, c, '[]');
+    };
+    let db2;
+    before(() => { db2 = initDatabase(':memory:'); });
+
+    it('seeds only Customer Support Agent on a fresh database', () => {
+      assert.deepEqual(db2.prepare('SELECT code FROM agentic_products ORDER BY code').all().map(r => r.code), ['SUPPORT_AGENT']);
+    });
+
+    it('hides the two retired starter solutions in an existing database and keeps their rows', () => {
+      legacy(['KNOWLEDGE_ASSISTANT', 'WORKFLOW_AGENT']);
+      db2.prepare("DELETE FROM agentic_pricing_config WHERE key = 'migrated_single_ready_made'").run();   // as in a database seeded before this change
+      agentic.initAgenticSchema(db2);
+      const rows = db2.prepare("SELECT code, active FROM agentic_products WHERE code IN ('KNOWLEDGE_ASSISTANT','WORKFLOW_AGENT')").all();
+      assert.equal(rows.length, 2, 'rows are kept for historical order references');
+      assert.ok(rows.every(r => r.active === 0));
+      assert.deepEqual(agentic.getCatalog(db2).products.map(p => p.code), ['SUPPORT_AGENT']);
+    });
+
+    it('runs once, so an administrator can re-enable a product and it stays enabled after a restart', () => {
+      db2.prepare("UPDATE agentic_products SET active = 1 WHERE code = 'KNOWLEDGE_ASSISTANT'").run();
+      agentic.initAgenticSchema(db2);
+      assert.equal(db2.prepare("SELECT active FROM agentic_products WHERE code = 'KNOWLEDGE_ASSISTANT'").get().active, 1);
+    });
+
+    it('keeps an existing order of a retired product readable', () => {
+      const cat = agentic.getPricing(db2);
+      assert.ok(cat.products.KNOWLEDGE_ASSISTANT, 'the product still exists in pricing for historical lookups');
     });
   });
 });

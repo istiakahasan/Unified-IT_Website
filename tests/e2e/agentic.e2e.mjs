@@ -127,15 +127,15 @@ describe('Agentic AI four-option pages (browser)', { skip }, () => {
     });
   }
 
-  it('Ready-Made: compare solutions, choose one, see its price, and place an order', async () => {
+  it('Ready-Made: shows only Customer Support Agent (no compare button), see its price, and place an order', async () => {
     const { page, context, errors } = await open('#p-agentic-ready');
     const root = '[data-agx="READY_MADE"]';
     await page.waitForSelector(`${root} .agx-products`);
-    assert.equal((await page.$$(`${root} .agx-products label`)).length, 3);
-    await page.click(`${root} [data-compare]`);
-    assert.ok(await page.isVisible(`${root} .agx-compare`));
-    await page.click(`${root} .agx-products label:nth-child(2)`);
-    assert.match(await page.textContent(`${root} [data-sum]`), /Knowledge Assistant/);
+    assert.equal((await page.$$(`${root} .agx-products label`)).length, 1);
+    assert.match(await page.textContent(`${root} .agx-products label`), /Customer Support Agent/);
+    assert.equal(await page.$(`${root} [data-compare]`), null, 'no comparison button with a single solution');
+    assert.equal(await page.locator(`${root} .agx-products label input`).isChecked(), true, 'the only solution is selected');
+    assert.match(await page.textContent(`${root} [data-sum]`), /Customer Support Agent/);
     assert.match(await page.textContent(`${root} [data-sum]`), /Initial payment/);
     await page.click(`${root} [data-pay]`);
     assert.match(await page.textContent(`${root} [data-formerr]`), /contact details/i);
