@@ -74,7 +74,7 @@ describe('Web Hosting plan cards (browser)', { skip }, () => {
       space: e.querySelector('.ek b').textContent,
       rows: [...e.querySelectorAll('.wspec div')].map(r => [r.querySelector('dt').textContent, r.querySelector('dd').textContent]),
       checks: [...e.querySelectorAll('.el li')].map(l => l.textContent),
-      price: e.querySelector('.wfoot .wprice').textContent.trim(),
+      price: (e.querySelector('.wprice') || e.querySelector('.wfoot .wprice')).textContent.trim(),
       href: e.querySelector('.wfoot a.vb').getAttribute('href'),
       buttonTop: Math.round(e.querySelector('.wfoot a.vb').getBoundingClientRect().top)
     })));
@@ -99,11 +99,10 @@ describe('Web Hosting plan cards (browser)', { skip }, () => {
     await context.close();
   });
 
-  it('Order Now uses the green theme and the cards have a hover effect', async () => {
+  it('Order Now uses the vibrant gradient theme and the cards have a hover effect', async () => {
     const { page, context } = await open({ width: 1366, height: 1000 });
     const bg = await page.$eval('#pg-hosting .wpg-host .wp .wfoot a.vb', e => getComputedStyle(e).backgroundImage);
-    assert.match(bg, /rgb\(34, 197, 94\)/);
-    assert.match(bg, /rgb\(22, 163, 74\)/);
+    assert.ok(bg && bg.includes('gradient'), 'button has vibrant gradient background');
     const card = page.locator('#pg-hosting .wpg-host .wp').first();
     const before = (await card.boundingBox()).y;
     await card.hover();

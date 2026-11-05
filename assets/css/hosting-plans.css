@@ -1,11 +1,12 @@
-/* Web Hosting plan cards (#pg-hosting only). Everything is scoped to .wpg-host, so no other page or card changes. */
+/* Web Hosting plan cards (#pg-hosting only). Everything is scoped to .wpg-host, matching the modern cosmic card design. */
 
 .pg .wpg.wpg-host {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  justify-content: stretch;
-  margin-top: 40px;
+  max-width: 1040px;
+  margin: 40px auto 0;
+  align-items: stretch;
 }
 
 .pg .wpg-host .wp {
@@ -13,117 +14,271 @@
   width: auto;
   display: flex;
   flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(14, 18, 36, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Allocation rows read like a spec sheet: label on the left, value on the right */
-.pg .wpg-host .wspec {
-  margin: 18px 22px 0;
-  display: grid;
-  gap: 0;
+.pg .wpg-host .wp:hover {
+  transform: translateY(-5px);
+  border-color: var(--c2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 35px color-mix(in srgb, var(--c2) 30%, transparent);
 }
 
-.pg .wpg-host .wspec div {
+/* Downward chevron header banner matching the SaaS email card style */
+.pg .wpg-host .wp .wh {
+  position: relative;
+  padding: 24px 24px 44px;
+  color: #06101c;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%);
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
-.pg .wpg-host .wspec dt {
-  font-size: 14px;
-  color: #bdb9d4;
+.pg .wpg-host .wp .wh::after {
+  display: none !important;
 }
 
-.pg .wpg-host .wspec dd {
+.pg .wpg-host .wp .mli {
+  display: block;
+  width: 28px;
+  height: 28px;
+  color: #06101c;
+  stroke-width: 2.1;
+  margin-bottom: 2px;
+}
+
+.pg .wpg-host .wp .wtag {
+  font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #06101c;
+  opacity: 0.85;
+}
+
+.pg .wpg-host .wp h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #06101c;
+}
+
+.pg .wpg-host .wp h3 .pn {
   font-weight: 700;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 
-.pg .wpg-host .el {
-  margin: 18px 22px 22px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
-}
-
-/* Footer: price on the left, action on the right, aligned across all four cards */
-.pg .wpg-host .wfoot {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px 18px;
-  padding: 18px 22px 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.pg .wpg-host .wprice {
+/* Hosting capacity headline */
+.pg .wpg-host .wp .ek {
+  margin: 16px 24px 0;
   display: flex;
   align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  min-width: 0;
-  color: #bdb9d4;
-}
-
-.pg .wpg-host .wprice b {
-  font-size: 26px;
-  line-height: 1.1;
-  font-weight: 800;
+  gap: 10px;
+  font: inherit;
+  letter-spacing: 0;
   color: #fff;
-  letter-spacing: -0.01em;
 }
 
-.pg .wpg-host .wprice .wp-cur {
-  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+.pg .wpg-host .wp .ek b {
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(120deg, var(--c1), var(--c2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.pg .wpg-host .wp .ek span {
+  font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   letter-spacing: 0.14em;
   color: #9a96b8;
 }
 
-.pg .wpg-host .wprice .wp-per {
-  font-size: 13px;
+/* Horizontal capacity meter bar */
+.pg .wpg-host .wp .mlm {
+  height: 8px;
+  margin: 14px 24px 0;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.pg .wpg-host .wp .mlm i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  box-shadow: 0 0 14px var(--c2);
+}
+
+/* Price row with soft white glow */
+.pg .wpg-host .wp .wprice {
+  margin: 16px 24px 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: #bdb9d4;
+}
+
+.pg .wpg-host .wp .wprice b {
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(255, 255, 255, 0.25);
+  letter-spacing: -0.01em;
+}
+
+.pg .wpg-host .wp .wprice .wp-cur {
+  font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.12em;
+  color: #c5c0e2;
+}
+
+.pg .wpg-host .wp .wprice .wp-per {
+  font-size: 14px;
   color: #9a96b8;
 }
 
-.pg .wpg-host .wprice-quote {
+.pg .wpg-host .wp .wprice-quote {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
 }
 
-.pg .wpg-host .wprice-quote b {
-  font-size: 18px;
+.pg .wpg-host .wp .wprice-quote b {
+  font-size: 20px;
+}
+
+/* Specifications list with checkmarks and count badges */
+.pg .wpg-host .wspec {
+  margin: 18px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg .wpg-host .wspec div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  font-size: 13.5px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.pg .wpg-host .wspec div:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.pg .wpg-host .wspec dt {
+  color: #cfcbe8;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 500;
+}
+
+.pg .wpg-host .wspec dt::before {
+  content: "✓";
+  color: var(--c2);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.pg .wpg-host .wspec dd {
+  margin: 0;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* Feature checklist */
+.pg .wpg-host .el {
+  margin: 12px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.pg .wpg-host .el li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #d8d5ed;
+  line-height: 1.45;
+}
+
+.pg .wpg-host .el li::before {
+  content: "✓" !important;
+  color: var(--c2) !important;
+  font-weight: 900;
+  font-size: 13px;
+  width: auto !important;
+  height: auto !important;
+  background: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+  margin: 0 !important;
+}
+
+/* Full-width bottom CTA button with vibrant gradient */
+.pg .wpg-host .wfoot {
+  margin-top: auto;
+  padding: 14px 24px 24px;
 }
 
 .pg .wpg-host .wfoot .vb {
-  margin: 0;
-  flex: 0 0 auto;
-  color: #fff;
-  background: linear-gradient(120deg, #22c55e, #16a34a);
-  box-shadow: 0 10px 26px rgba(34, 197, 94, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  gap: 10px;
+  color: #06101c;
+  border: 0;
+  background: linear-gradient(120deg, var(--c1), var(--c2));
+  box-shadow: 0 10px 26px rgba(120, 120, 255, 0.3);
+  text-decoration: none;
+  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .pg .wpg-host .wfoot .vb:hover,
 .pg .wpg-host .wfoot .vb:focus-visible {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.45);
-}
-
-/* Subtle card hover: a small lift and a soft glow in the plan's own colors */
-.pg .wpg-host .wp {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.pg .wpg-host .wp:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 44px color-mix(in srgb, var(--c1) 22%, transparent);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--c2) 42%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -141,20 +296,7 @@
 @media (max-width: 800px) {
   .pg .wpg.wpg-host {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 420px) {
-  .pg .wpg-host .el {
-    grid-template-columns: 1fr;
-  }
-
-  .pg .wpg-host .wfoot {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pg .wpg-host .wfoot .vb {
-    justify-content: center;
+    margin-left: 16px;
+    margin-right: 16px;
   }
 }
