@@ -324,10 +324,12 @@
   transform: scale(1.25);
 }
 
-/* Full-width bottom CTA button with vibrant gradient and spring micro-interactions */
+/* Full-width bottom CTA button matching the modern SaaS rectangular card style */
 .pg .wpg-host .wfoot {
   margin-top: auto;
-  padding: 12px 18px 22px;
+  padding: 16px 20px 22px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pg .wpg-host .wfoot .vb {
@@ -335,32 +337,42 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 12px 18px;
-  border-radius: 999px;
-  font-size: 14.5px;
+  min-height: 48px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   gap: 8px;
   color: #06101c;
   border: 0;
   background: linear-gradient(120deg, var(--c1), var(--c2));
-  box-shadow: 0 10px 26px rgba(120, 120, 255, 0.3);
+  box-shadow: 0 10px 26px rgba(120, 120, 255, 0.28);
   text-decoration: none;
   cursor: pointer;
-  transform: translateY(0) scale(1);
+  box-sizing: border-box;
+  transform: translateY(0);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               filter 0.2s ease;
 }
 
+.pg .wpg-host .wfoot .vb svg {
+  display: block;
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+}
+
 .pg .wpg-host .wfoot .vb:hover,
 .pg .wpg-host .wfoot .vb:focus-visible {
-  transform: translateY(-3px) scale(1.02);
-  filter: brightness(1.12);
-  box-shadow: 0 16px 36px color-mix(in srgb, var(--c2) 48%, transparent);
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--c2) 50%, transparent);
 }
 
 .pg .wpg-host .wfoot .vb:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0);
   filter: brightness(1.02);
 }
 
