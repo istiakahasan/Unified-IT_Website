@@ -1,39 +1,241 @@
 /* Agentic AI configurator (#agx inside #pg-agentic). Uses the existing page tokens (--a1/--a2) and the
    same surface/border treatment as .cxr cards so it matches the other service configurators. */
-.pg #agx{margin:42px 0 8px;text-align:left}
-.pg #agx h2{font-size:26px;color:#fff;margin:0 0 6px}
-.pg #agx .agx-sub{color:#a9b3da;font-size:15px;margin:0 0 22px;line-height:1.5}
-.pg #agx .agx-step{margin:30px 0 12px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--a1)}
-.pg #agx .cxr{grid-template-columns:repeat(3,1fr)}
-.pg #agx .cxr.agx-two{grid-template-columns:1fr 1fr}
-.pg #agx .cxr label{position:relative}
-.pg #agx .cxr label.agx-off{opacity:.45;cursor:not-allowed}
-.pg #agx .agx-price{display:block;margin-top:8px;font-weight:700;color:var(--a1);font-size:15px}
-.pg #agx .agx-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.pg #agx .agx-grid .full{grid-column:1/-1}
-.pg #agx .agx-f{display:block;font-size:13px;color:#a9b3da}
-.pg #agx .agx-f input,.pg #agx .agx-f textarea{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px 14px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#fff;font:inherit;font-size:14.5px}
-.pg #agx .agx-f textarea{min-height:84px;resize:vertical}
-.pg #agx .agx-f input:focus,.pg #agx .agx-f textarea:focus{outline:0;border-color:var(--a1)}
-.pg #agx .agx-note{font-size:13px;color:#a9b3da;margin:8px 0 0;line-height:1.5}
-.pg #agx .agx-warn{border:1px solid rgba(255,190,90,.5);background:rgba(255,190,90,.08);color:#ffd9a0;border-radius:12px;padding:10px 14px;font-size:13.5px;margin:10px 0}
-.pg #agx .agx-err{color:#ff9aa8;font-size:14px;margin:10px 0 0}
-.pg #agx .agx-docs{margin-top:12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden}
-.pg #agx .agx-docs div{display:grid;grid-template-columns:1.6fr .8fr .8fr .8fr;gap:10px;padding:10px 14px;font-size:13.5px;color:#d6dbf5;border-bottom:1px solid rgba(255,255,255,.08)}
-.pg #agx .agx-docs div:last-child{border-bottom:0}
-.pg #agx .agx-docs .h{color:#a9b3da;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.pg #agx .agx-sum{margin-top:30px;padding:22px;border-radius:16px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04)}
-.pg #agx .agx-sum h3{margin:0 0 4px;color:#fff;font-size:18px}
-.pg #agx .agx-sum h4{margin:18px 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--a1)}
-.pg #agx .agx-row{display:flex;justify-content:space-between;gap:16px;padding:6px 0;font-size:14.5px;color:#d6dbf5;border-bottom:1px dashed rgba(255,255,255,.08)}
-.pg #agx .agx-row b{color:#fff;white-space:nowrap}
-.pg #agx .agx-row.tot{font-size:16px;border-bottom:0;padding-top:12px}
-.pg #agx .agx-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:20px}
-.pg #agx .agx-actions .vb{margin:0;color:#06101c;border:0;background:linear-gradient(120deg,var(--a1),var(--a2));box-shadow:0 10px 26px rgba(120,120,255,.3)}
-.pg #agx .agx-actions .vb[disabled]{opacity:.5;cursor:not-allowed}
-.pg #agx .agx-done{margin-top:20px;padding:18px;border-radius:14px;border:1px solid var(--a1);background:rgba(110,168,255,.1);color:#e8ecff}
-.pg #agx .agx-done a{color:var(--a1)}
-.pg #agx .agx-track{margin-top:34px}
-@media(max-width:800px){.pg #agx .cxr,.pg #agx .cxr.agx-two,.pg #agx .agx-grid{grid-template-columns:1fr}
-  .pg #agx .agx-docs div{grid-template-columns:1fr 1fr}}
+
+.pg #agx {
+  max-width: 1180px;
+  margin: 40px auto 20px;
+  padding: 0 16px;
+  text-align: left;
+}
+
+.pg #agx h2 {
+  font-size: 26px;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.pg #agx .agx-sub {
+  color: #a9b3da;
+  font-size: 15px;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+.pg #agx .agx-step {
+  margin: 30px 0 12px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--a1);
+}
+
+.pg #agx .cxr {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pg #agx .cxr.agx-two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pg #agx .cxr label {
+  position: relative;
+}
+
+.pg #agx .cxr label.agx-off {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pg #agx .agx-price {
+  display: block;
+  margin-top: 8px;
+  font-weight: 700;
+  color: var(--a1);
+  font-size: 15px;
+}
+
+.pg #agx .agx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pg #agx .agx-grid .full {
+  grid-column: 1 / -1;
+}
+
+.pg #agx .agx-f {
+  display: block;
+  font-size: 13px;
+  color: #a9b3da;
+}
+
+.pg #agx .agx-f input,
+.pg #agx .agx-f textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.pg #agx .agx-f textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.pg #agx .agx-f input:focus,
+.pg #agx .agx-f textarea:focus {
+  outline: 0;
+  border-color: var(--a1);
+}
+
+.pg #agx .agx-note {
+  font-size: 13px;
+  color: #a9b3da;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.pg #agx .agx-warn {
+  border: 1px solid rgba(255, 190, 90, 0.5);
+  background: rgba(255, 190, 90, 0.08);
+  color: #ffd9a0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin: 10px 0;
+}
+
+.pg #agx .agx-err {
+  color: #ff9aa8;
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+
+.pg #agx .agx-docs {
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pg #agx .agx-docs div {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr 0.8fr 0.8fr;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #d6dbf5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pg #agx .agx-docs div:last-child {
+  border-bottom: 0;
+}
+
+.pg #agx .agx-docs .h {
+  color: #a9b3da;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pg #agx .agx-sum {
+  margin-top: 30px;
+  padding: 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pg #agx .agx-sum h3 {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.pg #agx .agx-sum h4 {
+  margin: 18px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--a1);
+}
+
+.pg #agx .agx-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 14.5px;
+  color: #d6dbf5;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.pg #agx .agx-row b {
+  color: #fff;
+  white-space: nowrap;
+}
+
+.pg #agx .agx-row.tot {
+  font-size: 16px;
+  border-bottom: 0;
+  padding-top: 12px;
+}
+
+.pg #agx .agx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pg #agx .agx-actions .vb {
+  margin: 0;
+  color: #06101c;
+  border: 0;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+  box-shadow: 0 10px 26px rgba(120, 120, 255, 0.3);
+}
+
+.pg #agx .agx-actions .vb[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pg #agx .agx-done {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--a1);
+  background: rgba(110, 168, 255, 0.1);
+  color: #e8ecff;
+}
+
+.pg #agx .agx-done a {
+  color: var(--a1);
+}
+
+.pg #agx .agx-track {
+  margin-top: 34px;
+}
+
+@media (max-width: 800px) {
+  .pg #agx .cxr,
+  .pg #agx .cxr.agx-two,
+  .pg #agx .agx-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pg #agx .agx-docs div {
+    grid-template-columns: 1fr 1fr;
+  }
+}
