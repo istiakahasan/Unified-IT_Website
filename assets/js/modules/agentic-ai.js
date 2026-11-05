@@ -28,8 +28,9 @@ try {
     root.id = 'agx';
     root.setAttribute('aria-label', 'Agentic AI configurator');
 
-    var footer = wrap.querySelector('.uf');
-    wrap.insertBefore(root, footer || null);
+    // Hero first, like the Business Email page; any info cards (.vg) follow the configurator.
+    var cards = wrap.querySelector('.vg');
+    wrap.insertBefore(root, cards || wrap.querySelector('.uf') || null);
 
     function esc(t) {
       return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
@@ -146,7 +147,12 @@ try {
         : 'billing interval to be confirmed';
 
       root.innerHTML =
-        '<h2>Build your AI agent</h2>' +
+        '<div class="dm">' +
+        '<section class="dsec" style="--i:0;text-align:center;margin-bottom:34px">' +
+          '<div class="dlab">Agentic AI &amp; Automation</div>' +
+          '<h2 class="dh">Build and deploy your AI agent</h2>' +
+          '<p class="dp">Autonomous AI agents that plan, reason, use tools, and execute business workflows on private, enterprise cloud infrastructure.</p>' +
+        '</section>' +
         '<p class="agx-sub">Choose a configuration, add your knowledge base, and review exactly what is charged once, monthly and by usage. All prices are in BDT (৳).</p>' +
 
         '<div class="agx-step">1 · Agent configuration</div>' +
@@ -224,7 +230,7 @@ try {
             '<span class="agx-err" id="agx-t-err" role="alert"></span>' +
           '</div>' +
           '<div id="agx-t-out"></div>' +
-        '</div>';
+        '</div></div>';
 
       sync();
     }
@@ -649,8 +655,10 @@ try {
       .then(build)
       .catch(function () {
         root.innerHTML =
-          '<h2>Build your AI agent</h2>' +
-          '<p class="agx-sub">The ordering service is not reachable from this page (it needs the Unified Cloud server). Please contact sales to order an Agentic AI agent.</p>';
+          '<div class="dm"><section class="dsec" style="--i:0;text-align:center;margin-bottom:34px">' +
+          '<div class="dlab">Agentic AI &amp; Automation</div><h2 class="dh">Build and deploy your AI agent</h2>' +
+          '<p class="dp">The ordering service is not reachable from this page (it needs the Unified Cloud server). Please contact sales to order an Agentic AI agent.</p>' +
+          '</section></div>';
       });
   })();
 } catch (err) {

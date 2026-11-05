@@ -1,3 +1,15 @@
+# CHANGES — Agentic AI page layout aligned with Business Email
+
+**Date:** 2026-11-05
+**Scope:** presentation of `#p-agentic` only. Pricing, RAG counting, WHMCS checkout, API and database are unchanged.
+
+- `assets/js/modules/agentic-ai.js`: `#agx` content is wrapped in `<div class="dm">` and starts with the Business Email style hero (`.dsec` / `.dlab` "Agentic AI & Automation" / `.dh` "Build and deploy your AI agent" / `.dp`). `#agx` is now inserted above the original info cards so the hero is the first thing on the page (previously the configurator sat below them). The unreachable-service fallback uses the same hero. All event handlers, server-authoritative pricing, RAG counting and order submission are untouched.
+- `assets/css/agentic-ai.css`: `.pg #agx` is `max-width:1180px`, centered, 16px padding; hero styles scoped to `#agx` (the email page's equivalents are scoped to `#pg-email` only); 24px grid gaps; 34px step spacing; configuration and option cards use rounded 18px borders with the `--a1`/`--a2` glow when selected.
+- Fixed while verifying in the browser: the site-wide `.pg label` rule uppercased all card text, so card labels reset `text-transform`; a later `.agx-grid` rule was overriding the new 24px gap.
+- Verified: `node scripts/check-syntax.mjs` (57/57 files), `npm test` and `node --test tests/agentic-ai.test.mjs`, the full suite, and a real-browser run (hero, card selection, voice hidden for Chat-Only, order placement and tracking, no console or CSP errors, no horizontal overflow at 390px).
+
+---
+
 # CHANGES — Agentic AI module (WHMCS purchasing, RAG billing, usage, admin)
 
 **Date:** 2026-11-05
