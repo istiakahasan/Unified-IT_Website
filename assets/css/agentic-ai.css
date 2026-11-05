@@ -128,11 +128,14 @@
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
-  transform: translateY(0) translateZ(0);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease,
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              background 0.3s ease;
+  transform: translateY(0) scale(1) translateZ(0);
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform, border-color, box-shadow;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s ease,
+              box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.4s ease;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -147,15 +150,16 @@
   height: 3px;
   background: linear-gradient(90deg, var(--c1), var(--c2));
   opacity: 0.85;
-  transition: height 0.25s ease, opacity 0.25s ease;
+  transition: height 0.35s ease, opacity 0.35s ease;
 }
 
 .pg .vg.agx-hub .vc:hover {
-  transform: translateY(-8px) translateZ(0);
-  border-color: color-mix(in srgb, var(--c1) 50%, rgba(255, 255, 255, 0.3));
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
-              0 0 35px color-mix(in srgb, var(--c1) 28%, transparent);
-  background: rgba(18, 22, 46, 0.88);
+  transform: translateY(-8px) scale(1.025) translateZ(0);
+  border-color: color-mix(in srgb, var(--c1) 60%, rgba(255, 255, 255, 0.35));
+  box-shadow: 0 28px 65px rgba(0, 0, 0, 0.58),
+              0 0 40px color-mix(in srgb, var(--c1) 32%, transparent);
+  background: rgba(18, 22, 46, 0.90);
+  z-index: 3;
 }
 
 .pg .vg.agx-hub .vc:hover::before {
@@ -177,13 +181,16 @@
   border: 1px solid color-mix(in srgb, var(--c1) 35%, transparent);
   margin-bottom: 16px;
   box-sizing: border-box;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s ease;
+  transform: scale(1) translateZ(0);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
 }
 
 .pg .vg.agx-hub .vc:hover .ei {
-  transform: scale(1.08);
-  border-color: color-mix(in srgb, var(--c1) 60%, transparent);
+  transform: scale(1.12) translateZ(0);
+  border-color: color-mix(in srgb, var(--c1) 65%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c1) 35%, transparent);
 }
 
 .pg .vg.agx-hub .vc h3 {
@@ -288,16 +295,16 @@
   text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
-  transform: translateY(0);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 0.2s ease;
+  transform: translateY(0) scale(1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.25s ease;
 }
 
 .pg .vg.agx-hub .vc .vb:hover,
 .pg .vg.agx-hub .vc .vb:focus-visible {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.10);
   box-shadow: 0 16px 36px color-mix(in srgb, var(--c2) 48%, transparent);
 }
 
