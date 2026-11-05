@@ -23,22 +23,24 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
-  transform: translateY(0) translateZ(0);
+  transform: translateY(0) scale(1) translateZ(0);
+  transform-origin: center center;
   backface-visibility: hidden;
   will-change: transform, border-color, box-shadow;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease,
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              background 0.3s ease;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s ease,
+              box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.4s ease;
 }
 
 .pg .wpg-host .wp:hover {
-  transform: translateY(-8px) translateZ(0);
+  transform: translateY(-8px) scale(1.025) translateZ(0);
   border-color: color-mix(in srgb, var(--c2) 75%, rgba(255, 255, 255, 0.4));
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
-              0 0 35px color-mix(in srgb, var(--c2) 32%, transparent),
+  box-shadow: 0 28px 65px rgba(0, 0, 0, 0.58),
+              0 0 40px color-mix(in srgb, var(--c2) 35%, transparent),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  background: rgba(18, 22, 44, 0.85);
+  background: rgba(18, 22, 44, 0.88);
+  z-index: 3;
 }
 
 /* Downward chevron header banner matching the SaaS email card style */
@@ -356,10 +358,10 @@
   text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
-  transform: translateY(0);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 0.2s ease;
+  transform: translateY(0) scale(1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.25s ease;
 }
 
 .pg .wpg-host .wfoot .vb svg {
@@ -371,8 +373,8 @@
 
 .pg .wpg-host .wfoot .vb:hover,
 .pg .wpg-host .wfoot .vb:focus-visible {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.10);
   box-shadow: 0 16px 36px color-mix(in srgb, var(--c2) 50%, transparent);
 }
 
