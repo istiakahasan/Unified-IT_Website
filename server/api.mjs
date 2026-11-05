@@ -8,6 +8,8 @@ import { RewardProcessingService } from './reward-service.mjs';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 import * as ticketsService from './tickets-service.mjs';
 import * as agentic from './agentic-ai.mjs';
+import * as requests from './agentic-requests.mjs';
+import { listOutbox, deliverEmail, mailerConfig } from './mailer.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -205,6 +207,27 @@ export async function handleApiRequest({ req, res, pathname, query, body, rawBod
         return sendJson(200, agentic.lookupOrderForCustomer(db, query.ref, query.email, clientIp));
       }
 
+      // GET /api/public/agentic/track?ref=&email= (priced orders AGT-... and quotation requests REQ-...)
+      if (req.method === 'GET' && pathname === '/api/public/agentic/track') {
+        const trackRef = String(query.ref || '').trim().toUpperCase();
+        if (trackRef.startsWith('REQ-')) return sendJson(200, { kind: 'request', ...requests.lookupRequest(db, trackRef, query.email, clientIp) });
+        return sendJson(200, { kind: 'order', ...agentic.lookupOrderForCustomer(db, trackRef, query.email, clientIp) });
+      }
+
+      // POST /api/public/agentic/requests (Customized and Branded requirement submissions)
+      if (req.method === 'POST' && pathname === '/api/public/agentic/requests') {
+        const created = await requests.createRequest(db, body, { actor: 'customer:' + String(body?.customer?.email || '').slice(0, 80) });
+        return sendJson(created.replay ? 200 : 201, created);
+      }
+
+      // POST /api/public/agentic/requests/:ref/respond | /payment (the customer's own request only: ref + email)
+      const reqAction = pathname.match(/^\/api\/public\/agentic\/requests\/([^/]+)\/(respond|payment)$/);
+      if (req.method === 'POST' && reqAction) {
+        const reqRef = decodeURIComponent(reqAction[1]);
+        if (reqAction[2] === 'respond') return sendJson(200, await requests.respondToQuotation(db, whmcsAdapter, reqRef, body.email, body));
+        return sendJson(200, await requests.submitPayment(db, reqRef, body.email, body));
+      }
+
       // POST /api/webhooks/whmcs/agentic (HMAC-signed by the WHMCS hook; activation happens only here)
       if (req.method === 'POST' && pathname === '/api/webhooks/whmcs/agentic') {
         const secret = process.env.AGENTIC_WEBHOOK_SECRET || process.env.WHMCS_WEBHOOK_SECRET || '';
@@ -213,7 +236,9 @@ export async function handleApiRequest({ req, res, pathname, query, body, rawBod
           logSecurityEvent('WEBHOOK_REJECTED', null, null, 'WHMCS', 'agentic-webhook', null, 'VERIFY_SIGNATURE', 'DENIED', {});
           return sendError(401, 'Invalid webhook signature.');
         }
-        const out = await agentic.processPaymentEvent(db, whmcsAdapter, body);
+        // A quotation invoice belongs to a request; anything else is a priced order invoice.
+        let out = await requests.processQuotationPaymentEvent(db, whmcsAdapter, body);
+        if (!out) out = await agentic.processPaymentEvent(db, whmcsAdapter, body);
         return sendJson(200, { ok: true, ...out });
       }
     } catch (e) {
@@ -1927,11 +1952,48 @@ export async function handleApiRequest({ req, res, pathname, query, body, rawBod
 
         if (req.method === 'GET') {
           if (!requirePermission('agentic:read')) return;
-          if (sub[0] === 'overview') return sendJson(200, agentic.getOverview(db));
+          if (sub[0] === 'overview') return sendJson(200, { ...agentic.getOverview(db), requests: requests.getRequestOverview(db) });
+          if (sub[0] === 'products') return sendJson(200, { products: agentic.listProducts(db) });
+          if (sub[0] === 'outbox') return sendJson(200, { emails: listOutbox(db), mail: { smtpConfigured: mailerConfig().configured, businessInboxConfigured: !!mailerConfig().notifyEmail } });
+          if (sub[0] === 'requests' && !sub[1]) return sendJson(200, requests.listRequests(db, query));
+          if (sub[0] === 'requests' && sub[1] && sub[2] === 'files' && sub[3]) {
+            const file = requests.getRequestFile(db, decodeURIComponent(sub[1]), decodeURIComponent(sub[3]));
+            res.writeHead(200, {
+              'Content-Type': file.mime,
+              'Content-Disposition': 'attachment; filename="' + file.filename.replace(/[^\w.\- ]/g, '_') + '"',
+              'Content-Length': file.buffer.length,
+              'X-Content-Type-Options': 'nosniff',
+              'Cache-Control': 'no-store'
+            });
+            return res.end(file.buffer);
+          }
+          if (sub[0] === 'requests' && sub[1]) return sendJson(200, requests.getRequestAdmin(db, decodeURIComponent(sub[1])));
           if (sub[0] === 'pricing') return sendJson(200, { pricing: agentic.getPricing(db), telephony: agentic.getTelephonyStatus(), whmcs: whmcsAdapter.getStatus(), mapping: agentic.getWhmcsMapping() });
           if (sub[0] === 'subscriptions') return sendJson(200, { subscriptions: agentic.listSubscriptions(db) });
           if (sub[0] === 'orders' && !sub[1]) return sendJson(200, agentic.listOrders(db, query));
           if (sub[0] === 'orders' && sub[1]) return sendJson(200, agentic.getOrderForAdmin(db, decodeURIComponent(sub[1])));
+        }
+
+        if (req.method === 'POST' && sub[0] === 'requests' && sub[1]) {
+          if (!requirePermission('agentic:manage')) return;
+          const rid = decodeURIComponent(sub[1]);
+          if (sub[2] === 'status') return sendJson(200, await requests.setRequestStatus(db, rid, String(body.status || ''), body.note, actor));
+          if (sub[2] === 'note') return sendJson(201, requests.addInternalNote(db, rid, body.note, actor));
+          if (sub[2] === 'quotation' && !sub[3]) return sendJson(200, requests.saveQuotation(db, rid, body, actor));
+          if (sub[2] === 'quotation' && sub[3] === 'send') return sendJson(200, await requests.sendQuotation(db, rid, actor));
+          if (sub[2] === 'payments' && sub[3] && sub[4] === 'verify') return sendJson(200, await requests.verifyPayment(db, rid, decodeURIComponent(sub[3]), body, actor));
+          if (sub[2] === 'payments' && sub[3] && sub[4] === 'reject') return sendJson(200, await requests.rejectPayment(db, rid, decodeURIComponent(sub[3]), body.note, actor));
+        }
+
+        if (sub[0] === 'products' && ['POST', 'PUT'].includes(req.method)) {
+          if (!requirePermission('agentic:manage')) return;
+          if (req.method === 'POST' && !sub[1]) return sendJson(201, agentic.saveProduct(db, body, actor));
+          if (req.method === 'PUT' && sub[1]) return sendJson(200, agentic.saveProduct(db, body, actor, decodeURIComponent(sub[1])));
+        }
+
+        if (req.method === 'POST' && sub[0] === 'outbox' && sub[1] && sub[2] === 'resend') {
+          if (!requirePermission('agentic:manage')) return;
+          return sendJson(200, await deliverEmail(db, decodeURIComponent(sub[1])));
         }
 
         if (req.method === 'PUT' && sub[0] === 'pricing') {

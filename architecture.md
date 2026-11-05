@@ -43,6 +43,9 @@ Unified Cloud Platform
       ├── reward-service.mjs        → Commission & reward point ledger
       ├── whmcs-adapter.mjs         → WHMCS enterprise billing & invoice lifecycle
       ├── agentic-ai.mjs            → Agentic AI pricing, RAG billing, WHMCS orders, verified activation, usage
+      ├── agentic-forms.mjs         → Agentic AI form specifications and server-side validation
+      ├── agentic-requests.mjs      → Customized/Branded quotation workflow and payment verification
+      ├── mailer.mjs                → SMTP client and persistent email outbox
       └── cloudstack-adapter.mjs    → Apache CloudStack multi-zone VM provisioning
 ```
 
@@ -82,7 +85,10 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 | 24 | `assets/js/modules/domain-search.js` | Real-time Dhaka Anycast domain search | Instant cart addition |
 | 25 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
 | 26 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
-| 26a | `assets/js/modules/agentic-ai.js` | Agentic AI configurator, pricing summary, RAG upload, order tracking | Injects `#agx` into `#pg-agentic` (built by `dynamic-services.js`) (before any `.vg` cards; the static cards were removed from `service-pages.js`) |
+| 26a | `assets/js/modules/agentic-common.js` | Shared helpers for the Agentic AI pages | `window.AGX` |
+| 26b | `assets/js/modules/agentic-checkout.js` | Ready-Made AI and Chat-Only AI pages | `[data-agx="READY_MADE"/"CHAT_ONLY"]` |
+| 26c | `assets/js/modules/agentic-requests.js` | Customized and Branded requirement forms | `[data-agx="CUSTOMIZED"/"BRANDED"]` |
+| 26d | `assets/js/modules/agentic-tracker.js` | Order and request tracker on the hub | `[data-agx-tracker]` |
 | 27 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
 
 ---
@@ -306,7 +312,9 @@ Testing is executed natively using Node.js Test Runner (`node --test`). `npm run
 
 - **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
 - **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
-- **`tests/agentic-ai.test.mjs`** (32 tests): character counting (English, Bengali NFC, whitespace, BOM), document validation and de-duplication, per-configuration pricing, backup-interval handling, idempotent order creation, signed-webhook activation, replay and amount-mismatch protection, refund/cancel/failed handling, customer isolation, lookup throttling, call-usage rules and post-paid usage billing, admin permissions and pricing validation.
+- **`tests/agentic-ai.test.mjs`** (33 tests): priced checkout: RAG character counting (English, Bengali NFC, whitespace, BOM), document validation and de-duplication, pricing per option and product, backup-interval handling, idempotent orders, signed-webhook activation, replay and amount-mismatch protection, refund/cancel/failed handling, customer isolation, call usage and post-paid billing, admin permissions.
+- **`tests/agentic-requests.test.mjs`** (26 tests): quotation workflow: field validation, idempotent submission and rate limit, uploads, category separation, real SMTP delivery against a local server, outbox retry, header-injection protection, the full status path, forbidden transitions, quotation versions and expiry, WHMCS invoice and signed-webhook approval, manual payment verification, customer isolation, admin permissions and file downloads, product management, Chat-Only requirements.
+- **`tests/e2e/agentic.e2e.mjs`** (18 browser tests): hub, navigation from the hub, direct URL, refresh and Back for the four pages, 390px layout, all four workflows, the quotation path through payment verification, and the admin UI.
 - **`tests/support-ticketing.test.mjs`** (26 tests):
   1. Public ticket submission, validation, SLA, and guest lookup.
   2. Reseller-to-buyer workflow, buyer ticket creation, and tenant isolation.
@@ -395,72 +403,105 @@ Since 2026-10-29 the CSP forbids inline script, so front-end code follows these 
 - Overlay `sync()` functions are idempotent (`if(open)return`), so repeated or rapid clicks and back/forward settle on the last hash with exactly one page visible (covered by e2e).
 - Server: per-request crash isolation, explicit `400` / `404` / `413` / `500` responses, no stack traces sent to clients.
 
-## 13a. Agentic AI Module (`server/agentic-ai.mjs`)
+## 13a. Agentic AI (four options)
 
-WHMCS stays the only billing and payment system. This module never takes a payment: it calculates prices, asks WHMCS for an order and invoice, and activates a service only after WHMCS confirms payment.
+WHMCS stays the only billing and payment system. The Agentic AI code never takes a payment: it calculates prices, asks WHMCS for an invoice, and moves an order forward only after a verified payment.
 
+### Routing and pages
+The site is hash-routed (`dynamic-services.js` builds one `section.pg` per key of `window.SERVICE_PAGES` and opens `#p-<key>`), so the new pages are plain keys in `assets/js/data/service-pages.js`. They work as direct URLs, survive refresh, and use the browser history for Back.
+
+| Hash | Page key | Content | Script |
+|---|---|---|---|
+| `#p-agentic` | `agentic` | Hub: hero, four option cards (2 x 2), "Which option fits you?" table, order/request tracker | `agentic-tracker.js` |
+| `#p-agentic-ready` | `agentic-ready` | Ready-Made AI: product cards, compare table, options, RAG, details, sticky summary | `agentic-checkout.js` (`READY_MADE`) |
+| `#p-agentic-custom` | `agentic-custom` | Customized requirements form and "what happens next" | `agentic-requests.js` (`CUSTOMIZED`) |
+| `#p-agentic-branded` | `agentic-branded` | Branded requirements form with logo and asset upload | `agentic-requests.js` (`BRANDED`) |
+| `#p-agentic-chat` | `agentic-chat` | Chat-Only configuration, options, RAG, sticky summary | `agentic-checkout.js` (`CHAT_ONLY`) |
+
+Each subpage is `<div class="dm"><div class="agx" data-agx="MODE"></div></div>`; the scripts build it from the form specifications served by `GET /api/public/agentic/catalog`. Layout follows `#pg-email`: breadcrumb back to the hub, centered `.dsec` hero (`.dlab`, `.dh`, `.dp`), a four-step strip, numbered panels, and a sticky side column. `agentic-common.js` (`window.AGX`) holds the shared helpers; `assets/css/agentic-ai.css` holds all styles (`.pg .agx…`). `service-modal.js` exempts `.agx-hub` so the hub's card buttons are real links instead of opening the plan pop-up. Page selectors are scoped by class and `data-` attributes, never by id, because several service pages exist in the DOM at once.
+
+### Server modules
+| File | Responsibility |
+|---|---|
+| `server/agentic-forms.mjs` | Field specifications for the four options, server-side validation (`validateForm`, `validateContact`, `validateFiles`); the browser renders its forms from the same specs |
+| `server/agentic-ai.mjs` | Priced checkout (Ready-Made and Chat-Only): pricing, products, RAG counting, WHMCS orders, verified activation, call usage |
+| `server/agentic-requests.mjs` | Quotation workflow (Customized and Branded): requests, files, status machine, quotations, payment verification |
+| `server/mailer.mjs` | SMTP client and the persistent email outbox |
+| `server/whmcs-adapter.mjs` | `createAgenticOrder`, `createUsageInvoice` (also used for quotation invoices), `getInvoice` |
+
+### Priced checkout flow (Ready-Made and Chat-Only)
 ```
-Browser (#agx)                 Node server                              WHMCS
- select config / options  ──►  (preview only, numbers are not trusted)
- upload / paste RAG text
- Proceed to Payment ─────────► POST /api/public/agentic/orders
-                                 validate input, recount RAG characters,
-                                 recompute prices from DB, 409 if the total changed
-                                 INSERT order + documents + subscriptions (PENDING)
-                                 syncClient ───────────────────────────► AddClient
-                                 createAgenticOrder ───────────────────► AddOrder (mapped product)
-                                                                          UpdateInvoice (one-time lines)
-                                                                          GetInvoice (total must equal ours)
- ◄─ order ref, invoice, checkout URL
- pays on WHMCS ─────────────────────────────────────────────────────────► payment recorded
-                                                         hook ◄────────── InvoicePaid etc.
-                               POST /api/webhooks/whmcs/agentic (HMAC-SHA256 over the raw body)
-                                 verify signature → dedupe on transaction ref →
-                                 live WHMCS: GetInvoice must be Paid with the same total →
-                                 amount must match → ACTIVE + activation record
+Browser                       Node server                              WHMCS
+ choose / configure   ──►  (preview only, numbers are not trusted)
+ Proceed to Payment ─────► POST /api/public/agentic/orders
+                             validate form + product, recount RAG characters,
+                             recompute prices from the database (409 if the total changed)
+                             INSERT order + documents + subscriptions (PENDING)
+                             syncClient / createAgenticOrder ───────► AddClient, AddOrder, UpdateInvoice, GetInvoice
+ ◄─ reference, invoice, checkout URL         (business inbox is emailed)
+ pays on WHMCS ─────────────────────────────────────────────────────► payment recorded
+                                                          hook ◄────── InvoicePaid
+                           POST /api/webhooks/whmcs/agentic (HMAC-SHA256 over the raw body)
+                             verify signature, dedupe on transaction reference,
+                             live WHMCS: GetInvoice must be Paid with the same total  ──► ACTIVE
 ```
+Order states: `PENDING_PAYMENT` → `ACTIVE` → `SUSPENDED`; side states `BILLING_ERROR` (safe to retry with the same idempotency key), `PAYMENT_REVIEW` (amount mismatch, never auto-activated), `CANCELLED`, `REFUNDED`.
 
-### Page layout (`#pg-agentic`)
-`#agx` (`max-width:1180px`, centered, 16px side padding) wraps its content in `<div class="dm">` like `#pg-email`. Order top to bottom: hero `.dsec` (`.dlab` badge, `.dh` headline, `.dp` paragraph, same centered treatment as the email page, scoped in `assets/css/agentic-ai.css`), step 1 agent configuration cards, step 2 options, optional branding form, RAG knowledge base, customer details, pricing summary, order tracking. Selected cards get the `--a1`/`--a2` glow. The generic `.pg label` rule uppercases labels, so card labels reset `text-transform` locally while form-field labels keep the site style.
+### Quotation flow (Customized and Branded)
+```
+POST /api/public/agentic/requests ──► validate, store request + files, email business + customer ──► PENDING_ANALYSIS
+admin: quotation draft (scope, solution, cost, charges, days, instructions, validity) ──► UNDER_REVIEW
+admin: send quotation ──► email customer ──► QUOTATION_SENT (valid_until = today + validity days)
+customer: accept ──► WHMCS invoice for the total ──► AWAITING_PAYMENT
+          revise ──► REVISION_REQUESTED (new version, old one SUPERSEDED)      decline ──► CANCELLED
+payment:  WHMCS InvoicePaid (signed, amount matches, confirmed with WHMCS)  ──┐
+          or customer reports a reference ──► PAYMENT_VERIFICATION ──► admin verifies received amount ≥ total ──┴─► APPROVED
+admin: IN_DEVELOPMENT (only from APPROVED) ──► COMPLETED
+```
+Allowed transitions are enforced in `TRANSITIONS`; an administrator can set only `UNDER_REVIEW`, `REVISION_REQUESTED`, `REJECTED`, `CANCELLED`, `IN_DEVELOPMENT` and `COMPLETED`, and reject, cancel and revision need a reason that the customer sees. `APPROVED` is reachable only through a verified payment. Webhook handling tries a quotation invoice first and falls back to the order flow.
 
-### Order states
-`PENDING_PAYMENT` → `ACTIVE` (verified payment) → `SUSPENDED` (admin) → `ACTIVE`. Side states: `BILLING_ERROR` (WHMCS call failed, safe to retry with the same idempotency key), `PAYMENT_REVIEW` (a paid event did not match the invoice amount, never auto-activated), `CANCELLED` (invoice cancelled before payment), `REFUNDED` (invoice refunded; subscriptions cancelled). Payment rows are `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `FLAGGED` or `PENDING`.
-
-### Tables (created by `initAgenticSchema`, called from `initDatabase`)
+### Tables
 | Table | Purpose |
 |---|---|
-| `agentic_pricing_config` | Key/value rates: server, backup amount and interval, maintenance, RAG per character, call per minute, call rounding |
-| `agentic_configurations` | The three configurations with development cost and which options each allows |
-| `agentic_orders` | One row per order: customer, selections, branding, price snapshot, WHMCS client/order/product references, status, provisioning status |
-| `agentic_rag_documents` | Extracted text, character count, cost, content hash; `UNIQUE(order_id, content_hash)` prevents double billing |
-| `agentic_invoices` | WHMCS invoice references (`INITIAL` and `USAGE`), unique per WHMCS invoice |
-| `agentic_payments` | Verified payment events; `transaction_ref UNIQUE` makes webhooks idempotent |
-| `agentic_subscriptions` | Server, monthly backup and (only when selected) maintenance |
-| `agentic_call_usage` | One row per call, `provider_ref UNIQUE`, billed minutes and amount, invoice reference once billed |
-| `agentic_activations` | Activation, suspension and deactivation history |
-| `agentic_audit_logs` | Append-only trail of orders, payments, price changes, usage and service actions |
+| `agentic_pricing_config`, `agentic_configurations` | Rates and the priced configurations. `CUSTOM_BRANDED` stays as an inactive row so historical orders keep their reference |
+| `agentic_products` | Ready-Made catalog (name, tagline, description, capabilities, setup fee, monthly fee, badge, order, visibility) |
+| `agentic_orders` | Priced orders: customer, selections, `product_code`, `requirements_json`, price snapshot, WHMCS references, status |
+| `agentic_rag_documents`, `agentic_invoices`, `agentic_payments`, `agentic_subscriptions`, `agentic_call_usage`, `agentic_activations` | RAG text and cost, WHMCS invoices, verified payments (unique transaction reference), subscriptions, call usage, activation history |
+| `agentic_requests` | Customized/Branded requests: category, customer, `requirements_json`, status |
+| `agentic_request_files` | Logo, brand assets and attachments (type and magic-byte checked, size limited) |
+| `agentic_quotations` | Versioned quotations: scope, solution, costs, charges JSON, timeline, instructions, validity, status, WHMCS invoice |
+| `agentic_request_payments` | Reported or WHMCS-confirmed payments; `reference UNIQUE`; status `SUBMITTED`, `VERIFIED`, `REJECTED`, with verifier and received amount |
+| `agentic_request_events` | Status history and internal notes (`internal = 1` rows are never shown to customers) |
+| `agentic_email_outbox` | Every outgoing message with status `QUEUED`, `SENT` or `FAILED`, attempts and last error |
+| `agentic_audit_logs` | Append-only trail of orders, requests, quotations, payments, price and product changes |
 
-Customers are created in the existing `customers` table so they appear in the admin Customers view.
+Relationships: requests, files, quotations, payments and events reference `agentic_requests(id)` with `ON DELETE CASCADE`; orders reference `agentic_configurations(code)`; customers are created in the existing `customers` table and linked from both orders and requests. Existing databases upgrade on start (`CREATE TABLE IF NOT EXISTS` plus `ALTER TABLE ADD COLUMN` for the two new order columns).
 
 ### Endpoints
 | Method and path | Auth | Purpose |
 |---|---|---|
-| `GET /api/public/agentic/catalog` | none | Configurations, rates, limits, telephony status |
-| `POST /api/public/agentic/quote` | none | Server-authoritative quote (nothing stored) |
-| `POST /api/public/agentic/orders` | none | Create order and WHMCS invoice (`idempotencyKey` required) |
-| `GET /api/public/agentic/orders/lookup?ref=&email=` | order ref + email, throttled | Customer's own order |
-| `POST /api/webhooks/whmcs/agentic` | HMAC signature header `X-Unified-Signature` | Payment events |
-| `GET /api/admin/agentic/overview, pricing, subscriptions, orders[/:id]` | `agentic:read` | Admin reads |
-| `PUT /api/admin/agentic/pricing` | `agentic:manage` | Update rates (validated, audited) |
-| `POST /api/admin/agentic/orders/:id/calling-usage, bill-usage, service` | `agentic:manage` | Record call, invoice usage, suspend/activate |
+| `GET /api/public/agentic/catalog` | none | Configurations, products, rates, form specifications, limits, telephony status |
+| `POST /api/public/agentic/orders` | none | Create a priced order and its WHMCS invoice (`idempotencyKey` required) |
+| `POST /api/public/agentic/requests` | none | Submit a Customized or Branded request (`idempotencyKey`, contact, fields, files); 5 per email per hour |
+| `GET /api/public/agentic/track?ref=&email=` | reference + email, throttled | Customer's own order (`AGT-`) or request (`REQ-`) |
+| `POST /api/public/agentic/requests/:ref/respond` | reference + email | `accept`, `revise`, `decline` |
+| `POST /api/public/agentic/requests/:ref/payment` | reference + email | Report a payment reference (never marks paid) |
+| `POST /api/webhooks/whmcs/agentic` | HMAC header `X-Unified-Signature` | WHMCS payment events (quotation invoices and order invoices) |
+| `GET /api/admin/agentic/overview, pricing, subscriptions, orders[/:id], requests[/:id], requests/:id/files/:fileId, products, outbox` | `agentic:read` | Admin reads (files download as attachments) |
+| `PUT /api/admin/agentic/pricing`; `POST/PUT /api/admin/agentic/products[/:code]` | `agentic:manage` | Rates and the Ready-Made catalog |
+| `POST /api/admin/agentic/requests/:id/status, note, quotation, quotation/send, payments/:pid/verify, payments/:pid/reject` | `agentic:manage` | Request management |
+| `POST /api/admin/agentic/orders/:id/calling-usage, bill-usage, service`; `POST /api/admin/agentic/outbox/:id/resend` | `agentic:manage` | Usage, service control, resend an email |
+
+### Email
+`mailerConfig()` reads `SMTP_*`, `MAIL_FROM` and `AGENTIC_NOTIFY_EMAIL`. `sendNotification` stores the message in `agentic_email_outbox`, then tries SMTP (implicit TLS, STARTTLS, `AUTH LOGIN`, base64 UTF-8 body, RFC 2047 subjects, CR/LF stripped from addresses and subjects so customer text cannot inject headers). It never throws. Messages: submission to the business inbox and confirmation to the customer; quotation sent; quotation accepted; payment to verify; payment verified or rejected; status changes; revision, decline and order notices.
 
 ### Security properties
-- Prices, character counts and the Chat-Only voice restriction are enforced on the server; client values are ignored.
-- The webhook needs `AGENTIC_WEBHOOK_SECRET`; signatures are compared in constant time over the raw request body (`server.mjs` now passes `rawBody` to the API layer). Unsigned or wrongly signed requests get 401 and a security event.
-- Duplicate protection: idempotency key per order, unique WHMCS invoice, unique transaction reference, unique document hash per order, unique call reference.
-- Document text is stored per order and is not returned by any endpoint. Logos are limited to PNG/JPEG/WebP with a magic-byte check (SVG is refused).
-- API credentials stay in environment variables; the frontend never sees them.
-
+- Prices, character counts, the product choice and the Chat-Only voice restriction are enforced on the server; client values are ignored.
+- The webhook needs `AGENTIC_WEBHOOK_SECRET`; signatures are compared in constant time over the raw body. Unsigned or wrongly signed requests get 401 and a security event.
+- Duplicate protection: idempotency key per order and per request, unique WHMCS invoice, unique transaction and payment reference, unique document hash per order, unique call reference.
+- Customer data is reachable only with the reference plus the email, with throttling. Internal notes, drafts and document text are never returned to customers.
+- Uploads: PNG/JPEG/WebP (and PDF for brand assets) only, magic bytes checked, size and count limited, SVG refused; admin downloads are `attachment` with `nosniff`.
+- API credentials, SMTP credentials and addresses stay in environment variables.
 
 ## 14. Deployment Architecture (as configured in the repository)
 

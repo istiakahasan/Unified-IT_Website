@@ -47,16 +47,20 @@ unified-it/
 │   ├── reward-service.mjs              # Sales-based reward points engine, ledger & refund handling
 │   ├── whmcs-adapter.mjs               # WHMCS enterprise billing, invoice lifecycle & refund approvals
 │   ├── agentic-ai.mjs                  # Agentic AI: pricing, RAG character billing, WHMCS orders, verified activation, usage
+│   ├── agentic-forms.mjs               # Agentic AI form specs + server validation for the four options
+│   ├── agentic-requests.mjs            # Customized/Branded quotation workflow, payment verification
+│   ├── mailer.mjs                      # SMTP client + persistent email outbox
 │   └── cloudstack-adapter.mjs          # Apache CloudStack multi-zone VM provisioning & NOC incident engine
 ├── CHANGES.md                          # Change log: root causes, fixes, security audit, measured results
 ├── tests/
 │   ├── admin-portal.test.mjs           # Enterprise Admin Portal automated test suite (33 tests)
 │   ├── partner-system.test.mjs         # Production Partner Program test suite (33 tests)
 │   ├── support-ticketing.test.mjs      # Role-Based Support Ticketing System test suite (26 tests)
-│   ├── agentic-ai.test.mjs             # Agentic AI module test suite (32 tests)
+│   ├── agentic-ai.test.mjs             # Agentic AI priced checkout test suite (33 tests)
+│   ├── agentic-requests.test.mjs       # Quotation workflow, products, Chat-Only, mailer (26 tests)
 │   ├── security-hardening.test.mjs     # HTTP security, CSP, hashing & cookie regression suite (42 tests)
 │   ├── csp-handlers.test.mjs           # data-on… parser + "no inline script anywhere" guard (46 tests)
-│   └── e2e/navigation.e2e.mjs          # Browser navigation / animation / CSP suite (10 tests; Chrome, Edge, Firefox, WebKit)
+│   └── e2e/                            # navigation.e2e.mjs (10 tests; Chrome, Edge, Firefox, WebKit) and agentic.e2e.mjs (18 tests; the four Agentic AI pages, workflows and admin UI)
 ├── data/                               # SQLite database + support attachments (runtime only, git-ignored, never served)
 ├── scripts/
 │   ├── serve.js                        # `npm start` entrypoint (port 3000)
@@ -75,7 +79,7 @@ unified-it/
     │   ├── pages/                      # Page scripts (formerly inline <script> blocks): admin.js, partners.js, …
     │   ├── vendor/                     # three.js, GLTFLoader, Meshopt decoder, anime.js (no runtime CDN)
     │   ├── modules/support-ticket.js   # Client ticket controller: submission, lookup, validation & upload
-    │   ├── modules/agentic-ai.js       # Agentic AI configurator, live pricing summary, RAG upload, order tracking
+    │   ├── modules/agentic-*.js        # Agentic AI: common helpers, checkout (Ready-Made, Chat-Only), requests (Customized, Branded), tracker
     │   └── modules/universal-cart.js   # Universal cart manager: flyout dropdown, trash bin removal & toast
     ├── models/                         # 3D Datacenter server rack model (meshopt glTF)
     └── images/                         # Brand logos, icons, and textures
@@ -192,26 +196,48 @@ Implemented in [`server/auth.mjs`](server/auth.mjs) and [`server/tickets-service
 - **Battery-Saving Throttling**: Pauses frame rendering immediately when the browser tab is hidden (`document.hidden`).
 - **Graceful Non-WebGL Fallback**: Fully operable without WebGL via the `runDomScrollDriver()` engine.
 
-### 8. Agentic AI Module (`#p-agentic`)
-A complete purchasing flow for AI agents, built into the existing Agentic AI service page. The page follows the same layout as the Business Email page: a `.dm` container (max 1180px) with a centered hero (`.dsec` with the `.dlab` badge, `.dh` headline and `.dp` paragraph) first, then the configurator steps. The static information cards were removed from the page data, so the configurator is shown directly. Backend: [`server/agentic-ai.mjs`](server/agentic-ai.mjs). Frontend: [`assets/js/modules/agentic-ai.js`](assets/js/modules/agentic-ai.js).
+### 8. Agentic AI (`#p-agentic`): four options, four workflows
+The Agentic AI main page is a hub with exactly four options. Each has its own page, its own form and its own submission process; they are never combined.
 
-| Configuration | Development (one-time) | Server | Backup | RAG | Maintenance (optional) | Voice calling |
-|---|---|---|---|---|---|---|
-| Ready-Made AI Agent | ৳0 | ৳1,000 / month | ৳500 | ৳1 per character | ৳5,000 / month | ৳5 / minute |
-| Customized / Branded AI Agent | ৳25,000 | ৳1,000 / month | ৳500 | ৳1 per character | ৳5,000 / month | ৳5 / minute |
-| Chat-Only AI Agent | ৳20,000 | ৳1,000 / month | ৳500 | ৳1 per character | ৳5,000 / month | Not available (hidden and rejected by the server) |
+| Option | Page (hash URL) | How the customer buys | Price |
+|---|---|---|---|
+| Ready-Made AI | `#p-agentic-ready` | Choose a pre-built solution, configure options, order online | Fixed: no development fee, ৳1,000/month server, backup ৳500, RAG ৳1/character, optional maintenance ৳5,000/month, voice ৳5/minute. Each solution can add its own setup and monthly fee (admin-managed, default none) |
+| Customized Agentic AI | `#p-agentic-custom` | Requirements form, then quotation | Project-specific quotation |
+| Branded Agentic AI | `#p-agentic-branded` | Brand requirements form (logo, assets, colors, appearance, domain), then quotation | Project-specific quotation |
+| Chat-Only AI | `#p-agentic-chat` | Configure the chatbot, order online | Fixed: ৳20,000 one-time development, ৳1,000/month server, backup ৳500, RAG ৳1/character, optional maintenance ৳5,000/month, no voice |
 
-All amounts are stored in the database (`agentic_pricing_config`, `agentic_configurations`) and editable in **Admin → Agentic AI**. A price change applies to new orders only; every order keeps a snapshot of the prices it was sold at.
+**Navigation.** The site is hash-routed, so every page works as a direct link, survives a refresh, and the browser Back button returns to the previous page. Each subpage starts with a breadcrumb back to **Agentic AI**. Confirmation panels link to the tracker on the main page.
 
-- **Pricing summary** keeps one-time charges, recurring charges, usage-based charges and the two payment estimates (initial and recurring) separate. Initial payment = one-time charges + first month of recurring charges + RAG processing. Voice minutes are never charged in advance.
-- **Backup billing interval is not assumed.** The ৳500 is displayed as its own line, and the interval (`one_time` or `monthly`) is a setting in Admin → Agentic AI. While it is unset, backup is shown but left out of both payment estimates and no backup subscription is created. Set it once the business rule is confirmed.
-- **RAG billing.** Upload `.txt .md .csv .json .log .xml .yaml .yml` files (max 5 documents, 2 MB each, 2,000,000 characters per order) or paste text. Billable characters are the Unicode code points of the extracted text after NFC normalisation, so English, Bengali, digits, symbols, spaces, tabs and line breaks all count and nothing is trimmed (a leading byte-order mark is not text and is removed). File names and metadata are never billed, binary and non-UTF-8 files are rejected, and identical content in one order is billed once. The browser shows a live estimate; the server recounts from the uploaded text and ignores any client-supplied number. PDF and Word files are not parsed (the server has no runtime dependencies); paste their text instead.
-- **Voice calling.** Selecting voice and the ৳5/minute rate work, and usage is tracked and billed after use. **No telephony provider exists in this repository, so live calls are not operational.** Call records are entered through `POST /api/admin/agentic/orders/:id/calling-usage` (a provider integration can call the same function) and are invoiced with the "Invoice call usage" action. Every started minute of a call is billed (`call_rounding` can be switched to exact seconds/60).
-- **Checkout and activation.** `POST /api/public/agentic/orders` validates the request, recomputes every price, stores the order and creates the WHMCS order and invoice (idempotent per request). The customer is sent to the WHMCS invoice. The service becomes `ACTIVE` only when WHMCS reports the payment through the signed webhook `POST /api/webhooks/whmcs/agentic`. See [`docs/whmcs-agentic-hook.php`](docs/whmcs-agentic-hook.php) for the WHMCS side.
-- **WHMCS mapping.** WHMCS product IDs come from the environment (`AGENTIC_WHMCS_PID_*`). No IDs are invented: with a live WHMCS connection, an unmapped product makes order creation fail with a clear billing error and nothing is charged. Development, RAG and one-time backup are added to the invoice as lines; server, maintenance and monthly backup form the recurring amount. Without WHMCS credentials the adapter runs in its existing sandbox mode (no real invoices, no payment page).
-- **Customer tracking.** There is no customer login in this application, so customers track an order from the same page with the order reference and email (same model as support-ticket lookup, with failed-lookup throttling): status, features, charges, RAG documents and costs, call usage, invoices, payments and renewal dates. Document text is never returned.
-- **Admin.** Orders, pricing, RAG and call usage, subscriptions, invoice and payment references, suspend/activate (activation is refused without a verified payment) and an audit trail. Permissions: `agentic:read` (Finance, Support, Auditor) and `agentic:manage` (Finance, Super Admin).
+**Ready-Made AI.** The catalog lives in the database (`agentic_products`) and is edited in **Admin → Agentic AI → Ready-Made AI products**: name, tagline, description, capabilities, setup fee, monthly add-on, badge, order and visibility. The page shows each solution, a side-by-side comparison table, options (voice, backup, maintenance), an optional RAG knowledge base, and a live summary that keeps one-time, recurring and usage charges apart. Three starter solutions (Customer Support Agent, Knowledge Assistant, Workflow Automation Agent, the ones the page already described) are seeded with no extra fees; edit them to your real offering. An order creates a WHMCS invoice and the service is activated only by a verified payment (see below).
 
+**Chat-Only AI.** Fields: purpose, knowledge-base requirement, website to integrate, supported languages, conversation style, custom responses, branding preferences, deployment requirements, additional specifications. The configuration is stored with the order and the same fixed-price WHMCS checkout applies. Voice calling is not shown and the server rejects it.
+
+**Customized and Branded (quotation workflow).** The customer submits the form, gets a reference such as `REQ-2026-ABCD2345`, and the request starts as **Pending Analysis**.
+
+```
+Pending Analysis -> Under Review -> Quotation Sent -> Awaiting Payment -> Payment Verification
+   -> Approved -> In Development -> Completed          (also: Revision Requested, Rejected, Cancelled)
+```
+
+1. **Submission:** every field is validated on the server, the request is stored, the full submission is emailed to `AGENTIC_NOTIFY_EMAIL`, and the customer gets a confirmation email.
+2. **Analysis and quotation:** in **Admin → Agentic AI → Custom requests** the team reviews the requirements and files, then writes the quotation: project scope, proposed solution, development cost, additional charges, delivery timeline, payment instructions and validity. Sending it emails the customer and moves the request to **Quotation Sent**.
+3. **Customer decision:** from the tracker the customer can accept, request changes (a new quotation version follows) or decline. An expired quotation cannot be accepted.
+4. **Billing:** accepting creates a WHMCS invoice for the quoted total and moves the request to **Awaiting Payment**. The customer can pay on that invoice, or report a transaction reference for a payment made another way.
+5. **Payment verification:** the request stays pending until the payment is verified. Either WHMCS reports the invoice paid through the signed webhook (checked against WHMCS when connected), or an administrator confirms the amount actually received (it must cover the quoted total). A customer submission, a reference or a screenshot never marks anything as paid.
+6. **Project start:** only an **Approved** request can move to **In Development**, then **Completed**. Every status change is recorded and the customer is emailed.
+
+**Email.** `server/mailer.mjs` sends through SMTP using environment variables only (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `AGENTIC_NOTIFY_EMAIL`). Every message is written to the **Email outbox** first; if SMTP is missing or fails the message stays queued or failed, the customer's submission still succeeds, and an administrator can resend it from the outbox. No address or credential is hard-coded.
+
+**Shared pricing rules** (Ready-Made and Chat-Only), all editable in **Admin → Agentic AI** and applied to new orders only:
+- The pricing summary keeps one-time charges, recurring charges, usage-based charges and the two payment estimates separate. Initial payment = one-time charges + first month of recurring charges + RAG processing. Voice minutes are never charged in advance.
+- **The backup billing interval is not assumed.** ৳500 is shown as its own line and the interval (`one_time` or `monthly`) is a setting. While unset, backup is left out of both estimates and no backup subscription is created.
+- **RAG billing:** upload `.txt .md .csv .json .log .xml .yaml .yml` files (max 5 documents, 2 MB each, 2,000,000 characters) or paste text. Billable characters are Unicode code points after NFC normalisation, so English, Bengali, digits, symbols, spaces, tabs and line breaks all count and nothing is trimmed. File names and metadata are never billed, binary and non-UTF-8 files are rejected, identical content is billed once, and the server recounts everything. PDF and Word files are not parsed (the server has no runtime dependencies); paste their text instead.
+- **Voice calling (Ready-Made only):** selecting and pricing work and usage is tracked and billed after use. **No telephony provider exists in this repository, so live calls are not operational.** Call records are entered through the admin API and invoiced from the admin panel.
+- **WHMCS mapping:** product IDs come from `AGENTIC_WHMCS_PID_*` (never invented). Without WHMCS credentials the adapter stays in sandbox mode. See [`docs/whmcs-agentic-hook.php`](docs/whmcs-agentic-hook.php) for the WHMCS side.
+
+**Tracking.** There is no customer login in this application, so customers track orders (`AGT-…`) and requests (`REQ-…`) from the tracker on the main Agentic AI page with the reference and the email used (failed lookups are throttled). Requests show the progress, the quotation, history and the actions allowed at the current status. Uploaded documents and internal notes are never shown.
+
+**Admin.** Orders, custom requests (filter by category and status, requirements, file downloads, status control with required reasons, quotation editor, payment verification, internal notes, history), Ready-Made products, pricing, subscriptions, usage, invoice references and the email outbox. Permissions: `agentic:read` (Finance, Support, Auditor) and `agentic:manage` (Finance, Super Admin).
 
 ---
 
@@ -255,13 +281,13 @@ npm run lint        # syntax check of every first-party .js/.mjs file (no TypeSc
 npm audit           # dependency advisories
 npm run build       # production build into dist/
 
-# Run all unit/integration suites (180 tests)
+# Run all unit/integration suites (243 tests)
 npm run test:all
 
 # HTTP security regression suite only (42 tests)
 npm run test:security
 
-# Browser navigation, animation & CSP regression tests (10 tests).
+# Browser tests: navigation, animation & CSP (10 tests) and the four Agentic AI pages and workflows (18 tests).
 # Uses an installed Chrome/Edge; set CHROME_PATH if it is not auto-detected. Skipped when none is found.
 # e.g. CHROME_PATH="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" npm run test:e2e
 # Other engines (one-time download of the Playwright builds):
@@ -270,7 +296,7 @@ npm run test:security
 #   BROWSER=webkit  npm run test:e2e      # Safari's engine
 npm run test:e2e
 
-# Run Agentic AI module test suite only (32 tests)
+# Run the Agentic AI test suites only (59 tests)
 npm run test:agentic
 
 # Run Support Ticketing System test suite only (26 tests)
@@ -321,6 +347,8 @@ Names only; never commit real values. See `.env.production.example` for the full
 | `AGENTIC_WHMCS_PID_READY_MADE`, `AGENTIC_WHMCS_PID_CUSTOM_BRANDED`, `AGENTIC_WHMCS_PID_CHAT_ONLY` | WHMCS product IDs for the three configurations (live billing refuses to create an order if the product is not mapped) |
 | `AGENTIC_WHMCS_ADDON_MAINTENANCE`, `AGENTIC_WHMCS_ADDON_BACKUP`, `AGENTIC_WHMCS_PAYMENT_METHOD`, `WHMCS_CLIENT_AREA_URL` | Optional WHMCS addon IDs, the payment gateway module name, and the client-area base URL used for the checkout link |
 | `AGENTIC_TELEPHONY_PROVIDER` | Label of the telephony provider that supplies call records (informational; see the Agentic AI section) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Outgoing email for Agentic AI notifications (STARTTLS, or implicit TLS when `SMTP_SECURE=true`). Without them, messages wait in the admin Email outbox |
+| `AGENTIC_NOTIFY_EMAIL` | Business inbox that receives every Agentic AI submission and order. Set it on the server; it is not hard-coded |
 
 ### 2. Nginx Reverse Proxy
 Deploy [`nginx/unified-cloud.conf`](nginx/unified-cloud.conf) into `/etc/nginx/conf.d/unified-cloud.conf`.  

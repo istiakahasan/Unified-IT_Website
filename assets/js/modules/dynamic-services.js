@@ -48,7 +48,11 @@ try {
       m365: 'Microsoft 365 · Deployment · Migration · Ongoing Management',
       backup: 'Cloud Backup · Disaster Recovery · 24/7 Monitoring',
       industry: 'Education · Government · Healthcare · Finance · Retail · Enterprise',
-      agentic: 'Agentic AI · Automation · Secure Deployment'
+      agentic: 'Agentic AI · Automation · Secure Deployment',
+      'agentic-ready': 'Ready-Made AI · Fixed Pricing · Secure Deployment',
+      'agentic-custom': 'Customized Agentic AI · Requirements Analysis · Custom Quotation',
+      'agentic-branded': 'Branded Agentic AI · Your Brand · Your Domain',
+      'agentic-chat': 'Chat-Only AI · Website Chat · Knowledge Base'
     };
 
     function UF(tag) {

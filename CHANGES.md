@@ -1,3 +1,67 @@
+# CHANGES — Agentic AI restructured into four options with separate workflows
+
+**Date:** 2026-11-05
+**Scope:** the Agentic AI service only. The existing visual identity (palette, typography, header, footer, animations, other pages) is unchanged; the new pages reuse the existing page shell, `.dm`/`.dsec` hero, `.vc` cards, `.cxr` option cards and `.vb` buttons.
+
+## What changed
+
+The single Agentic AI configurator was replaced by a hub and four independent pages, each with its own form, ordering process and order category:
+
+| Option | URL | Workflow |
+|---|---|---|
+| Ready-Made AI | `#p-agentic-ready` | Product catalog (admin-managed), comparison, options, fixed-price WHMCS order |
+| Customized Agentic AI | `#p-agentic-custom` | Requirements form, review, quotation, WHMCS invoice, verified payment, development |
+| Branded Agentic AI | `#p-agentic-branded` | Brand requirements and assets, then the same quotation workflow, stored as a separate category |
+| Chat-Only AI | `#p-agentic-chat` | Chatbot configuration, fixed-price WHMCS order, no voice |
+
+The old fixed-price "Customized / Branded" configuration (৳25,000) no longer exists as a purchasable option: Customized and Branded are quoted individually. Its database row is kept inactive for historical orders.
+
+## New files
+- `server/agentic-forms.mjs`: form specifications and server-side validation shared by the API and the browser forms.
+- `server/agentic-requests.mjs`: quotation workflow (requests, files, status machine, quotations, payment verification, webhook handling for quotation invoices).
+- `server/mailer.mjs`: SMTP client and the persistent email outbox.
+- `assets/js/modules/agentic-common.js`, `agentic-checkout.js`, `agentic-requests.js`, `agentic-tracker.js`: shared helpers, Ready-Made/Chat-Only pages, Customized/Branded pages, tracker.
+- `tests/agentic-requests.test.mjs` (26 tests) and `tests/e2e/agentic.e2e.mjs` (18 browser tests).
+
+## Removed files
+- `assets/js/modules/agentic-ai.js` (replaced by the four modules above).
+
+## Modified files
+- `server/agentic-ai.mjs`: products table and seed, `product_code` and `requirements_json` on orders (with `ALTER TABLE` upgrade), product fees in the quote, requirement validation, business-inbox notification on every order, product admin functions, `CUSTOM_BRANDED` deactivated, catalog now returns products and form specifications.
+- `server/api.mjs`, `server/db.mjs`: new public and admin routes, schema initialisation.
+- `assets/js/data/service-pages.js`: hub page and four subpage keys. `assets/js/modules/dynamic-services.js`: footer taglines for the new pages. `assets/js/modules/service-modal.js`: the plan pop-up now skips `.agx-hub` (it swallowed the hub card links). `index.html`: new scripts.
+- `assets/css/agentic-ai.css` (rewritten for the new pages), `admin.html`, `assets/js/pages/admin.js` (custom requests, products, outbox).
+- `tests/agentic-ai.test.mjs` (updated to the new rules), `package.json` (`test:agentic`, `test:e2e`), `.env.example`, `.env.production.example`, `docker-compose.yml`, README, architecture.md, this file.
+
+## Database changes
+New tables: `agentic_products`, `agentic_requests`, `agentic_request_files`, `agentic_quotations`, `agentic_request_payments`, `agentic_request_events`, `agentic_email_outbox`. New columns on `agentic_orders`: `product_code`, `requirements_json`. Existing databases are upgraded when the server starts.
+
+## New API
+Public: `POST /api/public/agentic/requests`, `GET /api/public/agentic/track`, `POST /api/public/agentic/requests/:ref/respond`, `POST /api/public/agentic/requests/:ref/payment`. Admin: requests list, detail, file download, status, note, quotation save and send, payment verify and reject; products list, create, update; email outbox list and resend. The webhook now also settles quotation invoices. Full table in architecture.md section 13a.
+
+## New environment variables
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `AGENTIC_NOTIFY_EMAIL` (documented in `.env.example`, passed through `docker-compose.yml`). Nothing is hard-coded.
+
+## Testing
+- `npm run lint`: 65/65 files parse.
+- Unit and integration suites: 243 tests pass (`npm run test:all`), including 33 + 26 Agentic AI tests. They cover validation of every field type, idempotent submission, per-email rate limit, upload checks, category separation, the full status path, forbidden transitions, quotation versions and expiry, WHMCS invoice creation and signed-webhook approval (amount mismatch flagged, duplicates ignored), manual payment verification (amount must cover the quote), customer isolation and lookup throttling, admin permissions, product management, Chat-Only requirements, and real SMTP delivery against a local test server (including outbox retry and header-injection protection).
+- Browser tests (`npm run test:e2e`, Chrome): 28 pass (10 existing + 18 new). They cover the hub, opening each option from the hub, direct URL, refresh and Back for all four pages, a 390px phone layout without horizontal scroll, the Ready-Made, Chat-Only, Customized and Branded workflows end to end, the Customized quotation through payment verification, and the admin UI (review, quotation, payment verification, product management).
+- `npm run build` succeeds.
+
+## Known limitations
+- **WHMCS live mode is untested** (no WHMCS server was available). The live calls follow the WHMCS API and run in sandbox mode here. Before go-live: create the Ready-Made and Chat-Only products, set `AGENTIC_WHMCS_PID_*`, `AGENTIC_WHMCS_PAYMENT_METHOD` and `AGENTIC_WEBHOOK_SECRET`, install `docs/whmcs-agentic-hook.php` (a sample) and test an invoice end to end.
+- **SMTP delivery is tested against a local test server**, not a real provider. Configure `SMTP_*`, `MAIL_FROM` and `AGENTIC_NOTIFY_EMAIL`; until then messages wait in the outbox.
+- **Voice calling is not operational:** no telephony provider exists in the repository. Usage can be recorded and billed.
+- **Agent deployment is not automated.** An approved or active order records the status; building and deploying the agent is a manual or external step.
+- **Backup billing interval** is intentionally unset until you choose `one_time` or `monthly` in Admin → Agentic AI.
+- **No customer login exists**, so tracking uses a reference plus the email.
+- **RAG files** are plain text only (no PDF or Word parser).
+- Customer-facing quotation emails contain the payment instructions you write; no payment credentials are generated or stored by this code.
+- The three seeded Ready-Made solutions are starter content taken from the page's earlier descriptions, with no extra fees; edit them in the admin panel.
+
+
+---
+
 # CHANGES — Agentic AI page layout aligned with Business Email
 
 **Date:** 2026-11-05

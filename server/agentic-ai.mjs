@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { FORM_SPECS, CONTACT_FIELDS, FormError, validateForm, allFields } from './agentic-forms.mjs';
+import { schemaSql as outboxSchemaSql, sendNotification, mailerConfig } from './mailer.mjs';
 
 /**
  * Agentic AI module: configurations, server-authoritative pricing, RAG character billing,
@@ -38,6 +40,18 @@ const DEFAULT_CONFIGS = [
   ['READY_MADE', 'Ready-Made AI Agent', 'Pre-built agent template deployed as-is. No development fee.', 0, 1, 0, 1],
   ['CUSTOM_BRANDED', 'Customized / Branded AI Agent', 'Your branding, identity, personality, business information and workflows.', 25000, 1, 1, 2],
   ['CHAT_ONLY', 'Chat-Only AI Agent', 'Text chat agent. Voice calling is not available.', 20000, 0, 0, 3]
+];
+
+const DEFAULT_PRODUCTS = [
+  { code: 'SUPPORT_AGENT', name: 'Customer Support Agent', tagline: 'Always-on first response for your customers', badge: '', sort: 1,
+    description: 'Always-on assistant that resolves common questions and routes the rest to your team.',
+    capabilities: ['24/7 first response', 'Knowledge-base answers', 'Ticket triage and routing', 'Human escalation'] },
+  { code: 'KNOWLEDGE_ASSISTANT', name: 'Knowledge Assistant', tagline: 'Ask questions across your company documents', badge: '', sort: 2,
+    description: 'Searches and summarizes your company documents, policies and data with answers you can trace to a source.',
+    capabilities: ['Document search', 'Answers with sources', 'Team-wide access', 'Access controls'] },
+  { code: 'WORKFLOW_AGENT', name: 'Workflow Automation Agent', tagline: 'Repetitive internal processes, start to finish', badge: '', sort: 3,
+    description: 'Handles repetitive internal processes from start to finish and reports back.',
+    capabilities: ['Approvals and requests', 'Data entry and updates', 'Scheduled reports', 'Integration with existing systems'] }
 ];
 
 const PRICING_KEYS = {
@@ -93,6 +107,8 @@ export function initAgenticSchema(db) {
       branding_json TEXT,
       brand_logo_mime TEXT,
       brand_logo_b64 TEXT,
+      product_code TEXT,
+      requirements_json TEXT,
       status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT'
         CHECK(status IN ('PENDING_PAYMENT','BILLING_ERROR','PAYMENT_REVIEW','ACTIVE','SUSPENDED','CANCELLED','REFUNDED')),
       pricing_snapshot_json TEXT NOT NULL,
@@ -131,6 +147,20 @@ export function initAgenticSchema(db) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(order_id, content_hash),
       FOREIGN KEY(order_id) REFERENCES agentic_orders(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS agentic_products (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      tagline TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      capabilities_json TEXT NOT NULL DEFAULT '[]',
+      setup_fee REAL NOT NULL DEFAULT 0 CHECK(setup_fee >= 0),
+      monthly_fee REAL NOT NULL DEFAULT 0 CHECK(monthly_fee >= 0),
+      badge TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS agentic_invoices (
@@ -220,6 +250,20 @@ export function initAgenticSchema(db) {
   const insCfg = db.prepare(`INSERT OR IGNORE INTO agentic_configurations
     (code, name, description, development_cost, voice_allowed, branding_allowed, sort_order) VALUES (?,?,?,?,?,?,?)`);
   for (const c of DEFAULT_CONFIGS) insCfg.run(...c);
+
+  // Upgrade path for databases created before the four-option restructure.
+  const orderCols = new Set(db.prepare('PRAGMA table_info(agentic_orders)').all().map(c => c.name));
+  if (!orderCols.has('product_code')) db.exec('ALTER TABLE agentic_orders ADD COLUMN product_code TEXT;');
+  if (!orderCols.has('requirements_json')) db.exec('ALTER TABLE agentic_orders ADD COLUMN requirements_json TEXT;');
+  // Customized and Branded agents are quoted individually (agentic-requests.mjs); the old fixed-price row stays
+  // only so historical orders keep their reference.
+  db.exec("UPDATE agentic_configurations SET active = 0 WHERE code = 'CUSTOM_BRANDED'");
+  db.exec(outboxSchemaSql());
+
+  // Starter Ready-Made catalog (the three solutions the Agentic AI page already described). Prices default to no
+  // extra charge so the confirmed Ready-Made rule (no development fee) holds; administrators edit them in the admin panel.
+  const insProd = db.prepare('INSERT OR IGNORE INTO agentic_products (code, name, tagline, description, capabilities_json, badge, sort_order) VALUES (?,?,?,?,?,?,?)');
+  for (const p of DEFAULT_PRODUCTS) insProd.run(p.code, p.name, p.tagline, p.description, JSON.stringify(p.capabilities), p.badge, p.sort);
 }
 
 /* ----------------------------------------------------------------- helpers */
@@ -248,6 +292,15 @@ export function audit(db, actor, action, orderId = null, details = {}) {
   }
 }
 
+function productFromRow(p) {
+  return {
+    code: p.code, name: p.name, tagline: p.tagline, description: p.description,
+    capabilities: JSON.parse(p.capabilities_json || '[]'),
+    setupFee: money(p.setup_fee), monthlyFee: money(p.monthly_fee),
+    badge: p.badge, sortOrder: p.sort_order, active: !!p.active
+  };
+}
+
 export function getPricing(db) {
   const kv = {};
   for (const r of db.prepare('SELECT key, value FROM agentic_pricing_config').all()) kv[r.key] = r.value;
@@ -259,6 +312,8 @@ export function getPricing(db) {
       voiceAllowed: !!c.voice_allowed, brandingAllowed: !!c.branding_allowed, active: !!c.active
     };
   }
+  const products = {};
+  for (const p of db.prepare('SELECT * FROM agentic_products ORDER BY sort_order, name').all()) products[p.code] = productFromRow(p);
   return {
     currency: CURRENCY,
     serverMonthly: money(kv.server_monthly),
@@ -268,7 +323,8 @@ export function getPricing(db) {
     ragPerChar: Number(kv.rag_per_char),
     callPerMinute: Number(kv.call_per_minute),
     callRounding: kv.call_rounding === 'exact' ? 'exact' : 'ceil',
-    configs
+    configs,
+    products
   };
 }
 
@@ -286,6 +342,9 @@ export function getCatalog(db, telephony = getTelephonyStatus()) {
       ragPerCharacter: p.ragPerChar,
       callPerMinute: p.callPerMinute
     },
+    products: Object.values(p.products).filter(x => x.active),
+    forms: FORM_SPECS,
+    contactFields: CONTACT_FIELDS,
     ragLimits: RAG_LIMITS,
     logoLimits: LOGO_LIMITS,
     telephony
@@ -413,6 +472,14 @@ export function buildQuote(pricing, input = {}, ragChars = 0) {
   const wantsVoice = input.voice === true || input.voice === 'true';
   if (wantsVoice && !cfg.voiceAllowed) throw new AgenticError(400, `Voice calling is not available for the ${cfg.name}.`);
   const voice = wantsVoice && cfg.voiceAllowed;
+  let product = null;
+  if (cfg.code === 'READY_MADE') {
+    const available = Object.values(pricing.products || {}).filter(p => p.active);
+    if (available.length) {
+      product = pricing.products[input.productCode];
+      if (!product || !product.active) throw new AgenticError(400, 'Choose one of the available Ready-Made AI solutions.');
+    }
+  }
   const backup = input.backup !== false && input.backup !== 'false';
   const maintenance = input.maintenance === true || input.maintenance === 'true';
   const chars = Math.max(0, Math.floor(Number(ragChars) || 0));
@@ -421,7 +488,9 @@ export function buildQuote(pricing, input = {}, ragChars = 0) {
   const oneTime = [];
   if (cfg.developmentCost > 0) oneTime.push({ code: 'DEVELOPMENT', label: `${cfg.name} development (one-time)`, amount: cfg.developmentCost });
 
+  if (product && product.setupFee > 0) oneTime.push({ code: 'PRODUCT_SETUP', label: `${product.name} setup (one-time)`, amount: product.setupFee });
   const recurring = [{ code: 'SERVER', label: 'Server', amount: pricing.serverMonthly, interval: 'monthly' }];
+  if (product && product.monthlyFee > 0) recurring.push({ code: 'PRODUCT', label: product.name, amount: product.monthlyFee, interval: 'monthly' });
   const notices = [];
   let backupLine = null;
   if (backup) {
@@ -454,6 +523,7 @@ export function buildQuote(pricing, input = {}, ragChars = 0) {
   return {
     currency: CURRENCY,
     configuration: { code: cfg.code, name: cfg.name },
+    product: product ? { code: product.code, name: product.name } : null,
     features: { voice, branding: cfg.brandingAllowed, backup, maintenance },
     oneTime, recurring, usage,
     backup: backupLine,
@@ -544,7 +614,7 @@ function newOrderRef() {
   return `AGT-${new Date().getFullYear()}-${s}`;
 }
 
-function upsertCustomer(db, c) {
+export function upsertCustomer(db, c) {
   const existing = db.prepare('SELECT id FROM customers WHERE lower(email) = ?').get(c.email);
   if (existing) return existing.id;
   const [first, ...rest] = c.name.split(/\s+/);
@@ -570,6 +640,16 @@ export async function createOrder(db, whmcs, input, { env = process.env, actor =
   const pricing = getPricing(db);
   const cfg = pricing.configs[input.configCode];
   if (!cfg) throw new AgenticError(400, 'Choose a valid Agentic AI configuration.');
+  if (!cfg.active) throw new AgenticError(400, 'Customized and Branded agents are quoted individually. Submit your requirements through that option instead.');
+  let requirements = null;
+  if (FORM_SPECS[cfg.code]) {
+    try {
+      requirements = validateForm(cfg.code, input.requirements);
+    } catch (e) {
+      if (e instanceof FormError) throw new AgenticError(400, e.message, { fields: e.fields });
+      throw e;
+    }
+  }
   const analysis = analyseDocuments(input.documents, input.ragText);
   const quote = buildQuote(pricing, input, analysis.totalChars);
 
@@ -585,13 +665,14 @@ export async function createOrder(db, whmcs, input, { env = process.env, actor =
     const customerId = upsertCustomer(db, customer);
     db.prepare(`INSERT INTO agentic_orders (
         id, order_ref, idempotency_key, customer_id, customer_name, customer_email, customer_phone, company_name,
-        config_code, voice_enabled, backup_enabled, maintenance_enabled, branding_json, brand_logo_mime, brand_logo_b64,
+        config_code, voice_enabled, backup_enabled, maintenance_enabled, branding_json, brand_logo_mime, brand_logo_b64, product_code, requirements_json,
         pricing_snapshot_json, development_cost, server_monthly, backup_amount, backup_interval, maintenance_monthly,
         rag_chars, rag_cost, call_rate, initial_total, recurring_total)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
       orderId, ref, idemKey, customerId, customer.name, customer.email, customer.phone, customer.company,
       cfg.code, quote.features.voice ? 1 : 0, quote.features.backup ? 1 : 0, quote.features.maintenance ? 1 : 0,
       branding ? JSON.stringify(branding) : null, logo?.mime || null, logo?.b64 || null,
+      quote.product?.code || null, requirements ? JSON.stringify(requirements) : null,
       JSON.stringify(quote), cfg.developmentCost, pricing.serverMonthly, pricing.backupAmount, pricing.backupInterval,
       pricing.maintenanceMonthly, analysis.totalChars, quote.totals.ragCost, quote.features.voice ? pricing.callPerMinute : 0,
       quote.totals.initialPayment, quote.totals.recurringMonthly);
@@ -611,6 +692,17 @@ export async function createOrder(db, whmcs, input, { env = process.env, actor =
   const order = db.prepare('SELECT * FROM agentic_orders WHERE id = ?').get(orderId);
   const result = await retryBilling(db, whmcs, order, env);
   result.skippedDuplicates = analysis.skippedDuplicates;
+  // Tell the business inbox about every new order too (best effort; the order never fails because of mail).
+  const notifyTo = mailerConfig(env).notifyEmail;
+  if (notifyTo) {
+    const lines = requirements ? allFields(FORM_SPECS[cfg.code]).filter(f => requirements[f.key]).map(f => `${f.label}: ${requirements[f.key]}`) : [];
+    await sendNotification(db, {
+      kind: 'ORDER_CREATED_BUSINESS', to: notifyTo, ref,
+      subject: `[Agentic AI] New ${cfg.name} order ${ref}`,
+      body: [`New ${cfg.name} order ${ref}`, quote.product ? `Solution: ${quote.product.name}` : '', `Customer: ${customer.name} <${customer.email}>`,
+        `Initial payment: ৳${quote.totals.initialPayment}, recurring ৳${quote.totals.recurringMonthly}/month`, '', ...lines].filter(x => x !== '').join('\n')
+    }, env);
+  }
   return result;
 }
 
@@ -839,6 +931,10 @@ function orderDetail(db, order, { forCustomer }) {
     configuration: quote.configuration,
     features: quote.features,
     quote,
+    product: quote.product || null,
+    requirements: order.requirements_json && FORM_SPECS[order.config_code]
+      ? allFields(FORM_SPECS[order.config_code]).filter(f => JSON.parse(order.requirements_json)[f.key]).map(f => ({ key: f.key, label: f.label, value: JSON.parse(order.requirements_json)[f.key] }))
+      : [],
     createdAt: order.created_at,
     activatedAt: order.activated_at,
     provisioningStatus: order.provisioning_status,
@@ -947,4 +1043,37 @@ export function setServiceState(db, orderId, action, actor, reason = '') {
     audit(db, actor, `SERVICE_${action.toUpperCase()}`, orderId, { reason });
     return { status: db.prepare('SELECT status FROM agentic_orders WHERE id = ?').get(orderId).status };
   });
+}
+
+/* ------------------------------------------------- Ready-Made product admin */
+
+export function listProducts(db) {
+  return db.prepare('SELECT * FROM agentic_products ORDER BY sort_order, name').all().map(productFromRow);
+}
+
+export function saveProduct(db, input, actor, existingCode = null) {
+  const errors = {};
+  const name = String(input?.name ?? '').trim().slice(0, 80);
+  if (name.length < 2) errors.name = 'Name is required.';
+  const code = existingCode || String(input?.code || name).toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+  if (!/^[A-Z0-9_]{3,40}$/.test(code)) errors.code = 'Code must be 3 to 40 letters, digits or underscores.';
+  const setupFee = Number(input?.setupFee ?? 0);
+  const monthlyFee = Number(input?.monthlyFee ?? 0);
+  if (!Number.isFinite(setupFee) || setupFee < 0 || setupFee > 100_000_000) errors.setupFee = 'Setup fee must be 0 or more.';
+  if (!Number.isFinite(monthlyFee) || monthlyFee < 0 || monthlyFee > 100_000_000) errors.monthlyFee = 'Monthly fee must be 0 or more.';
+  const capabilities = (Array.isArray(input?.capabilities) ? input.capabilities : String(input?.capabilities || '').split('\n'))
+    .map(c => String(c).trim().slice(0, 120)).filter(Boolean).slice(0, 12);
+  if (Object.keys(errors).length) throw new AgenticError(400, 'Please correct the product fields.', { fields: errors });
+  const exists = db.prepare('SELECT 1 FROM agentic_products WHERE code = ?').get(code);
+  if (existingCode && !exists) throw new AgenticError(404, 'Product not found.');
+  if (!existingCode && exists) throw new AgenticError(409, 'A product with this code already exists.');
+  const row = [code, name, String(input?.tagline ?? '').trim().slice(0, 160), String(input?.description ?? '').trim().slice(0, 1000),
+    JSON.stringify(capabilities), money(setupFee), money(monthlyFee), String(input?.badge ?? '').trim().slice(0, 30),
+    Math.floor(Number(input?.sortOrder) || 0), input?.active === false || input?.active === 0 || input?.active === 'false' ? 0 : 1];
+  db.prepare(`INSERT INTO agentic_products (code, name, tagline, description, capabilities_json, setup_fee, monthly_fee, badge, sort_order, active)
+    VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(code) DO UPDATE SET name=excluded.name, tagline=excluded.tagline, description=excluded.description,
+    capabilities_json=excluded.capabilities_json, setup_fee=excluded.setup_fee, monthly_fee=excluded.monthly_fee, badge=excluded.badge,
+    sort_order=excluded.sort_order, active=excluded.active, updated_at=datetime('now')`).run(...row);
+  audit(db, actor, existingCode ? 'PRODUCT_UPDATED' : 'PRODUCT_CREATED', null, { code, setupFee, monthlyFee });
+  return productFromRow(db.prepare('SELECT * FROM agentic_products WHERE code = ?').get(code));
 }

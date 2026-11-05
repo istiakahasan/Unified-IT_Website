@@ -1536,6 +1536,9 @@ function agxMoney(n) {
 async function loadAgentic() {
   loadAgenticOverview();
   loadAgenticOrders();
+  loadAgenticRequests();
+  loadAgenticProducts();
+  agxLoadOutbox();
   loadAgenticPricing();
 }
 
@@ -1550,6 +1553,7 @@ async function loadAgenticOverview() {
     const pending = o.ordersByStatus.PENDING_PAYMENT || 0;
     const cards = [
       ['teal', 'Active services', active],
+      ['amber', 'Requests needing action', (o.requests && o.requests.awaitingAction) || 0],
       ['amber', 'Awaiting payment', pending],
       ['blue', 'Paid revenue', agxMoney(o.paidRevenue)],
       ['purple', 'Active monthly recurring', agxMoney(o.activeMonthlyRecurring)],
@@ -1702,5 +1706,282 @@ async function saveAgenticPricing(event) {
     const j = await res.json();
     if (!res.ok) throw new Error(j.message || 'Could not save pricing');
     showToast('Agentic AI pricing saved. It applies to new orders.', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ============================================================================
+// Agentic AI administration, part 2: custom requests, quotations, products, email outbox
+// ============================================================================
+const AGX_STATUS_BADGE = {
+  PENDING_ANALYSIS: 'badge-warning', UNDER_REVIEW: 'badge-info', QUOTATION_SENT: 'badge-info', AWAITING_PAYMENT: 'badge-warning',
+  PAYMENT_VERIFICATION: 'badge-danger', APPROVED: 'badge-success', IN_DEVELOPMENT: 'badge-info', COMPLETED: 'badge-success',
+  REVISION_REQUESTED: 'badge-warning', REJECTED: 'badge-danger', CANCELLED: 'badge-danger'
+};
+
+async function agxJson(url, options) {
+  const res = await fetch(url, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const fieldMsg = data.fields ? ' ' + Object.values(data.fields).filter(v => typeof v === 'string').join(' ') : '';
+    throw new Error((data.message || 'Request failed') + fieldMsg);
+  }
+  return data;
+}
+
+function agxSend(method, url, body) {
+  return agxJson(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+}
+
+async function loadAgenticRequests() {
+  const body = document.getElementById('agxReqBody');
+  if (!body) return;
+  const params = new URLSearchParams();
+  const category = document.getElementById('agxReqCategory')?.value;
+  const status = document.getElementById('agxReqStatus')?.value;
+  if (category) params.set('category', category);
+  if (status) params.set('status', status);
+  try {
+    const data = await agxJson('/api/admin/agentic/requests?' + params.toString());
+    if (!data.requests.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;">No requests yet.</td></tr>'; return; }
+    body.innerHTML = data.requests.map(r => `
+      <tr>
+        <td class="mono">${escapeHtml(r.requestRef)}</td>
+        <td>${escapeHtml(r.customerName)}<br><span class="mono">${escapeHtml(r.customerEmail)}</span></td>
+        <td>${escapeHtml(r.category === 'BRANDED' ? 'Branded' : 'Customized')}</td>
+        <td><span class="badge ${AGX_STATUS_BADGE[r.status] || 'badge-info'}">${escapeHtml(r.statusLabel)}</span></td>
+        <td>${r.quotedTotal ? agxMoney(r.quotedTotal) : '-'}</td>
+        <td class="mono">${escapeHtml((r.createdAt || '').slice(0, 16))}</td>
+        <td><button class="btn-primary" type="button" data-onclick="openAgenticRequest('${escapeHtml(r.id)}')">Open</button></td>
+      </tr>`).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;">Not authorized or unavailable.</td></tr>';
+  }
+}
+
+function agxQuotationForm(d) {
+  const draft = d.quotations.find(q => q.status === 'DRAFT') || d.quotations[0] || {};
+  const charges = (draft.additionalCharges || []).map(c => `${c.label} | ${c.amount}`).join('\n');
+  const editable = ['PENDING_ANALYSIS', 'UNDER_REVIEW', 'REVISION_REQUESTED'].includes(d.status);
+  if (!editable) return '<p style="opacity:.8;">The quotation can be edited only while the request is Pending Analysis, Under Review or Revision Requested.</p>';
+  const v = (x) => escapeHtml(x == null ? '' : x);
+  return `
+    <form id="agxQuoteForm" data-onsubmit="saveAgenticQuotation(event, '${escapeHtml(d.id)}')" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
+      <label style="grid-column:1/-1;">Project scope<textarea class="form-control" name="scope" rows="3" required>${v(draft.scope)}</textarea></label>
+      <label style="grid-column:1/-1;">Proposed solution<textarea class="form-control" name="proposedSolution" rows="3" required>${v(draft.proposedSolution)}</textarea></label>
+      <label>Estimated development cost (BDT)<input class="form-control" name="developmentCost" type="number" min="0" step="1" value="${v(draft.developmentCost)}" required></label>
+      <label>Estimated delivery (days)<input class="form-control" name="timelineDays" type="number" min="1" max="730" step="1" value="${v(draft.timelineDays)}" required></label>
+      <label>Quotation validity (days)<input class="form-control" name="validityDays" type="number" min="1" max="90" step="1" value="${v(draft.validityDays || 14)}" required></label>
+      <label style="grid-column:1/-1;">Additional charges (one per line: label | amount)<textarea class="form-control" name="additionalCharges" rows="3">${v(charges)}</textarea></label>
+      <label style="grid-column:1/-1;">Payment instructions<textarea class="form-control" name="paymentInstructions" rows="3" required>${v(draft.paymentInstructions)}</textarea></label>
+      <div style="grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn-primary" type="submit">Save quotation draft</button>
+        <button class="btn-primary" type="button" data-onclick="sendAgenticQuotation('${escapeHtml(d.id)}')" ${draft.status === 'DRAFT' ? '' : 'disabled'}>Send quotation to customer</button>
+      </div>
+    </form>`;
+}
+
+async function openAgenticRequest(id) {
+  const panel = document.getElementById('agxReqPanel');
+  const el = document.getElementById('agxReqBodyDetail');
+  try {
+    const d = await agxJson('/api/admin/agentic/requests/' + encodeURIComponent(id));
+    document.getElementById('agxReqTitle').textContent = `${d.requestRef} · ${d.statusLabel}`;
+    const line = (a, b) => `<tr><td style="width:220px;vertical-align:top;">${escapeHtml(a)}</td><td style="white-space:pre-wrap;">${b}</td></tr>`;
+    const money = agxMoney;
+    const quotes = d.quotations.map(q => `v${q.version} · ${escapeHtml(q.status)} · ${money(q.total)} · ${q.validUntil ? 'valid until ' + escapeHtml(q.validUntil) : 'not sent'}${q.invoiceId ? ' · WHMCS invoice #' + escapeHtml(q.invoiceId) + (q.sandbox ? ' (sandbox)' : '') : ''}${q.billingError ? ' · billing: ' + escapeHtml(q.billingError) : ''}${q.customerMessage ? '<br>Customer: ' + escapeHtml(q.customerMessage) : ''}`).join('<br>') || '-';
+    const payments = d.payments.map(p => {
+      const actions = p.status === 'SUBMITTED' && d.status === 'PAYMENT_VERIFICATION'
+        ? ` <button class="btn-primary" type="button" data-onclick="verifyAgenticPayment('${escapeHtml(d.id)}', '${escapeHtml(p.id)}', ${Number(p.amount)})">Verify</button> <button class="btn-primary" type="button" data-onclick="rejectAgenticPayment('${escapeHtml(d.id)}', '${escapeHtml(p.id)}')">Reject</button>`
+        : '';
+      return `${escapeHtml(p.method)} · ${escapeHtml(p.reference)} · reported ${money(p.amount)} · ${escapeHtml(p.status)}${p.verifiedBy ? ' by ' + escapeHtml(p.verifiedBy) : ''}${actions}`;
+    }).join('<br>') || '-';
+    const files = d.files.map(f => `<a href="/api/admin/agentic/requests/${encodeURIComponent(d.id)}/files/${encodeURIComponent(f.id)}" download>${escapeHtml(f.filename)}</a> (${escapeHtml(f.kind)}, ${Math.round(f.size / 1024)} KB)`).join('<br>') || '-';
+    const transitions = d.allowedTransitions.map(t => `<option value="${escapeHtml(t.status)}">${escapeHtml(t.label)}</option>`).join('');
+    const history = d.events.map(e => `${escapeHtml((e.at || '').slice(0, 16))} · ${escapeHtml(e.actor || '')} · ${e.toLabel ? '<b>' + escapeHtml(e.toLabel) + '</b> ' : ''}${e.internal ? '<i>(internal)</i> ' : ''}${escapeHtml(e.note || '')}`).join('<br>');
+    const mails = d.emails.map(m => `${escapeHtml(m.kind)} → ${escapeHtml(m.to)} · ${escapeHtml(m.status)}${m.error ? ' (' + escapeHtml(m.error) + ')' : ''}`).join('<br>') || '-';
+    el.innerHTML = `
+      <table class="data-table"><tbody>
+        ${line('Customer', escapeHtml(`${d.customer.name} <${d.customer.email}>${d.customer.phone ? ', ' + d.customer.phone : ''}${d.customer.company ? ', ' + d.customer.company : ''}`))}
+        ${line('Category', escapeHtml(d.category === 'BRANDED' ? 'Branded Agentic AI' : 'Customized Agentic AI'))}
+        ${d.requirements.map(r => line(r.label, escapeHtml(r.value))).join('')}
+        ${line('Files', files)}
+        ${line('Quotations', quotes)}
+        ${line('Payments', payments)}
+        ${line('Emails', mails)}
+      </tbody></table>
+
+      <h3 style="margin:1.25rem 0 .5rem;">Status</h3>
+      ${transitions
+        ? `<form data-onsubmit="changeAgenticRequestStatus(event, '${escapeHtml(d.id)}')" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <label>Move to<select class="select-filter" name="status">${transitions}</select></label>
+            <label style="flex:1;min-width:240px;">Note to customer (required for reject, cancel, revision)<input class="form-control" name="note" maxlength="2000"></label>
+            <button class="btn-primary" type="submit">Update status</button></form>`
+        : '<p style="opacity:.8;">No manual status change is available. The next step happens through a quotation, a payment or a customer action.</p>'}
+
+      <h3 style="margin:1.25rem 0 .5rem;">Quotation</h3>
+      ${agxQuotationForm(d)}
+
+      <h3 style="margin:1.25rem 0 .5rem;">Internal note</h3>
+      <form data-onsubmit="addAgenticRequestNote(event, '${escapeHtml(d.id)}')" style="display:flex;gap:10px;">
+        <input class="form-control" name="note" maxlength="2000" placeholder="Visible to staff only" required style="flex:1;">
+        <button class="btn-primary" type="submit">Add note</button></form>
+
+      <h3 style="margin:1.25rem 0 .5rem;">History</h3>
+      <div style="font-size:13px;line-height:1.7;">${history}</div>`;
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function agxRun(promise, okMessage, id) {
+  try {
+    const r = await promise;
+    showToast(okMessage(r), 'success');
+    loadAgentic();
+    loadAgenticRequests();
+    agxLoadOutbox();
+    if (id) openAgenticRequest(id);
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function changeAgenticRequestStatus(event, id) {
+  event.preventDefault();
+  const f = event.target;
+  agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/status`, { status: f.elements.status.value, note: f.elements.note.value }), (r) => `Status is now ${r.statusLabel}.`, id);
+}
+
+function addAgenticRequestNote(event, id) {
+  event.preventDefault();
+  agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/note`, { note: event.target.elements.note.value }), () => 'Note added.', id);
+}
+
+function saveAgenticQuotation(event, id) {
+  event.preventDefault();
+  const f = event.target.elements;
+  const additionalCharges = f.additionalCharges.value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const [label, amount] = l.split('|');
+    return { label: (label || '').trim(), amount: Number((amount || '').trim()) };
+  });
+  return agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/quotation`, {
+    scope: f.scope.value, proposedSolution: f.proposedSolution.value, developmentCost: f.developmentCost.value,
+    timelineDays: f.timelineDays.value, validityDays: f.validityDays.value, additionalCharges, paymentInstructions: f.paymentInstructions.value
+  }), (r) => `Quotation draft v${r.version} saved (${agxMoney(r.total)}).`, id);
+}
+
+function sendAgenticQuotation(id) {
+  if (!window.confirm('Send this quotation to the customer by email? The request moves to Quotation Sent.')) return;
+  agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/quotation/send`), (r) => `Quotation v${r.version} sent${r.emailed ? '' : ' (email could not be delivered, see the outbox)'}.`, id);
+}
+
+function verifyAgenticPayment(id, paymentId, reported) {
+  const typed = window.prompt('Amount you actually received (BDT). Verify only after checking your bank or payment account:', String(reported));
+  if (typed === null) return;
+  agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/payments/${encodeURIComponent(paymentId)}/verify`, { verifiedAmount: Number(typed) }), () => 'Payment verified. The request is approved.', id);
+}
+
+function rejectAgenticPayment(id, paymentId) {
+  const note = window.prompt('Why could this payment not be verified? (sent to the customer)');
+  if (!note) return;
+  agxRun(agxSend('POST', `/api/admin/agentic/requests/${encodeURIComponent(id)}/payments/${encodeURIComponent(paymentId)}/reject`, { note }), () => 'Payment rejected. The request is awaiting payment again.', id);
+}
+
+/* ---- Ready-Made products ---- */
+
+async function loadAgenticProducts() {
+  const body = document.getElementById('agxProdBody');
+  if (!body) return;
+  try {
+    const { products } = await agxJson('/api/admin/agentic/products');
+    window.__agxProducts = products;
+    body.innerHTML = products.map(p => `
+      <tr>
+        <td><b>${escapeHtml(p.name)}</b>${p.badge ? ' <span class="badge badge-purple">' + escapeHtml(p.badge) + '</span>' : ''}<br><span class="mono">${escapeHtml(p.code)}</span></td>
+        <td>${agxMoney(p.setupFee)}</td>
+        <td>${agxMoney(p.monthlyFee)}</td>
+        <td><span class="badge ${p.active ? 'badge-success' : 'badge-danger'}">${p.active ? 'Visible' : 'Hidden'}</span></td>
+        <td><button class="btn-primary" type="button" data-onclick="editAgenticProduct('${escapeHtml(p.code)}')">Edit</button></td>
+      </tr>`).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;">Not authorized or unavailable.</td></tr>';
+  }
+}
+
+function resetAgenticProductForm() {
+  const f = document.getElementById('agxProdForm');
+  f.reset();
+  f.elements.code.value = '';
+  document.getElementById('agxProdSave').textContent = 'Add solution';
+  document.getElementById('agxProdNote').textContent = '';
+}
+
+function editAgenticProduct(code) {
+  const p = (window.__agxProducts || []).find(x => x.code === code);
+  if (!p) return;
+  const f = document.getElementById('agxProdForm');
+  f.elements.code.value = p.code;
+  f.elements.name.value = p.name;
+  f.elements.tagline.value = p.tagline;
+  f.elements.badge.value = p.badge;
+  f.elements.setupFee.value = p.setupFee;
+  f.elements.monthlyFee.value = p.monthlyFee;
+  f.elements.sortOrder.value = p.sortOrder;
+  f.elements.description.value = p.description;
+  f.elements.capabilities.value = p.capabilities.join('\n');
+  f.elements.active.checked = p.active;
+  document.getElementById('agxProdSave').textContent = 'Save changes';
+  document.getElementById('agxProdNote').textContent = `Editing ${p.code}. Price changes apply to new orders only.`;
+  f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function saveAgenticProduct(event) {
+  event.preventDefault();
+  const f = event.target.elements;
+  const code = f.code.value;
+  const payload = {
+    name: f.name.value, tagline: f.tagline.value, badge: f.badge.value, description: f.description.value,
+    capabilities: f.capabilities.value.split('\n'), setupFee: Number(f.setupFee.value), monthlyFee: Number(f.monthlyFee.value),
+    sortOrder: Number(f.sortOrder.value), active: f.active.checked
+  };
+  try {
+    await agxSend(code ? 'PUT' : 'POST', '/api/admin/agentic/products' + (code ? '/' + encodeURIComponent(code) : ''), payload);
+    showToast(code ? 'Solution updated.' : 'Solution added.', 'success');
+    resetAgenticProductForm();
+    loadAgenticProducts();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+/* ---- Email outbox ---- */
+
+async function agxLoadOutbox() {
+  const body = document.getElementById('agxMailBody');
+  if (!body) return;
+  try {
+    const { emails, mail } = await agxJson('/api/admin/agentic/outbox');
+    document.getElementById('agxMailStatus').textContent =
+      `SMTP: ${mail.smtpConfigured ? 'configured' : 'NOT configured (set SMTP_HOST and MAIL_FROM)'}. Business inbox: ${mail.businessInboxConfigured ? 'configured' : 'NOT configured (set AGENTIC_NOTIFY_EMAIL)'}. Messages that could not be sent stay here and can be resent.`;
+    if (!emails.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">No emails yet.</td></tr>'; return; }
+    body.innerHTML = emails.map(m => `
+      <tr>
+        <td class="mono">${escapeHtml((m.createdAt || '').slice(0, 16))}</td>
+        <td>${escapeHtml(m.kind)}</td>
+        <td class="mono">${escapeHtml(m.to)}</td>
+        <td class="mono">${escapeHtml(m.ref || '-')}</td>
+        <td><span class="badge ${m.status === 'SENT' ? 'badge-success' : (m.status === 'FAILED' ? 'badge-danger' : 'badge-warning')}">${escapeHtml(m.status)}</span>${m.error ? '<br><span style="font-size:12px;opacity:.8;">' + escapeHtml(m.error) + '</span>' : ''}</td>
+        <td>${m.status !== 'SENT' ? `<button class="btn-primary" type="button" data-onclick="resendAgenticEmail('${escapeHtml(m.id)}')">Resend</button>` : ''}</td>
+      </tr>`).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Not authorized or unavailable.</td></tr>';
+  }
+}
+
+async function resendAgenticEmail(id) {
+  try {
+    const r = await agxSend('POST', `/api/admin/agentic/outbox/${encodeURIComponent(id)}/resend`);
+    showToast(r.ok ? 'Email sent.' : `Not sent: ${r.error}`, r.ok ? 'success' : 'error');
+    agxLoadOutbox();
   } catch (e) { showToast(e.message, 'error'); }
 }

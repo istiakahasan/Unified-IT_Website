@@ -1,81 +1,411 @@
-/* Agentic AI configurator (#agx inside #pg-agentic). Uses the existing page tokens (--a1/--a2) and the
-   same surface/border treatment as .cxr cards so it matches the other service configurators. */
+/* Agentic AI pages: hub (#pg-agentic) and the four option pages (#pg-agentic-ready / -custom / -branded / -chat).
+   Built from the existing page tokens (--a1/--a2), the same dark surfaces, borders and radii as the other
+   service pages and configurators. Nothing here restyles an existing component. */
 
-.pg #agx {
+.pg .agx {
   max-width: 1180px;
-  margin: 40px auto 20px;
+  margin: 0 auto 48px;
   padding: 0 16px;
+  box-sizing: border-box;
   text-align: left;
 }
 
-.pg #agx h2 {
-  font-size: 26px;
-  color: #fff;
-  margin: 0 0 6px;
+.pg .agx-trackwrap {
+  margin-top: clamp(40px, 6vw, 72px);
+  padding: 0;
 }
 
-.pg #agx .agx-sub {
+.pg .agx-loading {
+  text-align: center;
   color: #a9b3da;
-  font-size: 15px;
-  margin: 0 0 22px;
+  padding: 80px 0;
+}
+
+/* ---- Breadcrumb and hero ------------------------------------------------ */
+
+.pg .agx-crumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 22px;
+  font-size: 14px;
+  color: #a9b3da;
+}
+
+.pg .agx-crumb a {
+  color: var(--a1);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pg .agx-crumb a:hover,
+.pg .agx-crumb a:focus-visible {
+  text-decoration: underline;
+}
+
+.pg .agx .dsec,
+.pg .agx-hero {
+  max-width: 860px;
+  margin: 0 auto 34px;
+  text-align: center;
+}
+
+.pg .dm > .dsec.agx-hero {
+  margin-top: 0;
+}
+
+.pg .agx .dlab,
+.pg .agx-hero .dlab {
+  display: inline-block;
+  margin-bottom: 12px;
+  text-shadow: 0 0 18px var(--a1);
+}
+
+.pg .agx .dh,
+.pg .agx-hero .dh {
+  margin: 0 auto 16px;
+  max-width: 820px;
+  text-align: center;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.15;
+}
+
+.pg .agx .dp,
+.pg .agx-hero .dp {
+  margin: 0 auto;
+  max-width: 680px;
+  text-align: center;
+  font-size: clamp(15px, 1.25vw, 17px);
+  line-height: 1.65;
+  color: #a9b3da;
+}
+
+/* ---- Hub: option cards and chooser ------------------------------------- */
+
+/* page-shell.css lays every .vg out as a row of quarter-width cards; the hub shows four options as a 2 x 2 grid. */
+.pg .vg.agx-hub {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  padding-right: 0;
+}
+
+.pg .vg.agx-hub .vc {
+  flex: none;
+  width: auto;
+}
+
+.pg .agx-chooser {
+  margin-top: clamp(40px, 6vw, 72px);
+}
+
+.pg .agx-chooser h3 {
+  margin: 0 0 16px;
+  color: #fff;
+  font-size: 22px;
+  text-align: center;
+}
+
+/* ---- Steps strip ------------------------------------------------------- */
+
+.pg .agx-steps {
+  list-style: none;
+  margin: 0 0 30px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pg .agx-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pg .agx-stepnum {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #06101c;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+}
+
+.pg .agx-steps b {
+  display: block;
+  color: #fff;
+  font-size: 14.5px;
+}
+
+.pg .agx-steps small {
+  display: block;
+  margin-top: 2px;
+  color: #a9b3da;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+/* ---- Two-column layout ------------------------------------------------- */
+
+.pg .agx-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: start;
+}
+
+.pg .agx-main {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.pg .agx-aside {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 12px;
+}
+
+/* ---- Panels ------------------------------------------------------------ */
+
+.pg .agx-panel {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 22px 24px 24px;
+}
+
+.pg .agx-panel > header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pg .agx-pnum {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--a1);
+  border: 1px solid var(--a1);
+  background: rgba(110, 168, 255, 0.1);
+}
+
+.pg .agx-panel h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 19px;
+}
+
+.pg .agx-desc {
+  margin: 4px 0 0;
+  color: #a9b3da;
+  font-size: 14px;
   line-height: 1.5;
 }
 
-.pg #agx .agx-step {
-  margin: 30px 0 12px;
-  font-size: 13px;
-  letter-spacing: 0.14em;
+.pg .agx-sub {
+  margin: 22px 0 12px;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--a1);
 }
 
-.pg #agx .cxr {
-  grid-template-columns: repeat(3, 1fr);
+.pg .agx-sub:first-child {
+  margin-top: 0;
 }
 
-.pg #agx .cxr.agx-two {
-  grid-template-columns: 1fr 1fr;
+/* ---- Radio / checkbox cards (reuse the .cxr look) ----------------------- */
+
+.pg .agx .cxr {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px;
 }
 
-.pg #agx .cxr label {
+.pg .agx .cxr.agx-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pg .agx .cxr label {
   position: relative;
+  border-radius: 16px;
+  padding: 18px 20px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 15px;
+  color: #d6dbf5;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
 }
 
-.pg #agx .cxr label.agx-off {
-  opacity: 0.45;
-  cursor: not-allowed;
+.pg .agx .cxr label:hover {
+  transform: translateY(-2px);
 }
 
-.pg #agx .agx-price {
+.pg .agx .cxr label.on {
+  border-color: var(--a1);
+  box-shadow:
+    0 0 0 1px var(--a1) inset,
+    0 10px 34px color-mix(in srgb, var(--a2) 28%, transparent),
+    0 0 24px color-mix(in srgb, var(--a1) 22%, transparent);
+}
+
+.pg .agx .cxr label small.agx-note {
+  color: #ffd9a0;
+}
+
+.pg .agx-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #06101c;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+}
+
+.pg .agx-caps {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.pg .agx-caps li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: #c9d0f0;
+}
+
+.pg .agx-caps li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--a1);
+}
+
+.pg .agx-price {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   font-weight: 700;
   color: var(--a1);
-  font-size: 15px;
+  font-size: 14.5px;
 }
 
-.pg #agx .agx-grid {
+.pg .agx-linkbtn {
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--a1);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ---- Tables ------------------------------------------------------------ */
+
+.pg .agx-tablewrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.pg .agx-compare {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #d6dbf5;
+}
+
+.pg .agx-compare th,
+.pg .agx-compare td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: top;
+}
+
+.pg .agx-compare thead th {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+}
+
+.pg .agx-compare tbody th {
+  color: #a9b3da;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pg .agx-compare tr:last-child th,
+.pg .agx-compare tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---- Form fields ------------------------------------------------------- */
+
+.pg .agx-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
 }
 
-.pg #agx .agx-grid .full {
+.pg .agx-grid .full {
   grid-column: 1 / -1;
 }
 
-.pg #agx .agx-f {
+.pg .agx-f {
   display: block;
-  font-size: 13px;
-  color: #a9b3da;
+  font-size: 13.5px;
+  color: #c9d0f0;
 }
 
-.pg #agx .agx-f input,
-.pg #agx .agx-f textarea {
+.pg .agx-f .agx-flabel {
+  display: block;
+  margin-bottom: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #d6dbf5;
+}
+
+.pg .agx-req {
+  color: #ff9aa8;
+  font-style: normal;
+}
+
+.pg .agx-f input,
+.pg .agx-f textarea,
+.pg .agx-f select {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  margin-top: 6px;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -85,48 +415,67 @@
   font-size: 14.5px;
 }
 
-.pg #agx .agx-f textarea {
-  min-height: 84px;
+.pg .agx-f select option {
+  color: #111;
+}
+
+.pg .agx-f textarea {
+  min-height: 96px;
   resize: vertical;
 }
 
-.pg #agx .agx-f input:focus,
-.pg #agx .agx-f textarea:focus {
+.pg .agx-f input[type="file"] {
+  padding: 10px;
+}
+
+.pg .agx-f input:focus,
+.pg .agx-f textarea:focus,
+.pg .agx-f select:focus {
   outline: 0;
   border-color: var(--a1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--a1) 25%, transparent);
 }
 
-.pg #agx .agx-note {
-  font-size: 13px;
-  color: #a9b3da;
-  margin: 8px 0 0;
+.pg .agx-f.bad input,
+.pg .agx-f.bad textarea,
+.pg .agx-f.bad select {
+  border-color: #ff7b8e;
+}
+
+.pg .agx-help {
+  display: block;
+  margin: 6px 0 0;
+  font-size: 12.5px;
   line-height: 1.5;
+  color: #a9b3da;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.pg #agx .agx-warn {
-  border: 1px solid rgba(255, 190, 90, 0.5);
-  background: rgba(255, 190, 90, 0.08);
-  color: #ffd9a0;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: 13.5px;
-  margin: 10px 0;
-}
-
-.pg #agx .agx-err {
+.pg .agx-ferr {
+  display: block;
+  min-height: 0;
+  margin: 6px 0 0;
+  font-size: 13px;
   color: #ff9aa8;
-  font-size: 14px;
-  margin: 10px 0 0;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.pg #agx .agx-docs {
-  margin-top: 12px;
+.pg .agx-ferr:empty {
+  display: none;
+}
+
+/* ---- Knowledge base documents ----------------------------------------- */
+
+.pg .agx-docs {
+  margin-top: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
   overflow: hidden;
 }
 
-.pg #agx .agx-docs div {
+.pg .agx-docs div {
   display: grid;
   grid-template-columns: 1.6fr 0.8fr 0.8fr 0.8fr;
   gap: 10px;
@@ -136,32 +485,38 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.pg #agx .agx-docs div:last-child {
+.pg .agx-docs div:last-child {
   border-bottom: 0;
 }
 
-.pg #agx .agx-docs .h {
+.pg .agx-docs .h {
   color: #a9b3da;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.pg #agx .agx-sum {
-  margin-top: 30px;
-  padding: 22px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
+.pg .agx-docs a {
+  color: var(--a1);
 }
 
-.pg #agx .agx-sum h3 {
-  margin: 0 0 4px;
+/* ---- Summary / side panels -------------------------------------------- */
+
+.pg .agx-sum {
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pg .agx-sum h3 {
+  margin: 0 0 6px;
   color: #fff;
   font-size: 18px;
 }
 
-.pg #agx .agx-sum h4 {
+.pg .agx-sum h4,
+.pg .agx-result h4 {
   margin: 18px 0 6px;
   font-size: 12px;
   letter-spacing: 0.12em;
@@ -169,36 +524,155 @@
   color: var(--a1);
 }
 
-.pg #agx .agx-row {
+.pg .agx-row {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 6px 0;
-  font-size: 14.5px;
+  padding: 7px 0;
+  font-size: 14px;
   color: #d6dbf5;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
 }
 
-.pg #agx .agx-row b {
+.pg .agx-row b {
   color: #fff;
-  white-space: nowrap;
+  text-align: right;
 }
 
-.pg #agx .agx-row.tot {
+.pg .agx-row.tot {
   font-size: 16px;
   border-bottom: 0;
   padding-top: 12px;
 }
 
-.pg #agx .agx-actions {
+.pg .agx-cta {
+  width: 100%;
+  margin: 0;
+  justify-content: center;
+  color: #06101c;
+  border: 0;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+  box-shadow: 0 10px 26px rgba(120, 120, 255, 0.3);
+}
+
+.pg .agx-cta[disabled],
+.pg .agx button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pg .agx-submit {
+  display: grid;
+  gap: 10px;
+}
+
+.pg .agx-formerr {
+  padding: 0;
+}
+
+.pg .agx-next ol {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  counter-reset: next;
+}
+
+.pg .agx-next li {
+  position: relative;
+  padding-left: 38px;
+  counter-increment: next;
+}
+
+.pg .agx-next li::before {
+  content: counter(next);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--a1);
+  border: 1px solid var(--a1);
+}
+
+.pg .agx-next b {
+  display: block;
+  color: #fff;
+  font-size: 14.5px;
+}
+
+.pg .agx-next span {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #a9b3da;
+}
+
+/* ---- Confirmation ------------------------------------------------------ */
+
+.pg .agx-done {
+  display: flex;
+  gap: 16px;
+  margin-top: 26px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--a1);
+  background: rgba(110, 168, 255, 0.1);
+  color: #e8ecff;
+}
+
+.pg .agx-tick {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #06101c;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+}
+
+.pg .agx-done b {
+  font-size: 18px;
+  color: #fff;
+}
+
+.pg .agx-done p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.pg .agx-refline {
+  margin-top: 6px;
+  color: #a9b3da;
+}
+
+.pg .agx-refline code {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 15px;
+}
+
+.pg .agx-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
-.pg #agx .agx-actions .vb {
+.pg .agx-actions .vb {
   margin: 0;
   color: #06101c;
   border: 0;
@@ -206,49 +680,265 @@
   box-shadow: 0 10px 26px rgba(120, 120, 255, 0.3);
 }
 
-.pg #agx .agx-actions .vb[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
+.pg .agx-link {
+  color: var(--a1);
+  font-weight: 600;
 }
 
-.pg #agx .agx-done {
-  margin-top: 20px;
-  padding: 18px;
-  border-radius: 14px;
-  border: 1px solid var(--a1);
-  background: rgba(110, 168, 255, 0.1);
-  color: #e8ecff;
+.pg .agx-ghost {
+  padding: 11px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.pg #agx .agx-done a {
+.pg .agx-ghost.danger {
+  border-color: rgba(255, 123, 142, 0.6);
+  color: #ff9aa8;
+}
+
+/* ---- Tracker ----------------------------------------------------------- */
+
+.pg .agx-result {
+  margin-top: 22px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pg .agx-reshead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.pg .agx-reshead h3 {
+  margin: 2px 0 0;
+  color: #fff;
+  font-size: 22px;
+}
+
+.pg .agx-kicker {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--a1);
 }
 
-.pg #agx .agx-track {
-  margin-top: 34px;
+.pg .agx-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: capitalize;
+  border: 1px solid currentColor;
 }
 
-@media (max-width: 800px) {
-  .pg #agx .cxr,
-  .pg #agx .cxr.agx-two,
-  .pg #agx .agx-grid {
+.pg .agx-badge.good { color: #6ee7a8; }
+.pg .agx-badge.mid { color: var(--a1); }
+.pg .agx-badge.bad { color: #ff9aa8; }
+
+.pg .agx-stepper {
+  list-style: none;
+  margin: 8px 0 18px;
+  padding: 0 0 6px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.pg .agx-stepper li {
+  flex: 1 0 96px;
+  text-align: center;
+  color: #7f89b3;
+}
+
+.pg .agx-stepper li span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pg .agx-stepper li small {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.3;
+}
+
+.pg .agx-stepper li.done {
+  color: #c9d0f0;
+}
+
+.pg .agx-stepper li.done span {
+  background: rgba(110, 231, 168, 0.18);
+  border-color: #6ee7a8;
+  color: #6ee7a8;
+}
+
+.pg .agx-stepper li.now {
+  color: #fff;
+}
+
+.pg .agx-stepper li.now span {
+  color: #06101c;
+  border-color: transparent;
+  background: linear-gradient(120deg, var(--a1), var(--a2));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--a1) 55%, transparent);
+}
+
+.pg .agx-banner {
+  margin: 8px 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(110, 168, 255, 0.45);
+  background: rgba(110, 168, 255, 0.08);
+  color: #d6dbf5;
+  font-size: 14px;
+}
+
+.pg .agx-banner.bad {
+  border-color: rgba(255, 123, 142, 0.55);
+  background: rgba(255, 123, 142, 0.08);
+  color: #ffb3be;
+}
+
+.pg .agx-quote,
+.pg .agx-respond {
+  margin: 18px 0;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pg .agx-quote h4,
+.pg .agx-respond h4 {
+  margin: 0 0 8px;
+}
+
+.pg .agx-quote h5 {
+  margin: 14px 0 4px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.pg .agx-pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #d6dbf5;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pg .agx-details {
+  margin: 18px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.pg .agx-details summary {
+  cursor: pointer;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pg .agx-details .agx-req {
+  margin-top: 12px;
+}
+
+.pg .agx-details .agx-req b {
+  color: #a9b3da;
+  font-size: 12.5px;
+}
+
+.pg .agx-timeline {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pg .agx-timeline li {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  font-size: 13.5px;
+  color: #d6dbf5;
+}
+
+.pg .agx-timeline time {
+  color: #8993bd;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Responsive -------------------------------------------------------- */
+
+@media (max-width: 1020px) {
+  .pg .agx-layout {
     grid-template-columns: 1fr;
   }
 
-  .pg #agx .agx-docs div {
-    grid-template-columns: 1fr 1fr;
+  .pg .agx-aside {
+    position: static;
   }
 }
 
-/* ---- Layout aligned with #pg-email (hero + .dm container, glowing cards) ---- */
-.pg #agx { max-width: 1180px; margin: 0 auto 48px; padding: 0 16px; box-sizing: border-box; }
-.pg #agx .dsec { max-width: 860px; margin: 0 auto 34px; text-align: center; }
-.pg #agx .dlab { display: inline-block; margin-bottom: 12px; text-shadow: 0 0 18px var(--a1); }
-.pg #agx .dh { margin: 0 auto 16px; max-width: 820px; text-align: center; font-size: clamp(2.1rem, 4vw, 3.2rem); line-height: 1.15; }
-.pg #agx .dp { margin: 0 auto; max-width: 680px; text-align: center; font-size: clamp(15px, 1.25vw, 17px); line-height: 1.65; color: #a9b3da; }
-.pg #agx .agx-sub { margin: 0 auto 22px; max-width: 760px; text-align: center; }
-.pg #agx .agx-grid, .pg #agx .cxr { gap: 24px; }
-.pg #agx .agx-step { margin: 34px 0 14px; }
-.pg #agx .cxr label { border-radius: 18px; padding: 22px; text-transform: none; letter-spacing: 0; font-size: 15px; color: #d6dbf5; transition: border-color .25s, box-shadow .25s, transform .25s; }
-.pg #agx .cxr label:hover { transform: translateY(-2px); }
-.pg #agx .cxr label.on { border-color: var(--a1); box-shadow: 0 0 0 1px var(--a1) inset, 0 10px 34px color-mix(in srgb, var(--a2) 28%, transparent), 0 0 24px color-mix(in srgb, var(--a1) 22%, transparent); }
+@media (max-width: 800px) {
+  .pg .vg.agx-hub {
+    grid-template-columns: 1fr;
+  }
+
+  .pg .agx-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pg .agx-grid,
+  .pg .agx .cxr.agx-two {
+    grid-template-columns: 1fr;
+  }
+
+  .pg .agx-docs div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pg .agx-panel {
+    padding: 18px 16px 20px;
+  }
+
+  .pg .agx-timeline li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .pg .agx-done {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg .agx .cxr label {
+    transition: none;
+  }
+
+  .pg .agx .cxr label:hover {
+    transform: none;
+  }
+}

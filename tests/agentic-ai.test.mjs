@@ -32,10 +32,11 @@ describe('Agentic AI module', () => {
     const raw = JSON.stringify(evt);
     return call('POST', '/api/webhooks/whmcs/agentic', { body: evt, raw, headers: { 'x-unified-signature': sig ?? sign(raw) } });
   };
+  const CHAT_REQ = { purpose: 'Answer product questions', languages: 'English, Bengali' };
   const order = (over = {}) => ({
     idempotencyKey: crypto.randomUUID(),
     customer: { name: 'Rahat Khan', email: `buyer${Math.random().toString(36).slice(2, 8)}@example.com`, phone: '01700000000' },
-    configCode: 'READY_MADE', backup: true, maintenance: false, voice: false,
+    configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT', backup: true, maintenance: false, voice: false,
     ...over
   });
 
@@ -93,15 +94,26 @@ describe('Agentic AI module', () => {
 
   describe('pricing', () => {
     it('Ready-Made has no development fee', () => {
-      const q = agentic.buildQuote(agentic.getPricing(db), { configCode: 'READY_MADE' }, 0);
+      const q = agentic.buildQuote(agentic.getPricing(db), { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT' }, 0);
       assert.equal(q.totals.oneTime, 0);
       assert.equal(q.oneTime.length, 0);
       assert.equal(q.totals.recurringMonthly, 1000);
     });
-    it('Customized costs ৳25,000 once and Chat-Only ৳20,000 once', () => {
+    it('Chat-Only costs ৳20,000 once; the old fixed-price Customized/Branded config is no longer sold', () => {
       const p = agentic.getPricing(db);
-      assert.equal(agentic.buildQuote(p, { configCode: 'CUSTOM_BRANDED' }, 0).totals.oneTime, 25000);
       assert.equal(agentic.buildQuote(p, { configCode: 'CHAT_ONLY' }, 0).totals.oneTime, 20000);
+      assert.equal(p.configs.CUSTOM_BRANDED.active, false);
+      assert.throws(() => agentic.buildQuote(p, { configCode: 'CUSTOM_BRANDED' }, 0), /valid Agentic AI configuration/);
+    });
+    it('Ready-Made needs one of the available solutions and adds that solution\'s own fees', () => {
+      const p = agentic.getPricing(db);
+      assert.throws(() => agentic.buildQuote(p, { configCode: 'READY_MADE' }, 0), /Ready-Made AI solutions/);
+      assert.throws(() => agentic.buildQuote(p, { configCode: 'READY_MADE', productCode: 'NOPE' }, 0), /Ready-Made AI solutions/);
+      const priced = { ...p, products: { ...p.products, SUPPORT_AGENT: { ...p.products.SUPPORT_AGENT, setupFee: 3000, monthlyFee: 800 } } };
+      const q = agentic.buildQuote(priced, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT' }, 0);
+      assert.equal(q.totals.oneTime, 3000);
+      assert.equal(q.totals.recurringMonthly, 1800);
+      assert.equal(q.product.code, 'SUPPORT_AGENT');
     });
     it('Chat-Only cannot use voice calling', () => {
       assert.throws(() => agentic.buildQuote(agentic.getPricing(db), { configCode: 'CHAT_ONLY', voice: true }), /not available/);
@@ -110,27 +122,27 @@ describe('Agentic AI module', () => {
     });
     it('keeps one-time, recurring and usage separate; maintenance only when enabled; RAG is ৳1/char', () => {
       const p = agentic.getPricing(db);
-      const off = agentic.buildQuote(p, { configCode: 'CUSTOM_BRANDED', maintenance: false, voice: true }, 1234);
+      const off = agentic.buildQuote(p, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT', maintenance: false, voice: true }, 1234);
       assert.equal(off.recurring.some(l => l.code === 'MAINTENANCE'), false);
       assert.equal(off.totals.ragCost, 1234);
       assert.equal(off.usage.find(u => u.code === 'VOICE').rate, 5);
       assert.equal(off.usage.find(u => u.code === 'VOICE').amount, null);
-      const on = agentic.buildQuote(p, { configCode: 'CUSTOM_BRANDED', maintenance: true }, 0);
+      const on = agentic.buildQuote(p, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT', maintenance: true }, 0);
       assert.equal(on.totals.recurringMonthly, 6000);
       assert.equal(on.maintenanceStatus, 'ENABLED');
     });
     it('does not guess the backup billing interval', () => {
       const p = agentic.getPricing(db);
       assert.equal(p.backupInterval, null);
-      const q = agentic.buildQuote(p, { configCode: 'READY_MADE' }, 0);
+      const q = agentic.buildQuote(p, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT' }, 0);
       assert.equal(q.backup.amount, 500);
       assert.equal(q.backup.interval, null);
       assert.equal(q.totals.initialPayment, 1000);   // backup excluded until the interval is confirmed
       assert.ok(q.notices.length === 1);
       const monthly = { ...p, backupInterval: 'monthly' };
-      assert.equal(agentic.buildQuote(monthly, { configCode: 'READY_MADE' }, 0).totals.recurringMonthly, 1500);
+      assert.equal(agentic.buildQuote(monthly, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT' }, 0).totals.recurringMonthly, 1500);
       const once = { ...p, backupInterval: 'one_time' };
-      const qo = agentic.buildQuote(once, { configCode: 'READY_MADE' }, 0);
+      const qo = agentic.buildQuote(once, { configCode: 'READY_MADE', productCode: 'SUPPORT_AGENT' }, 0);
       assert.equal(qo.totals.oneTime, 500);
       assert.equal(qo.totals.recurringMonthly, 1000);
     });
@@ -145,7 +157,10 @@ describe('Agentic AI module', () => {
     it('exposes the catalog without secrets', async () => {
       const r = await call('GET', '/api/public/agentic/catalog');
       assert.equal(r.statusCode, 200);
-      assert.equal(r.data.configurations.length, 3);
+      assert.equal(r.data.configurations.length, 2);
+      assert.deepEqual(r.data.configurations.map(c => c.code), ['READY_MADE', 'CHAT_ONLY']);
+      assert.equal(r.data.products.length, 3);
+      assert.ok(r.data.forms.CUSTOMIZED && r.data.forms.BRANDED && r.data.forms.CHAT_ONLY);
       assert.equal(r.data.rates.ragPerCharacter, 1);
       assert.equal(r.data.telephony.configured, false);
       assert.ok(!JSON.stringify(r.data).includes('SECRET'));
@@ -153,10 +168,10 @@ describe('Agentic AI module', () => {
     it('ignores client-supplied prices and recomputes RAG characters on the server', async () => {
       const text = 'বাংলা text 123';
       const r = await call('POST', '/api/public/agentic/orders', {
-        body: order({ ragText: text, price: 1, totalPrice: 1, developmentCost: 0, ragChars: 1, configCode: 'CUSTOM_BRANDED', branding: { brandName: 'Acme' } })
+        body: order({ ragText: text, price: 1, totalPrice: 1, developmentCost: 0, ragChars: 1 })
       });
       assert.equal(r.statusCode, 201);
-      assert.equal(r.data.quote.totals.oneTime, 25000);
+      assert.equal(r.data.quote.totals.oneTime, 0);
       assert.equal(r.data.quote.totals.ragCharacters, agentic.countBillableCharacters(text));
       assert.equal(r.data.quote.totals.ragCost, agentic.countBillableCharacters(text));
     });
@@ -165,9 +180,12 @@ describe('Agentic AI module', () => {
       assert.equal(r.statusCode, 409);
       assert.equal(r.data.code, 'price_changed');
     });
-    it('rejects voice for Chat-Only and branding is required for Customized', async () => {
-      assert.equal((await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CHAT_ONLY', voice: true }) })).statusCode, 400);
-      assert.equal((await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CUSTOM_BRANDED' }) })).statusCode, 400);
+    it('rejects voice for Chat-Only and fixed-price orders for the quotation-only Customized option', async () => {
+      assert.equal((await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CHAT_ONLY', productCode: undefined, requirements: CHAT_REQ, voice: true }) })).statusCode, 400);
+      const custom = await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CUSTOM_BRANDED', productCode: undefined }) });
+      assert.equal(custom.statusCode, 400);
+      assert.match(custom.data.message, /quoted individually/);
+      assert.equal((await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CHAT_ONLY', productCode: undefined }) })).statusCode, 400);
     });
     it('is idempotent: the same key never creates a second order or invoice', async () => {
       const body = order();
@@ -290,7 +308,7 @@ describe('Agentic AI module', () => {
     });
 
     it('refuses usage on a non-voice order', async () => {
-      const created = await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CHAT_ONLY' }) });
+      const created = await call('POST', '/api/public/agentic/orders', { body: order({ configCode: 'CHAT_ONLY', productCode: undefined, requirements: CHAT_REQ }) });
       const row = db.prepare('SELECT id FROM agentic_orders WHERE order_ref = ?').get(created.data.orderRef);
       await webhook({ event: 'InvoicePaid', invoiceId: created.data.invoice.id, transactionId: 'T-chat', amount: created.data.invoice.amount });
       const r = await call('POST', `/api/admin/agentic/orders/${row.id}/calling-usage`, { token: adminToken, body: { providerRef: 'c9', durationSeconds: 30 } });

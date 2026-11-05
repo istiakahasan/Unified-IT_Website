@@ -36,6 +36,13 @@ services:
       - AGENTIC_WHMCS_PAYMENT_METHOD=${AGENTIC_WHMCS_PAYMENT_METHOD:-}
       - WHMCS_CLIENT_AREA_URL=${WHMCS_CLIENT_AREA_URL:-}
       - AGENTIC_TELEPHONY_PROVIDER=${AGENTIC_TELEPHONY_PROVIDER:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - AGENTIC_NOTIFY_EMAIL=${AGENTIC_NOTIFY_EMAIL:-}
     volumes:
       - ./:/usr/src/app
       - /usr/src/app/node_modules

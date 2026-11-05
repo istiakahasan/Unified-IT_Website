@@ -1683,10 +1683,89 @@
           </div>
 
           <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Custom requests (Customized and Branded)</div>
+              <div class="panel-filters">
+                <select id="agxReqCategory" class="select-filter" data-onchange="loadAgenticRequests()">
+                  <option value="">Both categories</option>
+                  <option value="CUSTOMIZED">Customized</option>
+                  <option value="BRANDED">Branded</option>
+                </select>
+                <select id="agxReqStatus" class="select-filter" data-onchange="loadAgenticRequests()">
+                  <option value="">All statuses</option>
+                  <option value="PENDING_ANALYSIS">Pending Analysis</option>
+                  <option value="UNDER_REVIEW">Under Review</option>
+                  <option value="QUOTATION_SENT">Quotation Sent</option>
+                  <option value="AWAITING_PAYMENT">Awaiting Payment</option>
+                  <option value="PAYMENT_VERIFICATION">Payment Verification</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="IN_DEVELOPMENT">In Development</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="REVISION_REQUESTED">Revision Requested</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Reference</th><th>Customer</th><th>Category</th><th>Status</th><th>Quoted (BDT)</th><th>Submitted</th><th>Actions</th></tr></thead>
+                <tbody id="agxReqBody"><tr><td colspan="7" style="text-align:center;padding:2rem;">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="data-panel" id="agxReqPanel" hidden>
+            <div class="data-panel-header"><div class="panel-title" id="agxReqTitle">Request</div></div>
+            <div id="agxReqBodyDetail" style="padding:1rem 1.25rem;"></div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Ready-Made AI products</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Solution</th><th>Setup (BDT)</th><th>Monthly add-on (BDT)</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="agxProdBody"><tr><td colspan="5" style="text-align:center;padding:2rem;">Loading...</td></tr></tbody>
+              </table>
+            </div>
+            <form id="agxProdForm" data-onsubmit="saveAgenticProduct(event)" style="padding:1rem 1.25rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+              <input type="hidden" name="code">
+              <label>Name<input class="form-control" name="name" required maxlength="80"></label>
+              <label>Tagline<input class="form-control" name="tagline" maxlength="160"></label>
+              <label>Badge (optional)<input class="form-control" name="badge" maxlength="30"></label>
+              <label>Setup fee (BDT)<input class="form-control" name="setupFee" type="number" min="0" step="1" value="0"></label>
+              <label>Monthly add-on (BDT)<input class="form-control" name="monthlyFee" type="number" min="0" step="1" value="0"></label>
+              <label>Sort order<input class="form-control" name="sortOrder" type="number" step="1" value="0"></label>
+              <label style="grid-column:1/-1;">Description<textarea class="form-control" name="description" rows="2" maxlength="1000"></textarea></label>
+              <label style="grid-column:1/-1;">Capabilities (one per line)<textarea class="form-control" name="capabilities" rows="4"></textarea></label>
+              <label><input type="checkbox" name="active" checked> Visible to customers</label>
+              <div style="grid-column:1/-1;display:flex;gap:12px;align-items:center;">
+                <button class="btn-primary" type="submit" id="agxProdSave">Add solution</button>
+                <button class="btn-primary" type="button" data-onclick="resetAgenticProductForm()">Clear</button>
+                <span id="agxProdNote" style="font-size:13px;opacity:.8;"></span>
+              </div>
+            </form>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Email outbox</div>
+            </div>
+            <div id="agxMailStatus" style="padding:.75rem 1.25rem 0;font-size:13px;opacity:.85;"></div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>When</th><th>Kind</th><th>To</th><th>Reference</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="agxMailBody"><tr><td colspan="6" style="text-align:center;padding:2rem;">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="data-panel">
             <div class="data-panel-header"><div class="panel-title">Pricing and billing configuration</div></div>
             <form id="agxPricingForm" data-onsubmit="saveAgenticPricing(event)" style="padding:1rem 1.25rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;">
               <label>Ready-Made development (BDT)<input class="form-control" name="cfg_ready_dev" type="number" min="0" step="1"></label>
-              <label>Customized development (BDT)<input class="form-control" name="cfg_custom_dev" type="number" min="0" step="1"></label>
               <label>Chat-Only development (BDT)<input class="form-control" name="cfg_chat_dev" type="number" min="0" step="1"></label>
               <label>Server / month (BDT)<input class="form-control" name="server_monthly" type="number" min="0" step="1"></label>
               <label>Backup amount (BDT)<input class="form-control" name="backup_amount" type="number" min="0" step="1"></label>

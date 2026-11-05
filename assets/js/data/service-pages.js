@@ -101,7 +101,40 @@ window.SERVICE_PAGES = {
     "a1": "#5cf0ff",
     "a2": "#b47bff",
     "ic": "spark",
-    "cards": []
+    "cards": [],
+    "html": "<div class=\"dm\"><section class=\"dsec agx-hero\" style=\"--i:0\"><div class=\"dlab\">Agentic AI &amp; Automation</div><h2 class=\"dh\">Build and deploy your AI agent</h2><p class=\"dp\">Autonomous AI agents that plan, reason, use tools, and execute business workflows on private, enterprise cloud infrastructure. Choose how you want to get yours.</p></section><div class=\"vg agx-hub\" style=\"--i:1\"><div class=\"vc\" style=\"--i:0\"><svg class=\"ei\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 8l9-5 9 5v8l-9 5-9-5z\"/><path d=\"M3 8l9 5 9-5M12 13v8\"/></svg><h3>Ready-Made AI</h3><div class=\"ek\">FIXED PRICE · ORDER ONLINE</div><p class=\"vd\">Pre-built agents you can order today and have deployed on Unified Cloud.</p><div class=\"vsp\"></div><div class=\"eh\">INCLUDES</div><ul class=\"el\"><li>Browse a catalog of proven solutions</li><li>Compare solutions side by side</li><li>Add voice, backup or maintenance</li><li>Order and pay online</li></ul><a class=\"vb\" href=\"#p-agentic-ready\">Browse solutions <svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg></a></div><div class=\"vc\" style=\"--i:1\"><svg class=\"ei\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><h3>Customized Agentic AI</h3><div class=\"ek\">QUOTATION · BUILT FOR YOU</div><p class=\"vd\">A custom-built agent designed around your business requirements, integrations and workflows.</p><div class=\"vsp\"></div><div class=\"eh\">INCLUDES</div><ul class=\"el\"><li>Detailed requirements brief</li><li>Reviewed by our engineers</li><li>Project-specific quotation</li><li>Pay after you approve the quote</li></ul><a class=\"vb\" href=\"#p-agentic-custom\">Describe your project <svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg></a></div><div class=\"vc\" style=\"--i:2\"><svg class=\"ei\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-1-.8-1.6-.8-2.5 0-.9.7-1.7 1.7-1.7H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3z\"/><circle cx=\"7.5\" cy=\"11\" r=\"1\"/><circle cx=\"10\" cy=\"7\" r=\"1\"/><circle cx=\"15\" cy=\"7.5\" r=\"1\"/></svg><h3>Branded Agentic AI</h3><div class=\"ek\">QUOTATION · YOUR BRAND</div><p class=\"vd\">An AI agent that looks, sounds and behaves like your brand, on your domain or ours.</p><div class=\"vsp\"></div><div class=\"eh\">INCLUDES</div><ul class=\"el\"><li>Logo, colors and brand identity</li><li>Custom chatbot appearance</li><li>Your domain or deployment choice</li><li>Quotation and verified payment</li></ul><a class=\"vb\" href=\"#p-agentic-branded\">Brand your agent <svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg></a></div><div class=\"vc\" style=\"--i:3\"><svg class=\"ei\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 11h7M8.5 14h4\"/></svg><h3>Chat-Only AI</h3><div class=\"ek\">FIXED PRICE · CHAT</div><p class=\"vd\">A focused conversational chatbot for your website and customers, without autonomous automation.</p><div class=\"vsp\"></div><div class=\"eh\">INCLUDES</div><ul class=\"el\"><li>Website chat integration</li><li>Your knowledge base</li><li>Languages, tone and custom answers</li><li>Order and pay online</li></ul><a class=\"vb\" href=\"#p-agentic-chat\">Configure chatbot <svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg></a></div></div><section class=\"agx-chooser\" aria-label=\"Which option fits you\"><h3>Which option fits you?</h3><div class=\"agx-tablewrap\"><table class=\"agx-compare\"><thead><tr><th scope=\"col\"></th><th scope=\"col\">Ready-Made</th><th scope=\"col\">Customized</th><th scope=\"col\">Branded</th><th scope=\"col\">Chat-Only</th></tr></thead><tbody><tr><th scope=\"row\">How you buy</th><td>Order online</td><td>Request a quotation</td><td>Request a quotation</td><td>Order online</td></tr><tr><th scope=\"row\">Pricing</th><td>Fixed, shown before you pay</td><td>Project-specific</td><td>Project-specific</td><td>Fixed, shown before you pay</td></tr><tr><th scope=\"row\">Work starts after</th><td>Payment is confirmed</td><td>You accept the quote and payment is verified</td><td>You accept the quote and payment is verified</td><td>Payment is confirmed</td></tr><tr><th scope=\"row\">Best for</th><td>A fast start with a proven agent</td><td>Unique workflows and integrations</td><td>An on-brand, white-labelled agent</td><td>Website chat and FAQs</td></tr></tbody></table></div></section><div class=\"agx agx-trackwrap\" data-agx-tracker></div></div>"
+  },
+  "agentic-ready": {
+    "h": 255,
+    "a1": "#5cf0ff",
+    "a2": "#b47bff",
+    "ic": "spark",
+    "cards": [],
+    "html": "<div class=\"dm\"><div class=\"agx\" data-agx=\"READY_MADE\"></div></div>"
+  },
+  "agentic-custom": {
+    "h": 255,
+    "a1": "#5cf0ff",
+    "a2": "#b47bff",
+    "ic": "spark",
+    "cards": [],
+    "html": "<div class=\"dm\"><div class=\"agx\" data-agx=\"CUSTOMIZED\"></div></div>"
+  },
+  "agentic-branded": {
+    "h": 255,
+    "a1": "#5cf0ff",
+    "a2": "#b47bff",
+    "ic": "spark",
+    "cards": [],
+    "html": "<div class=\"dm\"><div class=\"agx\" data-agx=\"BRANDED\"></div></div>"
+  },
+  "agentic-chat": {
+    "h": 255,
+    "a1": "#5cf0ff",
+    "a2": "#b47bff",
+    "ic": "spark",
+    "cards": [],
+    "html": "<div class=\"dm\"><div class=\"agx\" data-agx=\"CHAT_ONLY\"></div></div>"
   },
   "contact": {
     "h": 230,
