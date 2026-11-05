@@ -15,8 +15,9 @@ try {
   var root = document.createElement('section');
   root.id = 'agx';
   root.setAttribute('aria-label', 'Agentic AI configurator');
-  var footer = wrap.querySelector('.uf');
-  wrap.insertBefore(root, footer || null);
+  // Same order as the Business Email page: hero first, then the content cards. The info cards (.vg) follow the configurator.
+  var cards = wrap.querySelector('.vg');
+  wrap.insertBefore(root, cards || wrap.querySelector('.uf') || null);
 
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function tk(n) { return '৳' + (Math.round(Number(n) * 100) / 100).toLocaleString('en-US'); }
@@ -53,7 +54,8 @@ try {
     var r = CAT.rates;
     var intervalTxt = r.backupInterval === 'one_time' ? 'one-time' : r.backupInterval === 'monthly' ? 'per month' : 'billing interval to be confirmed';
     root.innerHTML =
-      '<h2>Build your AI agent</h2><p class="agx-sub">Choose a configuration, add your knowledge base, and review exactly what is charged once, monthly and by usage. All prices are in BDT (৳).</p>' +
+      '<div class="dm"><section class="dsec" style="--i:0;text-align:center;margin-bottom:34px"><div class="dlab">Agentic AI &amp; Automation</div><h2 class="dh">Build and deploy your AI agent</h2><p class="dp">Autonomous AI agents that plan, reason, use tools, and execute business workflows on private, enterprise cloud infrastructure.</p></section>' +
+      '<p class="agx-sub">Choose a configuration, add your knowledge base, and review exactly what is charged once, monthly and by usage. All prices are in BDT (৳).</p>' +
       '<div class="agx-step">1 · Agent configuration</div><div class="cxr" id="agx-cfgs">' + CAT.configurations.map(cfgCard).join('') + '</div>' +
 
       '<div class="agx-step">2 · Options</div><div class="cxr agx-two">' +
@@ -90,7 +92,7 @@ try {
       '<div class="agx-track"><div class="agx-step">Track an order</div><div class="agx-grid">' +
       '<label class="agx-f">Order reference<input id="agx-t-ref" placeholder="AGT-2026-XXXXXXXX"></label>' +
       '<label class="agx-f">Email used for the order<input id="agx-t-email" type="email"></label></div>' +
-      '<div class="agx-actions"><button class="vb" type="button" id="agx-track">View order</button><span class="agx-err" id="agx-t-err" role="alert"></span></div><div id="agx-t-out"></div></div>';
+      '<div class="agx-actions"><button class="vb" type="button" id="agx-track">View order</button><span class="agx-err" id="agx-t-err" role="alert"></span></div><div id="agx-t-out"></div></div></div>';
     sync();
   }
 
@@ -273,7 +275,7 @@ try {
   }
 
   refreshCatalog().then(build).catch(function () {
-    root.innerHTML = '<h2>Build your AI agent</h2><p class="agx-sub">The ordering service is not reachable from this page (it needs the Unified Cloud server). Please contact sales to order an Agentic AI agent.</p>';
+    root.innerHTML = '<div class="dm"><section class="dsec" style="--i:0;text-align:center;margin-bottom:34px"><div class="dlab">Agentic AI &amp; Automation</div><h2 class="dh">Build and deploy your AI agent</h2><p class="dp">The ordering service is not reachable from this page (it needs the Unified Cloud server). Please contact sales to order an Agentic AI agent.</p></section></div>';
   });
 })();
 } catch (err) { console.error('[Agentic AI]', err); }
