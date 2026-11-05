@@ -1,3 +1,50 @@
+# CHANGES — Agentic AI page layout aligned with Business Email
+
+**Date:** 2026-11-05
+**Scope:** presentation of `#p-agentic` only. Pricing, RAG counting, WHMCS checkout, API and database are unchanged.
+
+- `assets/js/modules/agentic-ai.js`: `#agx` content is wrapped in `<div class="dm">` and starts with the Business Email style hero (`.dsec` / `.dlab` "Agentic AI & Automation" / `.dh` "Build and deploy your AI agent" / `.dp`). `#agx` is now inserted above the original info cards so the hero is the first thing on the page (previously the configurator sat below them). The unreachable-service fallback uses the same hero. All event handlers, server-authoritative pricing, RAG counting and order submission are untouched.
+- `assets/css/agentic-ai.css`: `.pg #agx` is `max-width:1180px`, centered, 16px padding; hero styles scoped to `#agx` (the email page's equivalents are scoped to `#pg-email` only); 24px grid gaps; 34px step spacing; configuration and option cards use rounded 18px borders with the `--a1`/`--a2` glow when selected.
+- Fixed while verifying in the browser: the site-wide `.pg label` rule uppercased all card text, so card labels reset `text-transform`; a later `.agx-grid` rule was overriding the new 24px gap.
+- Verified: `node scripts/check-syntax.mjs` (57/57 files), `npm test` and `node --test tests/agentic-ai.test.mjs`, the full suite, and a real-browser run (hero, card selection, voice hidden for Chat-Only, order placement and tracking, no console or CSP errors, no horizontal overflow at 390px).
+
+---
+
+# CHANGES — Agentic AI module (WHMCS purchasing, RAG billing, usage, admin)
+
+**Date:** 2026-11-05
+**Scope:** Agentic AI only (no Offline AI, ERP Analyzer or Custom Request). Existing images, layout, colours, typography and navigation were not changed. The new section is injected into the existing `#pg-agentic` page and reuses its card/radio styles.
+
+## What was added
+
+- **Backend** `server/agentic-ai.mjs`: pricing, three configurations, RAG character counting, order creation, WHMCS hand-off, verified payment activation, call usage and usage invoicing, read models, audit log.
+- **Database**: ten `agentic_*` tables with foreign keys, `CHECK` constraints and unique indexes for duplicate protection (created idempotently by `initAgenticSchema`, so existing databases upgrade on start).
+- **API** (`server/api.mjs`): public catalog, quote, order, lookup, signed WHMCS webhook; admin overview, orders, pricing, subscriptions, usage and service actions.
+- **WHMCS adapter**: `createAgenticOrder`, `getInvoice`, `createUsageInvoice`, `getInvoiceUrl` (and a sandbox `CreateInvoice`).
+- **RBAC**: new `agentic:read` / `agentic:manage` permissions.
+- **Server**: `server.mjs` passes the raw request body to the API layer so webhook signatures can be verified.
+- **Frontend**: `assets/js/modules/agentic-ai.js` and `assets/css/agentic-ai.css` (configurator, live pricing summary, RAG upload, order tracking). Admin: new **Agentic AI** view in `admin.html` / `assets/js/pages/admin.js`.
+- **Tests**: `tests/agentic-ai.test.mjs` (32 tests). Whole suite: 213 tests pass; `npm run lint` passes.
+- **Config and docs**: `.env.example`, `.env.production.example`, `docker-compose.yml` (new variables), `docs/whmcs-agentic-hook.php`, README, architecture.md, this file.
+
+## Decisions made without confirmation (change them in Admin → Agentic AI or in code)
+
+1. **Backup billing interval is unset by default.** The brief did not say whether ৳500 is one-time or recurring, so it is displayed but excluded from the payment estimates until an admin sets `one_time` or `monthly`.
+2. **RAG is billed on the initial invoice** using the characters actually processed (it is exact, not an estimate). Voice calling is billed after use through a separate usage invoice.
+3. **Initial payment** = one-time charges + first month of recurring charges + RAG.
+4. **Voice minutes**: every started minute of a call is billed (configurable to exact seconds).
+5. **Customer access** is order reference + email, because the application has no customer login. A real customer session would be a separate piece of work.
+6. **Supported RAG files** are plain-text formats only; PDF/Word are rejected because no parser dependency was added.
+
+## Not verified / not done
+
+- **Live WHMCS was not available.** The live path (`AddOrder`, `UpdateInvoice`, `GetInvoice`, `CreateInvoice`) follows the WHMCS API but has only been exercised in sandbox mode. Before go-live: create the three products, set `AGENTIC_WHMCS_PID_*`, `AGENTIC_WHMCS_PAYMENT_METHOD`, `AGENTIC_WEBHOOK_SECRET`, install `docs/whmcs-agentic-hook.php` (a sample, to be checked against your WHMCS version) and test one real invoice end to end. The adapter compares the WHMCS invoice total with the expected amount and refuses to proceed on a mismatch (for example tax settings).
+- **Voice calling is not operational**: there is no telephony provider in the repository, so none was invented. Usage can be recorded and billed; placing calls needs a provider integration.
+- **Agent provisioning is not automated.** Activation records the service as active and sets `provisioning_status = QUEUED`; deploying the actual agent is outside this repository.
+- **No customer self-service dashboard exists** in the application, so customer management is the tracking panel on the Agentic AI page.
+
+---
+
 # CHANGES — Navigation freeze fix, security hardening and performance
 
 **Date:** 2026-10-29
