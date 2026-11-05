@@ -1183,6 +1183,12 @@
                 <span>Invoices & Billing</span>
               </a>
             </li>
+            <li>
+              <a class="nav-link" data-onclick="switchAdminView('agentic')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>
+                <span>Agentic AI</span>
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -1637,6 +1643,69 @@
         <!-- ===================================================================
              VIEW 6: SUPPORT TICKETS (CENTRALIZED ADMIN NOC & HELPDESK)
              =================================================================== -->
+        <section id="view-agentic" class="admin-view">
+          <div class="section-header">
+            <div class="section-title-group">
+              <h1>Agentic AI</h1>
+              <p>Orders, pricing, RAG and call usage, subscriptions, and WHMCS invoice and payment references.</p>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="agxKpis"></div>
+
+          <div class="data-panel">
+            <div class="data-panel-header">
+              <div class="panel-title">Orders</div>
+              <div class="panel-filters">
+                <select id="agxStatusFilter" class="select-filter" data-onchange="loadAgenticOrders()">
+                  <option value="">All statuses</option>
+                  <option value="PENDING_PAYMENT">Pending payment</option>
+                  <option value="PAYMENT_REVIEW">Payment review</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="REFUNDED">Refunded</option>
+                  <option value="BILLING_ERROR">Billing error</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Order</th><th>Customer</th><th>Configuration</th><th>Status</th><th>Initial (BDT)</th><th>Monthly (BDT)</th><th>RAG chars</th><th>WHMCS invoice</th><th>Actions</th></tr></thead>
+                <tbody id="agxOrdersBody"><tr><td colspan="9" style="text-align:center;padding:2rem;">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="data-panel" id="agxDetailPanel" hidden>
+            <div class="data-panel-header"><div class="panel-title" id="agxDetailTitle">Order</div></div>
+            <div id="agxDetailBody" style="padding:1rem 1.25rem;"></div>
+          </div>
+
+          <div class="data-panel">
+            <div class="data-panel-header"><div class="panel-title">Pricing and billing configuration</div></div>
+            <form id="agxPricingForm" data-onsubmit="saveAgenticPricing(event)" style="padding:1rem 1.25rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;">
+              <label>Ready-Made development (BDT)<input class="form-control" name="cfg_ready_dev" type="number" min="0" step="1"></label>
+              <label>Customized development (BDT)<input class="form-control" name="cfg_custom_dev" type="number" min="0" step="1"></label>
+              <label>Chat-Only development (BDT)<input class="form-control" name="cfg_chat_dev" type="number" min="0" step="1"></label>
+              <label>Server / month (BDT)<input class="form-control" name="server_monthly" type="number" min="0" step="1"></label>
+              <label>Backup amount (BDT)<input class="form-control" name="backup_amount" type="number" min="0" step="1"></label>
+              <label>Backup billing interval
+                <select class="select-filter" name="backup_interval"><option value="">Not confirmed (excluded from totals)</option><option value="one_time">One-time</option><option value="monthly">Monthly</option></select></label>
+              <label>Maintenance / month (BDT)<input class="form-control" name="maintenance_monthly" type="number" min="0" step="1"></label>
+              <label>RAG per character (BDT)<input class="form-control" name="rag_per_char" type="number" min="0" step="0.01"></label>
+              <label>Calling per minute (BDT)<input class="form-control" name="call_per_minute" type="number" min="0" step="0.01"></label>
+              <label>Call rounding
+                <select class="select-filter" name="call_rounding"><option value="ceil">Every started minute</option><option value="exact">Exact (seconds / 60)</option></select></label>
+              <div style="grid-column:1/-1;display:flex;gap:12px;align-items:center;">
+                <button class="btn-primary" type="submit">Save pricing</button>
+                <span id="agxPricingNote" style="font-size:13px;opacity:.8;"></span>
+              </div>
+            </form>
+            <div id="agxIntegrationNote" style="padding:0 1.25rem 1rem;font-size:13px;opacity:.85;"></div>
+          </div>
+        </section>
+
         <section id="view-support" class="admin-view">
           <div class="section-header">
             <div class="section-title-group">

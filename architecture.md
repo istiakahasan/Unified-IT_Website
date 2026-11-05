@@ -42,6 +42,7 @@ Unified Cloud Platform
       ├── pricing-engine.mjs        → Automated wholesale pricing & tier transitions
       ├── reward-service.mjs        → Commission & reward point ledger
       ├── whmcs-adapter.mjs         → WHMCS enterprise billing & invoice lifecycle
+      ├── agentic-ai.mjs            → Agentic AI pricing, RAG billing, WHMCS orders, verified activation, usage
       └── cloudstack-adapter.mjs    → Apache CloudStack multi-zone VM provisioning
 ```
 
@@ -81,6 +82,7 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 | 24 | `assets/js/modules/domain-search.js` | Real-time Dhaka Anycast domain search | Instant cart addition |
 | 25 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
 | 26 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
+| 26a | `assets/js/modules/agentic-ai.js` | Agentic AI configurator, pricing summary, RAG upload, order tracking | Injects `#agx` into `#pg-agentic` (built by `dynamic-services.js`) |
 | 27 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
 
 ---
@@ -304,6 +306,7 @@ Testing is executed natively using Node.js Test Runner (`node --test`). `npm run
 
 - **`tests/partner-system.test.mjs`** (33 tests): Partner tiers, commissions, spend progression, and wholesale discounting.
 - **`tests/admin-portal.test.mjs`** (33 tests): RBAC matrix, CloudStack VM ops, WHMCS financial refunds, and security audit logs.
+- **`tests/agentic-ai.test.mjs`** (32 tests): character counting (English, Bengali NFC, whitespace, BOM), document validation and de-duplication, per-configuration pricing, backup-interval handling, idempotent order creation, signed-webhook activation, replay and amount-mismatch protection, refund/cancel/failed handling, customer isolation, lookup throttling, call-usage rules and post-paid usage billing, admin permissions and pricing validation.
 - **`tests/support-ticketing.test.mjs`** (26 tests):
   1. Public ticket submission, validation, SLA, and guest lookup.
   2. Reseller-to-buyer workflow, buyer ticket creation, and tenant isolation.
@@ -391,6 +394,70 @@ Since 2026-10-29 the CSP forbids inline script, so front-end code follows these 
 - WebGL failures (creation errors, `fallback` tier, context loss) fall back to the DOM scroll driver or to an overlay without particles. Every renderer is created inside `try`/`catch`. Before 2026-10-29 the service-page builder (`dynamic-services.js`) created its particle renderer unguarded, so without WebGL **no service page was built at all**. Navigation now keeps working, and the no-WebGL e2e test asserts the page is visible (Chromium and Firefox).
 - Overlay `sync()` functions are idempotent (`if(open)return`), so repeated or rapid clicks and back/forward settle on the last hash with exactly one page visible (covered by e2e).
 - Server: per-request crash isolation, explicit `400` / `404` / `413` / `500` responses, no stack traces sent to clients.
+
+## 13a. Agentic AI Module (`server/agentic-ai.mjs`)
+
+WHMCS stays the only billing and payment system. This module never takes a payment: it calculates prices, asks WHMCS for an order and invoice, and activates a service only after WHMCS confirms payment.
+
+```
+Browser (#agx)                 Node server                              WHMCS
+ select config / options  ──►  (preview only, numbers are not trusted)
+ upload / paste RAG text
+ Proceed to Payment ─────────► POST /api/public/agentic/orders
+                                 validate input, recount RAG characters,
+                                 recompute prices from DB, 409 if the total changed
+                                 INSERT order + documents + subscriptions (PENDING)
+                                 syncClient ───────────────────────────► AddClient
+                                 createAgenticOrder ───────────────────► AddOrder (mapped product)
+                                                                          UpdateInvoice (one-time lines)
+                                                                          GetInvoice (total must equal ours)
+ ◄─ order ref, invoice, checkout URL
+ pays on WHMCS ─────────────────────────────────────────────────────────► payment recorded
+                                                         hook ◄────────── InvoicePaid etc.
+                               POST /api/webhooks/whmcs/agentic (HMAC-SHA256 over the raw body)
+                                 verify signature → dedupe on transaction ref →
+                                 live WHMCS: GetInvoice must be Paid with the same total →
+                                 amount must match → ACTIVE + activation record
+```
+
+### Order states
+`PENDING_PAYMENT` → `ACTIVE` (verified payment) → `SUSPENDED` (admin) → `ACTIVE`. Side states: `BILLING_ERROR` (WHMCS call failed, safe to retry with the same idempotency key), `PAYMENT_REVIEW` (a paid event did not match the invoice amount, never auto-activated), `CANCELLED` (invoice cancelled before payment), `REFUNDED` (invoice refunded; subscriptions cancelled). Payment rows are `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `FLAGGED` or `PENDING`.
+
+### Tables (created by `initAgenticSchema`, called from `initDatabase`)
+| Table | Purpose |
+|---|---|
+| `agentic_pricing_config` | Key/value rates: server, backup amount and interval, maintenance, RAG per character, call per minute, call rounding |
+| `agentic_configurations` | The three configurations with development cost and which options each allows |
+| `agentic_orders` | One row per order: customer, selections, branding, price snapshot, WHMCS client/order/product references, status, provisioning status |
+| `agentic_rag_documents` | Extracted text, character count, cost, content hash; `UNIQUE(order_id, content_hash)` prevents double billing |
+| `agentic_invoices` | WHMCS invoice references (`INITIAL` and `USAGE`), unique per WHMCS invoice |
+| `agentic_payments` | Verified payment events; `transaction_ref UNIQUE` makes webhooks idempotent |
+| `agentic_subscriptions` | Server, monthly backup and (only when selected) maintenance |
+| `agentic_call_usage` | One row per call, `provider_ref UNIQUE`, billed minutes and amount, invoice reference once billed |
+| `agentic_activations` | Activation, suspension and deactivation history |
+| `agentic_audit_logs` | Append-only trail of orders, payments, price changes, usage and service actions |
+
+Customers are created in the existing `customers` table so they appear in the admin Customers view.
+
+### Endpoints
+| Method and path | Auth | Purpose |
+|---|---|---|
+| `GET /api/public/agentic/catalog` | none | Configurations, rates, limits, telephony status |
+| `POST /api/public/agentic/quote` | none | Server-authoritative quote (nothing stored) |
+| `POST /api/public/agentic/orders` | none | Create order and WHMCS invoice (`idempotencyKey` required) |
+| `GET /api/public/agentic/orders/lookup?ref=&email=` | order ref + email, throttled | Customer's own order |
+| `POST /api/webhooks/whmcs/agentic` | HMAC signature header `X-Unified-Signature` | Payment events |
+| `GET /api/admin/agentic/overview, pricing, subscriptions, orders[/:id]` | `agentic:read` | Admin reads |
+| `PUT /api/admin/agentic/pricing` | `agentic:manage` | Update rates (validated, audited) |
+| `POST /api/admin/agentic/orders/:id/calling-usage, bill-usage, service` | `agentic:manage` | Record call, invoice usage, suspend/activate |
+
+### Security properties
+- Prices, character counts and the Chat-Only voice restriction are enforced on the server; client values are ignored.
+- The webhook needs `AGENTIC_WEBHOOK_SECRET`; signatures are compared in constant time over the raw request body (`server.mjs` now passes `rawBody` to the API layer). Unsigned or wrongly signed requests get 401 and a security event.
+- Duplicate protection: idempotency key per order, unique WHMCS invoice, unique transaction reference, unique document hash per order, unique call reference.
+- Document text is stored per order and is not returned by any endpoint. Logos are limited to PNG/JPEG/WebP with a magic-byte check (SVG is refused).
+- API credentials stay in environment variables; the frontend never sees them.
+
 
 ## 14. Deployment Architecture (as configured in the repository)
 

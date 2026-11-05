@@ -233,6 +233,7 @@ function switchAdminView(viewName) {
   else if (viewName === 'partners') loadPartners();
   else if (viewName === 'cloud') loadVMs();
   else if (viewName === 'billing') loadInvoices();
+  else if (viewName === 'agentic') loadAgentic();
   else if (viewName === 'support') loadSupportTickets();
   else if (viewName === 'cms') loadCMSData();
   else if (viewName === 'security') { loadSecurityEvents(); loadActiveSessions(); loadAdminUsers(); }
@@ -1523,4 +1524,183 @@ async function loadFullAuditTrail() {
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #fb7185; padding: 2rem;">Error: ${err.message}</td></tr>`;
   }
+}
+
+// ============================================================================
+// Agentic AI administration (orders, pricing, RAG/call usage, WHMCS references)
+// ============================================================================
+function agxMoney(n) {
+  return '৳' + (Math.round(Number(n || 0) * 100) / 100).toLocaleString('en-US');
+}
+
+async function loadAgentic() {
+  loadAgenticOverview();
+  loadAgenticOrders();
+  loadAgenticPricing();
+}
+
+async function loadAgenticOverview() {
+  const el = document.getElementById('agxKpis');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/admin/agentic/overview');
+    if (!res.ok) { el.innerHTML = ''; return; }
+    const o = await res.json();
+    const active = o.ordersByStatus.ACTIVE || 0;
+    const pending = o.ordersByStatus.PENDING_PAYMENT || 0;
+    const cards = [
+      ['teal', 'Active services', active],
+      ['amber', 'Awaiting payment', pending],
+      ['blue', 'Paid revenue', agxMoney(o.paidRevenue)],
+      ['purple', 'Active monthly recurring', agxMoney(o.activeMonthlyRecurring)],
+      ['teal', 'RAG characters', o.rag.characters.toLocaleString('en-US')],
+      ['blue', 'Call minutes', o.calling.billedMinutes]
+    ];
+    el.innerHTML = cards.map(c => `<div class="kpi-card ${c[0]}"><div class="kpi-header"><span class="kpi-label">${escapeHtml(c[1])}</span></div><div class="kpi-value">${escapeHtml(String(c[2]))}</div></div>`).join('');
+    const note = document.getElementById('agxIntegrationNote');
+    if (note) note.textContent = o.telephony.notice;
+  } catch (e) {
+    console.error('Agentic overview failed', e);
+  }
+}
+
+async function loadAgenticOrders() {
+  const body = document.getElementById('agxOrdersBody');
+  if (!body) return;
+  const status = document.getElementById('agxStatusFilter')?.value || '';
+  try {
+    const res = await fetch('/api/admin/agentic/orders' + (status ? '?status=' + encodeURIComponent(status) : ''));
+    if (!res.ok) { body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Not authorized or unavailable.</td></tr>'; return; }
+    const data = await res.json();
+    if (!data.orders.length) { body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">No Agentic AI orders yet.</td></tr>'; return; }
+    const cls = { ACTIVE: 'badge-success', PENDING_PAYMENT: 'badge-warning', PAYMENT_REVIEW: 'badge-danger', BILLING_ERROR: 'badge-danger', SUSPENDED: 'badge-warning', CANCELLED: 'badge-danger', REFUNDED: 'badge-danger' };
+    body.innerHTML = data.orders.map(o => `
+      <tr>
+        <td class="mono">${escapeHtml(o.orderRef)}</td>
+        <td>${escapeHtml(o.customerName)}<br><span class="mono">${escapeHtml(o.customerEmail)}</span></td>
+        <td>${escapeHtml(o.configCode.replace(/_/g, ' '))}${o.voice ? ' + voice' : ''}${o.maintenance ? ' + maint.' : ''}</td>
+        <td><span class="badge ${cls[o.status] || 'badge-info'}">${escapeHtml(o.status)}</span></td>
+        <td>${agxMoney(o.initialTotal)}</td>
+        <td>${agxMoney(o.recurringTotal)}</td>
+        <td>${Number(o.ragChars).toLocaleString('en-US')}</td>
+        <td class="mono">${escapeHtml(o.invoiceId || '-')}</td>
+        <td><button class="btn-primary" type="button" data-onclick="openAgenticOrder('${escapeHtml(o.id)}')">Open</button></td>
+      </tr>`).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Could not load orders.</td></tr>';
+  }
+}
+
+async function openAgenticOrder(id) {
+  const panel = document.getElementById('agxDetailPanel');
+  const bodyEl = document.getElementById('agxDetailBody');
+  try {
+    const res = await fetch('/api/admin/agentic/orders/' + encodeURIComponent(id));
+    if (!res.ok) { showToast('Could not load the order.', 'error'); return; }
+    const d = await res.json();
+    document.getElementById('agxDetailTitle').textContent = `${d.orderRef} · ${d.status}`;
+    const line = (a, b) => `<tr><td>${escapeHtml(a)}</td><td>${b}</td></tr>`;
+    const q = d.quote.totals;
+    bodyEl.innerHTML = `
+      <table class="data-table"><tbody>
+        ${line('Customer', escapeHtml(`${d.customer.name} <${d.customer.email}>`))}
+        ${line('Configuration', escapeHtml(d.configuration.name))}
+        ${line('One-time / monthly / initial', `${agxMoney(q.oneTime)} / ${agxMoney(q.recurringMonthly)} / ${agxMoney(q.initialPayment)}`)}
+        ${line('Backup', d.backup.amount === null ? 'Not selected' : escapeHtml(`${agxMoney(d.backup.amount)} (${d.backup.interval || 'interval not confirmed'})`))}
+        ${line('Maintenance', escapeHtml(d.maintenance))}
+        ${line('RAG', escapeHtml(`${d.rag.characters.toLocaleString('en-US')} characters, ${agxMoney(d.rag.cost)} across ${d.rag.documents.length} document(s)`))}
+        ${line('Calling', d.calling.enabled ? escapeHtml(`${d.calling.usage.calls} calls, ${d.calling.usage.billedMinutes} min, ${agxMoney(d.calling.usage.amount)} (unbilled ${agxMoney(d.calling.usage.unbilledAmount)})`) : 'Not included')}
+        ${line('WHMCS', escapeHtml(`client ${d.whmcs.clientId || '-'}, order ${d.whmcs.orderId || '-'}, product ${d.whmcs.productId || 'sandbox'}`))}
+        ${line('Invoices', d.invoices.map(i => escapeHtml(`#${i.id} ${i.kind} ${agxMoney(i.amount)} ${i.status}${i.sandbox ? ' (sandbox)' : ''}`)).join('<br>') || '-')}
+        ${line('Payments', d.payments.map(p => escapeHtml(`${p.reference} ${p.status} ${p.createdAt}`)).join('<br>') || '-')}
+        ${line('Subscriptions', d.subscriptions.map(s => escapeHtml(`${s.kind} ${agxMoney(s.amount)} ${s.status} next ${s.nextDueDate || '-'}`)).join('<br>') || '-')}
+        ${line('Provisioning', escapeHtml(d.provisioningStatus))}
+        ${d.billingError ? line('Billing error', escapeHtml(d.billingError)) : ''}
+      </tbody></table>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        ${d.status === 'ACTIVE' ? `<button class="btn-primary" type="button" data-onclick="agenticServiceAction('${escapeHtml(d.id)}', 'suspend')">Suspend</button>` : ''}
+        ${['SUSPENDED', 'PAYMENT_REVIEW'].includes(d.status) ? `<button class="btn-primary" type="button" data-onclick="agenticServiceAction('${escapeHtml(d.id)}', 'activate')">Activate</button>` : ''}
+        ${d.calling.enabled && d.status === 'ACTIVE' ? `<button class="btn-primary" type="button" data-onclick="agenticRecordCall('${escapeHtml(d.id)}')">Record call</button>
+        <button class="btn-primary" type="button" data-onclick="agenticBillUsage('${escapeHtml(d.id)}')">Invoice call usage</button>` : ''}
+      </div>`;
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    showToast('Could not load the order.', 'error');
+  }
+}
+
+async function agenticPost(url, payload) {
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(j.message || 'Request failed');
+  return j;
+}
+
+async function agenticServiceAction(id, action) {
+  try {
+    const reason = action === 'suspend' ? (window.prompt('Reason for suspension (optional):') || '') : 'Reactivated by administrator';
+    await agenticPost(`/api/admin/agentic/orders/${encodeURIComponent(id)}/service`, { action, reason });
+    showToast(`Service ${action === 'suspend' ? 'suspended' : 'activated'}.`, 'success');
+    loadAgentic();
+    openAgenticOrder(id);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function agenticRecordCall(id) {
+  const providerRef = window.prompt('Call identifier from the telephony provider:');
+  if (!providerRef) return;
+  const seconds = Number(window.prompt('Call duration in seconds:'));
+  if (!Number.isFinite(seconds)) { showToast('Enter the duration as a number of seconds.', 'error'); return; }
+  try {
+    const r = await agenticPost(`/api/admin/agentic/orders/${encodeURIComponent(id)}/calling-usage`, { providerRef, durationSeconds: seconds });
+    showToast(`Recorded ${r.billedMinutes} billed minute(s), ${agxMoney(r.amount)}.`, 'success');
+    openAgenticOrder(id);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function agenticBillUsage(id) {
+  try {
+    const r = await agenticPost(`/api/admin/agentic/orders/${encodeURIComponent(id)}/bill-usage`, {});
+    showToast(r.billed ? `Usage invoice #${r.invoiceId} created for ${agxMoney(r.amount)}.` : r.message, r.billed ? 'success' : 'info');
+    openAgenticOrder(id);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadAgenticPricing() {
+  const form = document.getElementById('agxPricingForm');
+  if (!form) return;
+  try {
+    const res = await fetch('/api/admin/agentic/pricing');
+    if (!res.ok) return;
+    const { pricing, whmcs } = await res.json();
+    const set = (name, v) => { const el = form.elements[name]; if (el) el.value = v ?? ''; };
+    set('cfg_ready_dev', pricing.configs.READY_MADE.developmentCost);
+    set('cfg_custom_dev', pricing.configs.CUSTOM_BRANDED.developmentCost);
+    set('cfg_chat_dev', pricing.configs.CHAT_ONLY.developmentCost);
+    set('server_monthly', pricing.serverMonthly);
+    set('backup_amount', pricing.backupAmount);
+    set('backup_interval', pricing.backupInterval || '');
+    set('maintenance_monthly', pricing.maintenanceMonthly);
+    set('rag_per_char', pricing.ragPerChar);
+    set('call_per_minute', pricing.callPerMinute);
+    set('call_rounding', pricing.callRounding);
+    const note = document.getElementById('agxPricingNote');
+    if (note) note.textContent = `WHMCS mode: ${whmcs.mode}. Price changes apply to new orders only.`;
+  } catch (e) {
+    console.error('Agentic pricing load failed', e);
+  }
+}
+
+async function saveAgenticPricing(event) {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {};
+  for (const el of form.elements) if (el.name) payload[el.name] = el.value;
+  try {
+    const res = await fetch('/api/admin/agentic/pricing', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.message || 'Could not save pricing');
+    showToast('Agentic AI pricing saved. It applies to new orders.', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
 }

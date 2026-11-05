@@ -7,6 +7,7 @@ import { hashPasswordAsync } from './db.mjs';
 import { RewardProcessingService } from './reward-service.mjs';
 import { evaluateAndUpgradePartnerTier } from './pricing-engine.mjs';
 import * as ticketsService from './tickets-service.mjs';
+import * as agentic from './agentic-ai.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +34,7 @@ export { getClientIp };
 /**
  * REST API Router for Cloud Partner Program & Centralized Admin Portal
  */
-export async function handleApiRequest({ req, res, pathname, query, body, db, pricingEngine, whmcsAdapter, cloudstackAdapter, rewardService }) {
+export async function handleApiRequest({ req, res, pathname, query, body, rawBody = '', db, pricingEngine, whmcsAdapter, cloudstackAdapter, rewardService }) {
   const rewards = rewardService || new RewardProcessingService(db);
 
   // Helper functions
@@ -175,6 +176,52 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
   // =========================================================================
   // PUBLIC & CUSTOMER SUPPORT TICKETING API
   // =========================================================================
+
+  // =========================================================================
+  // AGENTIC AI MODULE (public catalog/checkout/lookup + signed WHMCS payment webhook)
+  // =========================================================================
+  if (pathname.startsWith('/api/public/agentic/') || pathname === '/api/webhooks/whmcs/agentic') {
+    try {
+      // GET /api/public/agentic/catalog
+      if (req.method === 'GET' && pathname === '/api/public/agentic/catalog') {
+        return sendJson(200, agentic.getCatalog(db));
+      }
+
+      // POST /api/public/agentic/quote (server-authoritative price; nothing is stored)
+      if (req.method === 'POST' && pathname === '/api/public/agentic/quote') {
+        const analysis = agentic.analyseDocuments(body.documents, body.ragText);
+        const quote = agentic.buildQuote(agentic.getPricing(db), body, analysis.totalChars);
+        return sendJson(200, { quote, skippedDuplicates: analysis.skippedDuplicates });
+      }
+
+      // POST /api/public/agentic/orders (creates the order and its WHMCS invoice)
+      if (req.method === 'POST' && pathname === '/api/public/agentic/orders') {
+        const result = await agentic.createOrder(db, whmcsAdapter, body, { actor: 'customer:' + String(body?.customer?.email || '').slice(0, 80) });
+        return sendJson(result.replay ? 200 : 201, result);
+      }
+
+      // GET /api/public/agentic/orders/lookup?ref=&email= (customer's own order only)
+      if (req.method === 'GET' && pathname === '/api/public/agentic/orders/lookup') {
+        return sendJson(200, agentic.lookupOrderForCustomer(db, query.ref, query.email, clientIp));
+      }
+
+      // POST /api/webhooks/whmcs/agentic (HMAC-signed by the WHMCS hook; activation happens only here)
+      if (req.method === 'POST' && pathname === '/api/webhooks/whmcs/agentic') {
+        const secret = process.env.AGENTIC_WEBHOOK_SECRET || process.env.WHMCS_WEBHOOK_SECRET || '';
+        if (!secret) return sendError(503, 'Payment webhook is not configured (AGENTIC_WEBHOOK_SECRET).');
+        if (!agentic.verifyWebhookSignature(rawBody, req.headers['x-unified-signature'], secret)) {
+          logSecurityEvent('WEBHOOK_REJECTED', null, null, 'WHMCS', 'agentic-webhook', null, 'VERIFY_SIGNATURE', 'DENIED', {});
+          return sendError(401, 'Invalid webhook signature.');
+        }
+        const out = await agentic.processPaymentEvent(db, whmcsAdapter, body);
+        return sendJson(200, { ok: true, ...out });
+      }
+    } catch (e) {
+      if (e instanceof agentic.AgenticError) return sendError(e.status, e.message, e.extra);
+      console.error('[Agentic API]', e);
+      return sendError(500, 'Agentic AI request failed.');
+    }
+  }
 
   // GET /api/support/catalog (Products, categories, priorities for support submission)
   if (req.method === 'GET' && pathname === '/api/support/catalog') {
@@ -1869,6 +1916,45 @@ export async function handleApiRequest({ req, res, pathname, query, body, db, pr
     // =========================================================================
     // 4.4. BILLING & FINANCIAL ADMINISTRATION
     // =========================================================================
+
+    // =========================================================================
+    // 4.x AGENTIC AI MANAGEMENT
+    // =========================================================================
+    if (pathname.startsWith('/api/admin/agentic/')) {
+      try {
+        const actor = req.session.email;
+        const sub = pathname.replace('/api/admin/agentic/', '').split('/').filter(Boolean);
+
+        if (req.method === 'GET') {
+          if (!requirePermission('agentic:read')) return;
+          if (sub[0] === 'overview') return sendJson(200, agentic.getOverview(db));
+          if (sub[0] === 'pricing') return sendJson(200, { pricing: agentic.getPricing(db), telephony: agentic.getTelephonyStatus(), whmcs: whmcsAdapter.getStatus(), mapping: agentic.getWhmcsMapping() });
+          if (sub[0] === 'subscriptions') return sendJson(200, { subscriptions: agentic.listSubscriptions(db) });
+          if (sub[0] === 'orders' && !sub[1]) return sendJson(200, agentic.listOrders(db, query));
+          if (sub[0] === 'orders' && sub[1]) return sendJson(200, agentic.getOrderForAdmin(db, decodeURIComponent(sub[1])));
+        }
+
+        if (req.method === 'PUT' && sub[0] === 'pricing') {
+          if (!requirePermission('agentic:manage')) return;
+          const applied = agentic.updatePricing(db, body, actor);
+          logAudit('ADMIN', req.session.userId, actor, 'AGENTIC_PRICING_UPDATED', 'agentic_pricing_config', null, applied);
+          return sendJson(200, { applied, pricing: agentic.getPricing(db) });
+        }
+
+        if (req.method === 'POST' && sub[0] === 'orders' && sub[1]) {
+          if (!requirePermission('agentic:manage')) return;
+          const orderId = decodeURIComponent(sub[1]);
+          const order = agentic.getOrderForAdmin(db, orderId);
+          if (sub[2] === 'calling-usage') return sendJson(201, agentic.recordCallUsage(db, order.id, body, actor));
+          if (sub[2] === 'bill-usage') return sendJson(200, await agentic.billUsage(db, whmcsAdapter, order.id, actor));
+          if (sub[2] === 'service') return sendJson(200, agentic.setServiceState(db, order.id, body.action, actor, body.reason));
+        }
+      } catch (e) {
+        if (e instanceof agentic.AgenticError) return sendError(e.status, e.message, e.extra);
+        console.error('[Agentic Admin API]', e);
+        return sendError(500, 'Agentic AI admin request failed.');
+      }
+    }
 
     // GET /api/admin/billing/overview
     if (req.method === 'GET' && pathname === '/api/admin/billing/overview') {

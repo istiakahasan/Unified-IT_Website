@@ -55,6 +55,8 @@ export const ROLE_PERMISSIONS = {
     'billing:refund',
     'billing:payouts',
     'billing:pricing_rules',
+    'agentic:read',
+    'agentic:manage',
     'partners:read',
     'customers:read'
   ],
@@ -75,6 +77,7 @@ export const ROLE_PERMISSIONS = {
   SUPPORT_ADMIN: [
     'support:read',
     'support:write',
+    'agentic:read',
     'customers:read',
     'customers:reset_password',
     'infrastructure:read'
@@ -98,6 +101,7 @@ export const ROLE_PERMISSIONS = {
   // Read-Only Auditor: Comprehensive compliance access to operational and audit records
   AUDITOR: [
     'audit:read',
+    'agentic:read',
     'security:read',
     'billing:read',
     'partners:read',
