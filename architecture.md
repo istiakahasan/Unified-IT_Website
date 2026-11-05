@@ -82,7 +82,7 @@ All modules are loaded in strict sequence to respect DOM element dependencies an
 | 24 | `assets/js/modules/domain-search.js` | Real-time Dhaka Anycast domain search | Instant cart addition |
 | 25 | `assets/js/modules/ui-toggles.js` | Billing period switcher (Monthly/Yearly)| Dynamic attribute toggler |
 | 26 | `assets/js/modules/support-ticket.js` | Universal ticket modal & guest lookup | `window.openSupportTicketModal` |
-| 26a | `assets/js/modules/agentic-ai.js` | Agentic AI configurator, pricing summary, RAG upload, order tracking | Injects `#agx` into `#pg-agentic` (built by `dynamic-services.js`), above the original `.vg` info cards |
+| 26a | `assets/js/modules/agentic-ai.js` | Agentic AI configurator, pricing summary, RAG upload, order tracking | Injects `#agx` into `#pg-agentic` (built by `dynamic-services.js`) (before any `.vg` cards; the static cards were removed from `service-pages.js`) |
 | 27 | `assets/js/app.js` | Application bootstrap & router | Final initialization |
 
 ---
@@ -421,7 +421,7 @@ Browser (#agx)                 Node server                              WHMCS
 ```
 
 ### Page layout (`#pg-agentic`)
-`#agx` (`max-width:1180px`, centered, 16px side padding) wraps its content in `<div class="dm">` like `#pg-email`. Order top to bottom: hero `.dsec` (`.dlab` badge, `.dh` headline, `.dp` paragraph, same centered treatment as the email page, scoped in `assets/css/agentic-ai.css`), step 1 agent configuration cards, step 2 options, optional branding form, RAG knowledge base, customer details, pricing summary, order tracking, then the original information cards. Selected cards get the `--a1`/`--a2` glow. The generic `.pg label` rule uppercases labels, so card labels reset `text-transform` locally while form-field labels keep the site style.
+`#agx` (`max-width:1180px`, centered, 16px side padding) wraps its content in `<div class="dm">` like `#pg-email`. Order top to bottom: hero `.dsec` (`.dlab` badge, `.dh` headline, `.dp` paragraph, same centered treatment as the email page, scoped in `assets/css/agentic-ai.css`), step 1 agent configuration cards, step 2 options, optional branding form, RAG knowledge base, customer details, pricing summary, order tracking. Selected cards get the `--a1`/`--a2` glow. The generic `.pg label` rule uppercases labels, so card labels reset `text-transform` locally while form-field labels keep the site style.
 
 ### Order states
 `PENDING_PAYMENT` → `ACTIVE` (verified payment) → `SUSPENDED` (admin) → `ACTIVE`. Side states: `BILLING_ERROR` (WHMCS call failed, safe to retry with the same idempotency key), `PAYMENT_REVIEW` (a paid event did not match the invoice amount, never auto-activated), `CANCELLED` (invoice cancelled before payment), `REFUNDED` (invoice refunded; subscriptions cancelled). Payment rows are `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `FLAGGED` or `PENDING`.

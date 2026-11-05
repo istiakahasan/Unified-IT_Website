@@ -193,7 +193,7 @@ Implemented in [`server/auth.mjs`](server/auth.mjs) and [`server/tickets-service
 - **Graceful Non-WebGL Fallback**: Fully operable without WebGL via the `runDomScrollDriver()` engine.
 
 ### 8. Agentic AI Module (`#p-agentic`)
-A complete purchasing flow for AI agents, built into the existing Agentic AI service page. The page follows the same layout as the Business Email page: a `.dm` container (max 1180px) with a centered hero (`.dsec` with the `.dlab` badge, `.dh` headline and `.dp` paragraph) first, then the configurator steps, then the original information cards. Backend: [`server/agentic-ai.mjs`](server/agentic-ai.mjs). Frontend: [`assets/js/modules/agentic-ai.js`](assets/js/modules/agentic-ai.js).
+A complete purchasing flow for AI agents, built into the existing Agentic AI service page. The page follows the same layout as the Business Email page: a `.dm` container (max 1180px) with a centered hero (`.dsec` with the `.dlab` badge, `.dh` headline and `.dp` paragraph) first, then the configurator steps. The static information cards were removed from the page data, so the configurator is shown directly. Backend: [`server/agentic-ai.mjs`](server/agentic-ai.mjs). Frontend: [`assets/js/modules/agentic-ai.js`](assets/js/modules/agentic-ai.js).
 
 | Configuration | Development (one-time) | Server | Backup | RAG | Maintenance (optional) | Voice calling |
 |---|---|---|---|---|---|---|

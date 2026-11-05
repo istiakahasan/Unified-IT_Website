@@ -152,6 +152,11 @@ export class WHMCSAdapter {
     }
   }
 
+  _nextSandboxInvoiceId() {
+    this._sandboxInvoiceSeq = Math.max((this._sandboxInvoiceSeq || 0) + 1, Date.now());
+    return this._sandboxInvoiceSeq;
+  }
+
   /** Reads one invoice (used to confirm a payment notification against WHMCS itself). */
   async getInvoice(invoiceId) {
     const r = await this._callApi('GetInvoice', { invoiceid: invoiceId });
@@ -166,7 +171,8 @@ export class WHMCSAdapter {
   async createAgenticOrder({ clientId, productId, addonIds = [], paymentMethod, recurringMonthly, oneTimeItems = [], expectedTotal, orderRef, idempotencyKey }) {
     if (!this.isConfigured) {
       const sim = this._simulateCall('AddOrder', { orderRef }, idempotencyKey);
-      return { orderId: sim.orderid, invoiceId: sim.invoiceid, total: expectedTotal, checkoutUrl: null, sandbox: true };
+      // Sandbox invoice numbers must be unique (they are stored under a UNIQUE constraint), so they are sequential, not random.
+      return { orderId: sim.orderid, invoiceId: this._nextSandboxInvoiceId(), total: expectedTotal, checkoutUrl: null, sandbox: true };
     }
     const params = {
       clientid: clientId,
@@ -200,7 +206,7 @@ export class WHMCSAdapter {
   async createUsageInvoice({ clientId, paymentMethod, description, amount, idempotencyKey }) {
     if (!this.isConfigured) {
       const sim = this._simulateCall('CreateInvoice', { description, amount }, idempotencyKey);
-      return { invoiceId: sim.invoiceid, checkoutUrl: null, sandbox: true };
+      return { invoiceId: this._nextSandboxInvoiceId(), checkoutUrl: null, sandbox: true };
     }
     const r = await this._callApi('CreateInvoice', {
       userid: clientId,
