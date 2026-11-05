@@ -17,7 +17,7 @@
     "test:agentic": "node --test tests/agentic-ai.test.mjs tests/agentic-requests.test.mjs",
     "test:security": "node --test tests/security-hardening.test.mjs",
     "test:all": "node --test tests/*.test.mjs",
-    "test:e2e": "node --test tests/e2e/navigation.e2e.mjs tests/e2e/agentic.e2e.mjs",
+    "test:e2e": "node --test tests/e2e/navigation.e2e.mjs tests/e2e/agentic.e2e.mjs tests/e2e/hosting.e2e.mjs",
     "audit": "npm audit",
     "update:prices": "node scripts/update-digicert-prices.mjs && node scripts/update-comodo-prices.mjs",
     "update:digicert": "node scripts/update-digicert-prices.mjs",
