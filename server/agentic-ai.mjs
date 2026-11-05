@@ -45,13 +45,7 @@ const DEFAULT_CONFIGS = [
 const DEFAULT_PRODUCTS = [
   { code: 'SUPPORT_AGENT', name: 'Customer Support Agent', tagline: 'Always-on first response for your customers', badge: '', sort: 1,
     description: 'Always-on assistant that resolves common questions and routes the rest to your team.',
-    capabilities: ['24/7 first response', 'Knowledge-base answers', 'Ticket triage and routing', 'Human escalation'] },
-  { code: 'KNOWLEDGE_ASSISTANT', name: 'Knowledge Assistant', tagline: 'Ask questions across your company documents', badge: '', sort: 2,
-    description: 'Searches and summarizes your company documents, policies and data with answers you can trace to a source.',
-    capabilities: ['Document search', 'Answers with sources', 'Team-wide access', 'Access controls'] },
-  { code: 'WORKFLOW_AGENT', name: 'Workflow Automation Agent', tagline: 'Repetitive internal processes, start to finish', badge: '', sort: 3,
-    description: 'Handles repetitive internal processes from start to finish and reports back.',
-    capabilities: ['Approvals and requests', 'Data entry and updates', 'Scheduled reports', 'Integration with existing systems'] }
+    capabilities: ['24/7 first response', 'Knowledge-base answers', 'Ticket triage and routing', 'Human escalation'] }
 ];
 
 const PRICING_KEYS = {
@@ -264,6 +258,14 @@ export function initAgenticSchema(db) {
   // extra charge so the confirmed Ready-Made rule (no development fee) holds; administrators edit them in the admin panel.
   const insProd = db.prepare('INSERT OR IGNORE INTO agentic_products (code, name, tagline, description, capabilities_json, badge, sort_order) VALUES (?,?,?,?,?,?,?)');
   for (const p of DEFAULT_PRODUCTS) insProd.run(p.code, p.name, p.tagline, p.description, JSON.stringify(p.capabilities), p.badge, p.sort);
+
+  // Ready-Made now starts with Customer Support Agent only. Databases seeded earlier hide the two retired starter
+  // solutions (rows and order references are kept). A marker makes this run once, so an administrator can still
+  // re-enable either product later without the next restart hiding it again.
+  if (!db.prepare("SELECT 1 FROM agentic_pricing_config WHERE key = 'migrated_single_ready_made'").get()) {
+    db.exec("UPDATE agentic_products SET active = 0 WHERE code IN ('KNOWLEDGE_ASSISTANT', 'WORKFLOW_AGENT');");
+    db.prepare("INSERT INTO agentic_pricing_config (key, value) VALUES ('migrated_single_ready_made', '1')").run();
+  }
 }
 
 /* ----------------------------------------------------------------- helpers */

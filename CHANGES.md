@@ -1,3 +1,16 @@
+# CHANGES — Ready-Made AI starts with Customer Support Agent only
+
+**Date:** 2026-11-05
+**Scope:** the Ready-Made starter catalog.
+
+- `server/agentic-ai.mjs`: `DEFAULT_PRODUCTS` now seeds only `SUPPORT_AGENT`. `initAgenticSchema` runs `UPDATE agentic_products SET active = 0 WHERE code IN ('KNOWLEDGE_ASSISTANT', 'WORKFLOW_AGENT')` once on existing databases (guarded by a `migrated_single_ready_made` marker in `agentic_pricing_config`, so an administrator who re-enables a product is not overridden at the next restart). Rows are kept, so historical order references still resolve.
+- `#p-agentic-ready` step 1 shows the single Customer Support Agent card, pre-selected, and the "Compare solutions" button is not rendered (it appears again when more than one product is active).
+- Copy that would otherwise be untrue with one solution: the step-1 panel text says "Your pre-built agent is selected below" unless more than one product is active, and the hub's Ready-Made card bullets read "A proven, pre-built agent" and "Ready to deploy on Unified Cloud" (`assets/js/modules/agentic-checkout.js`, `assets/js/data/service-pages.js`, cache-busting versions in `index.html`).
+- Tests: the catalog test expects one product (`SUPPORT_AGENT`); four new migration tests (fresh seed, hide-once with rows kept, admin re-enable survives a restart, historical product still readable); the Ready-Made browser test checks one card, no compare button, and the summary.
+- Docs: README and architecture.md describe Customer Support Agent as the starter solution.
+
+---
+
 # CHANGES — Web Hosting plan cards
 
 **Date:** 2026-11-05
