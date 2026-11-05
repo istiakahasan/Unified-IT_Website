@@ -437,14 +437,17 @@
       e.stopPropagation();
       var card = wpBtn.closest('.vc.wp');
       var title = (card.querySelector('h3') || {}).textContent || 'Web Hosting Plan';
-      var priceText = (card.querySelector('.vd b') || card.querySelector('.ek b') || {}).textContent || 'BDT 2,400 Tk';
-      var specText = (card.querySelector('.ek span') || {}).textContent || 'SSD Hosting';
+      var priceText = (card.querySelector('.wprice b') || card.querySelector('.vd b') || card.querySelector('.ek b') || {}).textContent || '2,970';
+      var space = (card.querySelector('.ek b') || {}).textContent || '';
+      var specText = space ? (space + ' Storage · 1 Domain · cPanel · SSL · 24X7 Support') : '1 Domain · cPanel · SSL · 24X7 Support';
       add({
         name: title.trim(),
-        details: specText.trim(),
+        details: specText,
         price: priceText,
+        period: '/yr',
         quantity: 1
       });
+      openDrawer();
       return;
     }
 
