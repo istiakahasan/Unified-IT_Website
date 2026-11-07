@@ -7,7 +7,7 @@
  * Refreshed automatically by scripts/update-comodo-prices.mjs.
  */
 window.COMODO_PRICES = {
-  "updated": "2026-11-06",
+  "updated": "2026-11-07",
   "source": "https://www.namecheap.com/security/ssl-certificates/",
   "markup": 0.3,
   "fallbackRate": 123,
